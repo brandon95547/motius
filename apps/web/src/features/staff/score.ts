@@ -98,7 +98,19 @@ const BAR_NUMBER_INK = 11
 const TIME_HALF = 9
 
 export interface Measured {
+  /**
+   * The chord struck here, as the song has it. With no notes at all for a
+   * place where nothing is struck: a note tied over from before is written
+   * again there, and the page has a notehead for it though the player has
+   * nothing new to do.
+   */
   readonly step: SongStep
+  /**
+   * Which of the song's chords it is, counting from none. A place where
+   * nothing is struck is not one of them, and stands between two: after the
+   * third chord and before the fourth it is three and a half. So this says
+   * where a place falls in the playing, and is not its place in the list.
+   */
   readonly index: number
   /**
    * Its notes as the page will draw them: spelled, handed, and each carrying
@@ -293,6 +305,65 @@ export function clefsAt(clefs: Song['clefs'], ms: number, layer?: ScoreLayer): S
 export const changedClefs = (clefs: StaffClefs | undefined): StaffClefs | undefined =>
   !clefs || (clefs.treble === 'treble' && clefs.bass === 'bass') ? undefined : clefs
 
+/** A place on the page where something is written: a chord, and which of the song's it is. */
+interface Column {
+  readonly step: SongStep
+  readonly index: number
+}
+
+/** How near two moments are and still the same place on the page, in milliseconds. */
+const SAME_MOMENT = 30
+
+/**
+ * The places of a score: its chords, and the moments between them where a
+ * tied note is written again and nothing is struck.
+ *
+ * A note tied over a bar line has a notehead in the new bar. Where a chord is
+ * struck at that moment the head is drawn with it. Where none is — the other
+ * hand is resting, or the piece is ending on a chord held through its last
+ * bar — there was nowhere to draw it: the head was left out, and a final bar
+ * of nothing but tied notes was left off the page altogether. Such a moment
+ * is a place of its own, with held noteheads and no chord.
+ *
+ * Null where every place is a chord, which is most music.
+ */
+function columnsOf(steps: readonly SongStep[]): readonly Column[] | null {
+  const struck = (ms: number): boolean => {
+    let low = 0
+    let high = steps.length - 1
+    while (low < high) {
+      const middle = (low + high + 1) >> 1
+      if (steps[middle]!.startMs <= ms + SAME_MOMENT) low = middle
+      else high = middle - 1
+    }
+    return steps[low] !== undefined && Math.abs(steps[low]!.startMs - ms) <= SAME_MOMENT
+  }
+  const moments: number[] = []
+  for (const step of steps)
+    for (const note of step.notes)
+      for (const segment of note.tied ?? [])
+        if (segment.startMs > note.startMs && !struck(segment.startMs))
+          moments.push(segment.startMs)
+  if (moments.length === 0) return null
+  moments.sort((a, b) => a - b)
+  const distinct = moments.filter((ms, at) => at === 0 || ms - moments[at - 1]! > SAME_MOMENT)
+
+  const columns: Column[] = []
+  let next = 0
+  for (const [index, step] of steps.entries()) {
+    columns.push({ step, index })
+    const until = steps[index + 1]?.startMs ?? Infinity
+    const between: number[] = []
+    while (next < distinct.length && distinct[next]! < until) between.push(distinct[next++]!)
+    for (const [at, startMs] of between.entries())
+      columns.push({
+        step: { notes: [], startMs },
+        index: index + (at + 1) / (between.length + 1),
+      })
+  }
+  return columns
+}
+
 /**
  * Every chord of the song, measured and spaced but not placed.
  *
@@ -320,12 +391,18 @@ export function measureScore(
   /** The staff of this pair a note is written on. Its hand's, on a piano's usual two. */
   const rowOf = (note: SongNote): Staff =>
     layer ? (rowIn(layer, staffNumberOf(note, staves)) ?? 'treble') : staffFor(note.note, note.hand)
+  // Every place something is written, of the whole score, so that the pairs
+  // of a score on several staves count the same places.
+  const columns = columnsOf(every)
+  const all = columns ? columns.map((column) => column.step) : every
+  /** Which of the song's chords the place at a position in the list is. */
+  const indexAt = (position: number) => (columns ? columns[position]!.index : position)
   const steps = layer
-    ? every.map((step) => ({
+    ? all.map((step) => ({
         ...step,
         notes: step.notes.filter((note) => rowIn(layer, staffNumberOf(note, staves)) !== null),
       }))
-    : every
+    : all
   const beat = song ? 60000 / song.bpm : 500
   const fifths = song?.key?.fifths ?? 0
   /** The bars the file laid out. Absent only for a song stored before they were read. */
@@ -400,8 +477,8 @@ export function measureScore(
    * the chord at its own moment, to be drawn with it, with a note of which
    * chord its tie comes from.
    *
-   * One that falls where nothing at all is struck has no chord to join and is
-   * not drawn yet; its tie then runs on to wherever the note is next written.
+   * One that falls where nothing at all is struck has a place of its own to be
+   * drawn at (`columnsOf`), which is a chord of held noteheads and nothing else.
    */
   const heldAt = new Map<number, { note: SongNote; fromIndex: number }[]>()
   const tiedOut = new Map<number, { note: number; toIndex: number }[]>()
@@ -410,10 +487,10 @@ export function measureScore(
     let high = steps.length - 1
     while (low < high) {
       const middle = (low + high + 1) >> 1
-      if (steps[middle]!.startMs <= ms + 30) low = middle
+      if (steps[middle]!.startMs <= ms + SAME_MOMENT) low = middle
       else high = middle - 1
     }
-    return steps[low] && Math.abs(steps[low]!.startMs - ms) <= 30 ? low : -1
+    return steps[low] && Math.abs(steps[low]!.startMs - ms) <= SAME_MOMENT ? low : -1
   }
   for (const [index, step] of steps.entries())
     for (const note of step.notes) {
@@ -762,15 +839,26 @@ export function measureScore(
     return {
       // The chord as the score has it, every pair's notes and all: the keys
       // are watched for the whole of it.
-      step: every[index]!,
-      index,
+      step: all[index]!,
+      index: indexAt(index),
       notes,
       value: shown,
       ...(parts ? { parts } : {}),
       ...(helds.length > 0
-        ? { ties: helds.map(({ note, fromIndex }) => ({ note: note.note, fromIndex })) }
+        ? {
+            ties: helds.map(({ note, fromIndex }) => ({
+              note: note.note,
+              fromIndex: indexAt(fromIndex),
+            })),
+          }
         : {}),
-      ...(tiedOut.has(index) ? { tiesOut: tiedOut.get(index)! } : {}),
+      ...(tiedOut.has(index)
+        ? {
+            tiesOut: tiedOut
+              .get(index)!
+              .map(({ note, toIndex }) => ({ note, toIndex: indexAt(toIndex) })),
+          }
+        : {}),
       ...(rests.length > 0 ? { rests } : {}),
       ...(firstOfBar && barRests.has(bar) ? { barRest: barRests.get(bar)! } : {}),
       ...(emptyBars.length > 0 ? { emptyBars } : {}),
@@ -980,7 +1068,7 @@ export function useMeasuredScore(
     const { layers, outline } = alignLayers(
       pairs.map((pair) => measureScore(source, steps, hints, pair)),
     )
-    return { measured: outline, layers, regions: regionsOf(song, steps, pairs) }
+    return { measured: outline, layers, regions: regionsOf(song, outline, pairs) }
   }, [song, source, steps, hints])
   return { steps, ...score }
 }
@@ -1031,7 +1119,7 @@ const HIDE_AFTER = 8
 
 /** A stretch of a score drawn on the same staves throughout. */
 export interface ScoreRegion {
-  /** The half-open run of chords it holds. */
+  /** The half-open run of places it holds, counted along the measured list. */
   readonly from: number
   readonly to: number
   /** Which staves of each pair are drawn through it. */
@@ -1053,9 +1141,11 @@ export interface ScoreRegion {
  */
 export function regionsOf(
   song: Pick<Song, 'notes' | 'measures' | 'staves'>,
-  steps: readonly SongStep[],
+  /** The places of the score, in order: its chords, as measured or as the song has them. */
+  places: readonly (SongStep | Pick<Measured, 'step'>)[],
   pairs: readonly ScoreLayer[],
 ): ScoreRegion[] {
+  const steps = places.map((place) => ('step' in place ? place.step : place))
   const measures = song.measures
   const count = song.staves ?? 2
   const everything = (): ScoreRegion[] => [

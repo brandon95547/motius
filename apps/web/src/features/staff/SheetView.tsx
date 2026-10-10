@@ -196,7 +196,7 @@ export function SheetView({
 
   const last = systems.at(-1)
   const pageHeight = last ? last.top + last.height + spacing / 2 : PLAIN_SYSTEM
-  const current = systems.find((system) => here >= system.from && here < system.to)
+  const current = systems.find((system) => system.placed.some((entry) => entry.index === here))
 
   // Which systems are drawn: the ones in the window, and a window's worth
   // either side. Counted in half-windows of scroll, so the drawing changes
@@ -247,7 +247,12 @@ export function SheetView({
             <SystemRow
               key={system.from}
               system={system}
-              phase={phaseOf(roleFor, system.from, system.to)}
+              // By the chords it holds, which is what a role is asked of.
+              phase={phaseOf(
+                roleFor,
+                system.placed[0]?.index ?? 0,
+                (system.placed.at(-1)?.index ?? 0) + 1,
+              )}
               marks={marks}
               pageWidth={pageWidth}
               fifths={fifths}
@@ -364,8 +369,8 @@ const SystemRow = React.memo(
             </text>
           )}
           <BarLines lines={lines} />
-          {PLAYHEAD_SHOWN && here >= system.from && here < system.to && (
-            <Playhead x={system.placed[here - system.from]!.x} />
+          {PLAYHEAD_SHOWN && system.placed.some((entry) => entry.index === here) && (
+            <Playhead x={system.placed.find((entry) => entry.index === here)!.x} />
           )}
           {system.pairs.map(({ entries, beaming, place }, index) => (
             <StaffLayer key={index} place={place}>

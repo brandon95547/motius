@@ -394,9 +394,12 @@ export function watchedIn(
   measured: readonly Measured[],
   live: (index: number) => boolean,
 ): Watched[] {
-  return measured
-    .filter((entry) => live(entry.index))
-    .map((entry) => ({ index: entry.index, notes: entry.step.notes.map((note) => note.note) }))
+  return (
+    measured
+      // A place where nothing is struck has no keys to watch.
+      .filter((entry) => entry.step.notes.length > 0 && live(entry.index))
+      .map((entry) => ({ index: entry.index, notes: entry.step.notes.map((note) => note.note) }))
+  )
 }
 
 /**

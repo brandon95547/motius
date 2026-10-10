@@ -144,10 +144,13 @@ export function FlowView({
   const [frameRef, size] = useElementSize<HTMLDivElement>()
   const scrollRef = React.useRef<HTMLDivElement>(null)
 
-  // Where the player is along the chords drawn, which need not begin at the
-  // piece's first.
+  // Where the player is along the places drawn, which need not begin at the
+  // piece's first, and are not all chords.
   const base = measured[0]?.index ?? 0
-  const at = here - base
+  const at = React.useMemo(
+    () => measured.findIndex((entry) => entry.index === here),
+    [measured, here],
+  )
 
   const placed = React.useMemo(
     () => place(measured, headerEnd(fifths, withTime)),

@@ -134,7 +134,12 @@ export const SongScore = React.memo(function SongScore() {
    * staves that stretch uses, and changes once when the staves do — the way a
    * printed score starts a new system there.
    */
-  const region = regions?.find((each) => here >= each.from && here < each.to) ?? regions?.[0]
+  // By which chord the player is on, not by where it is in the list: a place
+  // where nothing is struck is in the list and is not a chord.
+  const region =
+    regions?.find(
+      (each) => here >= measured[each.from]!.index && here <= measured[each.to - 1]!.index,
+    ) ?? regions?.[0]
   const stretch = React.useMemo(
     () =>
       region && layers
