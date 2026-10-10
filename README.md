@@ -112,9 +112,11 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
 - **Three staves, or four, where the score has them.** Piano music too thick
   for two staves is printed on more — the end of Rachmaninoff's Prelude in
   C-sharp Minor on four, two to a hand — and is drawn on the staves it was
-  written on, under one brace, each in its own clef. A staff that is empty for
-  a long stretch is left off the page while it is, the way a printed score
-  goes from two staves to four when the music thickens.
+  written on, each in its own clef: three under one brace, four with a brace
+  to each hand's pair. A staff that is empty for a long stretch is left off
+  the page while it is, the way a printed score goes from two staves to four
+  when the music thickens, and the bars before the change are shared between
+  the last two lines rather than leaving one alone.
 - **Fingering is worked out for files that have none** — see below.
 - **Drums are played as drums.** A MIDI file's percussion channel is routed to a
   synthesized kit rather than onto the piano, and accompaniment parts sound

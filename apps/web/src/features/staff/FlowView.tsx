@@ -293,7 +293,7 @@ export function FlowView({
           preserveAspectRatio="xMinYMid meet"
           aria-hidden
         >
-          <SystemBrace />
+          <SystemBrace braces={layout.braces} />
           {/* The clef where the player is: the clefs stay put while the music
               passes them, so they are the ones the music at hand is read in. */}
           {pairs.map(({ entries, index, place }) => (

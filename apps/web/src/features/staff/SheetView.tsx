@@ -332,7 +332,7 @@ const SystemRow = React.memo(
               <PaperCards width={pageWidth} />
             </StaffLayer>
           ))}
-          <SystemBrace />
+          <SystemBrace braces={system.layout.braces} />
           {system.pairs.map(({ entries, place }, index) => (
             <StaffLayer key={index} place={place}>
               {/* Each line opens in the clefs its first chord is read in. */}

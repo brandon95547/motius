@@ -25,6 +25,7 @@ import {
   STAFF_HEIGHT,
   STEP,
   yOn,
+  type BraceSpan,
   type LayerPlace,
   type RowsShown,
 } from './staff-frame'
@@ -1419,6 +1420,12 @@ export interface SystemLayout {
   readonly layers: readonly LayerPlace[]
   /** The top line of every staff drawn, from the top of the system down. */
   readonly staves: readonly number[]
+  /**
+   * Where the braces go, where the system has more than the one down its
+   * whole height: a brace to each pair of staves, on a page with two staves
+   * to a hand.
+   */
+  readonly braces?: readonly BraceSpan[]
   /** The frame that holds all of it. */
   readonly top: number
   readonly bottom: number
@@ -1517,7 +1524,25 @@ export function layoutOf(
       top = Math.min(top, tops[index]! + reach.up)
       bottom = Math.max(bottom, tops[index]! + reach.down)
     }
-  return { layers: places, staves: tops, top: Math.floor(top), bottom: Math.ceil(bottom) }
+  // A brace to each pair, where every pair on the page is a whole one and
+  // there is more than one: two staves to a hand. Three staves, or a pair with
+  // a staff left out, are under one brace like any piano system.
+  const pairs = places.filter((each) => each.rows.treble || each.rows.bass)
+  const braces =
+    pairs.length > 1 && pairs.every((each) => each.rows.treble && each.rows.bass)
+      ? pairs.map((each) => ({
+          top: each.offset + STAFF_BANDS.treble.top - each.spread,
+          bottom: each.offset + STAFF_BANDS.bass.bottom + each.spread,
+        }))
+      : undefined
+
+  return {
+    layers: places,
+    staves: tops,
+    ...(braces ? { braces } : {}),
+    top: Math.floor(top),
+    bottom: Math.ceil(bottom),
+  }
 }
 
 export interface Placed extends Measured {
@@ -1793,7 +1818,7 @@ export function breakIntoSystems(
    */
   breaks?: ReadonlySet<number>,
 ): System[] {
-  const systems: System[] = []
+  const systems: Omit<System, 'stretch'>[] = []
   let from = 0
 
   while (from < measured.length) {
@@ -1817,11 +1842,57 @@ export function breakIntoSystems(
     // reached the end of the piece and there is nothing to back up for.
     if (!forced && to < measured.length && lastBar > from) to = lastBar
 
-    systems.push({ from, to, stretch: stretchFor(measured, from, to, fifths, width) })
+    systems.push({ from, to })
     from = to
   }
 
-  return systems
+  /*
+   * The line before a change of staves.
+   *
+   * A line that has to end there ends wherever the music has got to, and that
+   * can be one bar into it: three bars filling a line and a fourth alone on
+   * the next, with the rest of that line bare, before the page goes on to
+   * four staves. An engraver would have shared those four bars between the
+   * two lines. So a short line in front of such a break takes bars from the
+   * line before it, until the two are as even as a bar line allows.
+   */
+  for (let at = 1; at < systems.length; at++) {
+    const short = systems[at]!
+    const before = systems[at - 1]!
+    if (!breaks?.has(short.to) || breaks.has(short.from)) continue
+    if (naturalWidth(measured, short.from, short.to, fifths) >= width * MIN_FILL) continue
+    let best = short.from
+    let uneven = Infinity
+    for (let split = before.from + 1; split <= short.from; split++) {
+      if (measured[split]!.bar === measured[split - 1]!.bar) continue
+      const second = naturalWidth(measured, split, short.to, fifths)
+      if (second + RIGHT_MARGIN > width) continue
+      const difference = Math.abs(naturalWidth(measured, before.from, split, fifths) - second)
+      if (difference < uneven) {
+        uneven = difference
+        best = split
+      }
+    }
+    systems[at - 1] = { ...before, to: best }
+    systems[at] = { ...short, from: best }
+  }
+
+  return systems.map((system) => ({
+    ...system,
+    stretch: stretchFor(measured, system.from, system.to, fifths, width),
+  }))
+}
+
+/** How wide a run of chords is as it was measured, from the head of its line to its last ink. */
+function naturalWidth(
+  measured: readonly Measured[],
+  from: number,
+  to: number,
+  fifths: number,
+): number {
+  let width = headerEnd(fifths, from === 0) + leadIn(measured[from])
+  for (let i = from + 1; i < to; i++) width += measured[i]!.gap
+  return width + measured[to - 1]!.extent.right
 }
 
 /**
@@ -1845,8 +1916,7 @@ function stretchFor(
   for (let i = from + 1; i < to; i++) gaps += measured[i]!.gap
   if (gaps <= 0) return 1
   const last = measured[to - 1]!.extent.right
-  const natural = start + gaps + last
-  if (natural < width * MIN_FILL) return 1
+  if (naturalWidth(measured, from, to, fifths) < width * MIN_FILL) return 1
   const target = width - RIGHT_MARGIN
   return Math.min(MAX_STRETCH, Math.max(1, (target - start - last) / gaps))
 }

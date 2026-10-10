@@ -272,6 +272,47 @@ describe('where the staves of a system stand', () => {
   })
 })
 
+describe('the braces of a system', () => {
+  const braces = (clefs: readonly ('G' | 'F')[], rows?: Parameters<typeof layoutOf>[1]) => {
+    const song = score([
+      opening(clefs) + bar(...clefs.map((_, at): [number, string, number] => [at + 1, 'C', 4])),
+    ])
+    return layoutOf(measuredIn(song).layers, rows).braces
+  }
+
+  it('gives each hand’s pair its own, on a page with two staves to a hand', () => {
+    const apart = STAFF_BANDS.bass.top - STAFF_BANDS.treble.top
+    const top = STAFF_BANDS.treble.top
+    expect(braces(FOUR)).toEqual([
+      { top, bottom: top + apart + STAFF_HEIGHT },
+      { top: top + apart * 2, bottom: top + apart * 3 + STAFF_HEIGHT },
+    ])
+  })
+
+  it('is one down the whole system for three staves, and for a pair with a staff left out', () => {
+    expect(
+      braces(
+        ['G', 'G', 'F'],
+        [
+          { treble: true, bass: true },
+          { treble: false, bass: true },
+        ],
+      ),
+    ).toBeUndefined()
+    expect(
+      braces(FOUR, [
+        { treble: true, bass: false },
+        { treble: false, bass: true },
+      ]),
+    ).toBeUndefined()
+  })
+
+  it('is one for a piano’s usual two staves', () => {
+    const song = score([opening(['G', 'F']) + bar([1, 'E', 5], [2, 'C', 3])])
+    expect(layoutOf([measureScore(song, songSteps(song, 'both'))]).braces).toBeUndefined()
+  })
+})
+
 describe('which staves each stretch of a piece is drawn on', () => {
   const outer = bar([1, 'E', 5], [4, 'C', 3])
   const all = bar([1, 'E', 5], [2, 'C', 4], [3, 'G', 3], [4, 'C', 2])
@@ -323,6 +364,38 @@ describe('which staves each stretch of a piece is drawn on', () => {
         { treble: true, bass: true },
       ],
     ])
+  })
+
+  it('shares the bars before a change of staves between the last two lines', () => {
+    // Bars of eight quarter-chords, then one bar of a single chord, and then
+    // the page goes onto four staves.
+    const busy =
+      Array.from({ length: 4 }, () => note('E', 5, 1, 1, 1)).join('') + back + note('C', 3, 4)
+    const song = score([
+      opening(FOUR) + busy,
+      busy,
+      busy,
+      busy,
+      outer,
+      ...Array<string>(8).fill(all),
+    ])
+    const { outline } = measuredIn(song)
+    const change = outline.findIndex((entry) => entry.bar === 6)
+    const fifth = outline.findIndex((entry) => entry.bar === 5)
+    // A page just wide enough for the four busy bars, and not for a fifth.
+    let width = 400
+    while (breakIntoSystems(outline, 0, width, new Set([fifth]))[0]!.to < fifth) width += 2
+
+    const systems = breakIntoSystems(outline, 0, width, new Set([change]))
+    const bars = systems
+      .filter((system) => system.to <= change)
+      .map((system) => [outline[system.from]!.bar, outline[system.to - 1]!.bar])
+    // Not four bars and then one alone, with the page about to change: the
+    // short bar has company.
+    expect(bars).toHaveLength(2)
+    expect(bars[1]![1]).toBe(5)
+    expect(bars[1]![0]).toBeLessThan(5)
+    expect(bars[0]).toEqual([1, bars[1]![0]! - 1])
   })
 
   it('starts a new line where the staves change, with room left on the old one or not', () => {

@@ -287,31 +287,51 @@ export function StaffGutter({
   )
 }
 
+/** A stretch of a system a brace holds together: from one staff's top line to another's bottom. */
+export interface BraceSpan {
+  readonly top: number
+  readonly bottom: number
+}
+
 /**
- * The brace and the line that open a system, down the whole of it.
+ * The brace and the line that open a system.
  *
- * One of each however many staves there are: three staves or four under one
- * brace are still one instrument.
+ * The line runs down the whole of it, however many staves there are: they are
+ * one instrument. The brace does too, on a piano's usual two staves and on
+ * three. On four — two to a hand — each hand's pair has a brace of its own,
+ * which is how such a page is printed and what tells the pairs apart;
+ * `braces` says where those are.
  */
-export function SystemBrace() {
-  // The brace and the opening line hold the staves together, so they are as
-  // tall as the system is, however far it has opened.
-  const { top, bottom } = useSystemSpan()
-  const middle = (top + bottom) / 2
+export function SystemBrace({ braces }: { braces?: readonly BraceSpan[] }) {
+  // The opening line holds the staves together, so it is as tall as the
+  // system is, however far it has opened.
+  const system = useSystemSpan()
   // A curl either side of the middle, its point towards the margin.
   const brace = STAFF_START - STEP * 0.9
   const reach = STEP * 1.9
-  const bow = (bottom - top) * 0.09
   return (
     <>
-      <path
-        d={
-          `M ${brace} ${top} C ${brace - reach * 1.5} ${top + bow} ${brace + reach * 0.5} ${middle - bow} ${brace - reach} ${middle} ` +
-          `C ${brace + reach * 0.5} ${middle + bow} ${brace - reach * 1.5} ${bottom - bow} ${brace} ${bottom}`
-        }
-        className="staff__brace"
+      {(braces ?? [system]).map(({ top, bottom }) => {
+        const middle = (top + bottom) / 2
+        const bow = (bottom - top) * 0.09
+        return (
+          <path
+            key={top}
+            d={
+              `M ${brace} ${top} C ${brace - reach * 1.5} ${top + bow} ${brace + reach * 0.5} ${middle - bow} ${brace - reach} ${middle} ` +
+              `C ${brace + reach * 0.5} ${middle + bow} ${brace - reach * 1.5} ${bottom - bow} ${brace} ${bottom}`
+            }
+            className="staff__brace"
+          />
+        )
+      })}
+      <line
+        x1={STAFF_START}
+        y1={system.top}
+        x2={STAFF_START}
+        y2={system.bottom}
+        className="staff__system-line"
       />
-      <line x1={STAFF_START} y1={top} x2={STAFF_START} y2={bottom} className="staff__system-line" />
     </>
   )
 }
