@@ -9,7 +9,7 @@ import {
   type Device,
   type DeviceIdentity,
   type Instrument,
-  type SongCategory,
+  type SetSongCategoryInput,
   type UpdateDeviceConfigInput,
 } from '@sonara/shared'
 
@@ -196,14 +196,15 @@ export const api = {
   forgetDevice: (id: string) =>
     request(`/devices/${encodeURIComponent(id)}`, z.null(), { method: 'DELETE' }),
 
-  /** The built-in songs that have been moved off the shelf they came on, and where to. */
+  /** The built-in songs whose genre or moods have been changed, and what to. */
   listSongCategories: (signal?: AbortSignal) =>
     request('/songs/categories', collectionSchema(songCategoryChoiceSchema), { signal }),
 
-  setSongCategory: (songId: string, category: SongCategory) =>
+  /** Changes a song's genre, its moods, or both; what is left out stays as it was. */
+  setSongCategory: (songId: string, change: SetSongCategoryInput) =>
     request(`/songs/${encodeURIComponent(songId)}/category`, songCategoryChoiceSchema, {
-      method: 'PUT',
-      body: JSON.stringify({ category }),
+      method: 'PATCH',
+      body: JSON.stringify(change),
     }),
 }
 

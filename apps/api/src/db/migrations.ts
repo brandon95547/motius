@@ -78,6 +78,29 @@ export const MIGRATIONS: readonly Migration[] = [
       );
     `,
   },
+  {
+    version: 3,
+    name: 'song_genres_and_moods',
+    up: /* sql */ `
+      -- Songs are sorted by genre, and by one or more moods under it, so what
+      -- has been changed about a song is either or both of those rather than
+      -- one shelf. Each is NULL where it has not been changed. The moods are a
+      -- JSON list, validated on the way in and out: nothing queries inside it.
+      ALTER TABLE song_categories ADD COLUMN genre TEXT;
+      ALTER TABLE song_categories ADD COLUMN moods TEXT;
+
+      -- A shelf was a mood, so a song moved to one that is still a mood keeps
+      -- the move, as its only mood. The two shelves that are no longer moods
+      -- (Peaceful & Calm, Reflective) have nothing to carry over to, and those
+      -- songs go back to what the catalog says.
+      UPDATE song_categories
+         SET moods = json_array(category)
+       WHERE category IN ('romantic', 'joyful', 'dramatic', 'mysterious', 'dreamy', 'playful');
+      DELETE FROM song_categories WHERE moods IS NULL;
+
+      ALTER TABLE song_categories DROP COLUMN category;
+    `,
+  },
 ]
 
 /** Applies every migration newer than the file's current `user_version`. */

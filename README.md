@@ -61,13 +61,16 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
 
 ### Songs
 
-- **Sixty-six pieces come with it**, from Bach to Joplin, in a chooser that
-  Songs opens on: listed by mood — Peaceful & Calm, Reflective, Romantic,
-  Joyful & Uplifting, Dramatic & Powerful, Mysterious & Dark, Dreamy &
-  Atmospheric, Playful & Energetic — and searchable by title or composer. A
-  piece can be moved to another mood from the chooser ("Edit categories"), and
-  the move is kept by the server for everyone. Your own songs are in the same
-  chooser.
+- **Fifty-eight pieces come with it**, from Bach to Joplin, in a chooser that
+  Songs opens on: shelved by genre — Classical, Gospel, Jazz, Blues, Pop, Rock,
+  Country, Soul & R&B, Folk & Traditional, New Age — and under every genre by
+  the same eight moods: Dramatic & Powerful, Dreamy & Atmospheric, Joyful &
+  Uplifting, Mysterious & Dark, Ominous & Apocalyptic, Playful & Energetic,
+  Romantic, Storytelling. A piece is in one genre and can have several moods;
+  the moods are switches over the list, any number on at once, and the list is
+  searchable by title or composer. Either can be changed for any piece from the
+  chooser ("Edit categories"), and the change is kept by the server for
+  everyone. Your own songs are in the same chooser.
 - **Import MusicXML (`.musicxml`, `.xml`), Compressed MusicXML (`.mxl`),
   MuseScore (`.mscz`) and MIDI (`.mid`, `.midi`)** — normalized into one score
   model on the way in, so playback, the keyboard, the staff and Learn never know
@@ -407,14 +410,15 @@ drawn is attached to a chord or a bar, so both views lay it out the same way
 and only the stretch near the window is ever in the page.
 
 The songs that come with the app are scores in `apps/web/public/songs`, listed
-in `features/songs/catalog.ts` with a title, a composer and a mood each (the
-moods are `SONG_CATEGORIES` in the shared contract; a song moved to another is
-a row in the API's `song_categories` table, and only the moves are stored). They
-are read through `read-song.ts` like any other file, one at a time as they are
-chosen, and held in memory rather than in storage: they come back with the app,
-and the stored library is for what the player brought. `song-catalog.test.ts`
-reads every one of them, so a score that loses a hand on import fails there
-rather than in front of a player. The scores are from the
+in `features/songs/catalog.ts` with a title, a composer, a genre and one or
+more moods each (`SONG_GENRES` and `SONG_MOODS` in the shared contract: one
+list of moods, shared by every genre; a song whose genre or moods were changed
+is a row in the API's `song_categories` table, and only what was changed is
+stored). They are read through `read-song.ts` like any other file, one at a
+time as they are chosen, and held in memory rather than in storage: they come
+back with the app, and the stored library is for what the player brought.
+`song-catalog.test.ts` reads every one of them, so a score that loses a hand
+on import fails there rather than in front of a player. The scores are from the
 [MuseTrainer library](https://github.com/musetrainer/library).
 
 Where the file names no hands at all, which is most MIDI files, they are worked

@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { SONG_CATEGORIES } from '@sonara/shared'
+import { SONG_GENRES, SONG_MOODS } from '@sonara/shared'
 import { SONG_CATALOG, catalogSongTitle } from '@/features/songs/catalog'
 import { readSongBytes } from '@/features/songs/read-song'
 
@@ -27,13 +27,21 @@ describe('the built-in songs', () => {
     expect(readdirSync(SCORES).sort()).toEqual(listed)
   })
 
-  it('puts every song in a category the chooser lists, and leaves no category empty', () => {
-    const categories: readonly string[] = SONG_CATEGORIES.map((category) => category.id)
-    for (const entry of SONG_CATALOG) expect(categories, entry.id).toContain(entry.category)
-    for (const category of categories) {
+  it('gives every song a genre and one or more moods the chooser lists, and leaves no mood empty', () => {
+    const genres: readonly string[] = SONG_GENRES.map((genre) => genre.id)
+    const moods: readonly string[] = SONG_MOODS.map((mood) => mood.id)
+    for (const entry of SONG_CATALOG) {
+      expect(genres, entry.id).toContain(entry.genre)
+      expect(entry.moods.length, entry.id).toBeGreaterThan(0)
+      expect(new Set(entry.moods).size, entry.id).toBe(entry.moods.length)
+      for (const mood of entry.moods) expect(moods, entry.id).toContain(mood)
+    }
+    // A genre can wait for its first song. A mood no song has is a switch
+    // that can never be turned on, under every genre at once.
+    for (const mood of SONG_MOODS) {
       expect(
-        SONG_CATALOG.some((entry) => entry.category === category),
-        category,
+        SONG_CATALOG.some((entry) => entry.moods.includes(mood.id)),
+        mood.id,
       ).toBe(true)
     }
   })

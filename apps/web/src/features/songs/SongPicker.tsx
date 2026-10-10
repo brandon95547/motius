@@ -1,25 +1,28 @@
 import * as React from 'react'
 import { create } from 'zustand'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Loader2, Search, Trash2, Upload } from 'lucide-react'
+import { ChevronDown, Loader2, Search, Trash2, Upload } from 'lucide-react'
 import {
-  SONG_CATEGORIES,
+  SONG_GENRES,
+  SONG_MOODS,
+  type SetSongCategoryInput,
   type Song,
-  type SongCategory,
   type SongCategoryChoice,
+  type SongGenre,
+  type SongMood,
 } from '@sonara/shared'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/cn'
 import { Button, IconButton } from '@/ui/Button'
-import { controlShell, Select } from '@/ui/Controls'
+import { controlShell, FilterChip, Select } from '@/ui/Controls'
 import { Dialog } from '@/ui/Dialog'
 import { useSongStore } from '@/state/song-store'
 import { SONG_CATALOG, catalogSongId, loadCatalogSong, type CatalogSong } from './catalog'
 import { readSong, type ImportFailure, type ImportResult } from './read-song'
 
 /**
- * Choosing a song: the ones that come with Sonara, by mood, and the player's
- * own, with the way to import more.
+ * Choosing a song: the ones that come with Sonara, by genre and by mood, and
+ * the player's own, with the way to import more.
  *
  * A dialog, and the first thing the Songs area shows, because the area has
  * nothing to put on the staff until one is chosen. It is the only place a song
@@ -27,10 +30,16 @@ import { readSong, type ImportFailure, type ImportResult } from './read-song'
  * the person looking for something to play, and two places to look would be a
  * fact about where the files are kept.
  *
- * The shelves are moods, and which shelf a piece belongs on is an opinion. The
- * catalog has one for every piece; "Edit categories" turns each row into a
- * choice of shelf, and a move is kept by the server, so it is made once for
- * everyone rather than in one browser.
+ * The genres are the shelves, down the side, and a song is on one. The moods
+ * divide every genre the same way, so they are one row of switches over the
+ * list rather than a list of their own under each genre: with a genre chosen
+ * the list is laid out mood by mood, and the switches say which moods to show.
+ * A song is under each mood it has, so one that is two of them is listed twice.
+ *
+ * Which genre a piece is in and which moods it has are opinions. The catalog
+ * has them for every piece; "Edit categories" turns each row into those two
+ * choices, and a change is kept by the server, so it is made once for everyone
+ * rather than in one browser.
  *
  * The import is deliberately format-sniffing rather than extension-trusting.
  * A `.mid` that is really XML, or a `.xml` that is really a MIDI file, are both
@@ -38,19 +47,36 @@ import { readSong, type ImportFailure, type ImportResult } from './read-song'
  * bytes settle it in a way a filename never can.
  */
 
-/** What the list is showing: everything, one mood, or the player's own. */
-type Shelf = 'all' | SongCategory | 'mine'
+/** What the list is showing: everything, one genre, or the player's own. */
+type Shelf = 'all' | SongGenre | 'mine'
 
-/** The key the moved songs are kept under in the query cache. */
+/** A built-in song as it is filed now: by the catalog, or by a change to it. */
+interface Placed {
+  readonly entry: CatalogSong
+  readonly genre: SongGenre
+  readonly moods: readonly SongMood[]
+}
+
+/** A stretch of the list under one heading. */
+interface Section {
+  readonly id: string
+  readonly title: string
+  readonly songs: readonly Placed[]
+}
+
+/** The key the changed songs are kept under in the query cache. */
 const MOVED = ['song-categories'] as const
 type Moves = { items: SongCategoryChoice[] }
 
 // Outside the component, so the menu's Import can turn to the player's own
 // songs before the chooser is on screen.
-const useShelfStore = create<{ shelf: Shelf }>(() => ({ shelf: 'all' }))
+const useShelfStore = create<{ shelf: Shelf; moods: readonly SongMood[] }>(() => ({
+  shelf: 'all',
+  moods: [],
+}))
 
 /** Turns the chooser to the player's own songs, where importing happens. */
-export const showMySongs = () => useShelfStore.setState({ shelf: 'mine' })
+export const showMySongs = () => useShelfStore.setState({ shelf: 'mine', moods: [] })
 
 /** Named for what the file is, not for what it is closest to. */
 const SOURCE_LABELS: Record<string, string> = {
@@ -61,6 +87,9 @@ const SOURCE_LABELS: Record<string, string> = {
 
 /** Lower case and without accents, so "fur elise" finds "Für Elise". */
 const fold = (text: string) => text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+
+/** A piece and which score of it, for naming the controls of one row. */
+const nameOf = (entry: CatalogSong) => `${entry.title}${entry.edition ? `, ${entry.edition}` : ''}`
 
 const row = [
   'flex w-full items-center gap-3 rounded-[var(--radius-md)] border p-2.5 text-left',
@@ -78,22 +107,25 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
   const currentId = useSongStore((state) => state.currentId)
   const { add, open: openSong, openBuiltIn, remove } = useSongStore.getState()
   const shelf = useShelfStore((state) => state.shelf)
+  const chosenMoods = useShelfStore((state) => state.moods)
   const [query, setQuery] = React.useState('')
   /** The built-in song being fetched, by its catalog id. */
   const [loading, setLoading] = React.useState<string | null>(null)
   const [failed, setFailed] = React.useState<CatalogSong | null>(null)
   const [importError, setImportError] = React.useState<ImportResult | null>(null)
   const request = React.useRef<AbortController | null>(null)
-  /** Whether the rows are choices of shelf rather than songs to open. */
+  /** Whether the rows are choices of genre and mood rather than songs to open. */
   const [editing, setEditing] = React.useState(false)
+  /** The song whose moods are laid out to choose from, by its catalog id. */
+  const [choosing, setChoosing] = React.useState<string | null>(null)
   const [moveFailed, setMoveFailed] = React.useState<CatalogSong | null>(null)
 
   /*
-   * Where each song has been moved to, over where the catalog puts it.
+   * What each song has been changed to, over what the catalog says of it.
    *
-   * Asked of the server, which keeps the moves. Without an answer — no server,
-   * or nothing moved — every song is on the shelf it came on, and the chooser
-   * is as usable as it was.
+   * Asked of the server, which keeps the changes. Without an answer — no
+   * server, or nothing changed — every song is as it came, and the chooser is
+   * as usable as it was.
    */
   const queryClient = useQueryClient()
   const moved = useQuery({
@@ -102,22 +134,30 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
     staleTime: Infinity,
     enabled: open,
   })
-  const shelfOf = React.useMemo(() => {
-    const moves = new Map(moved.data?.items.map((move) => [move.songId, move.category]))
-    return (entry: CatalogSong): SongCategory => moves.get(entry.id) ?? entry.category
+  const placed = React.useMemo<readonly Placed[]>(() => {
+    const changes = new Map(moved.data?.items.map((item) => [item.songId, item]))
+    return SONG_CATALOG.map((entry) => {
+      const change = changes.get(entry.id)
+      return { entry, genre: change?.genre ?? entry.genre, moods: change?.moods ?? entry.moods }
+    })
   }, [moved.data])
   const move = useMutation({
-    mutationFn: ({ entry, category }: { entry: CatalogSong; category: SongCategory }) =>
-      api.setSongCategory(entry.id, category),
-    // On the new shelf at once, and back where it was if the server refuses.
-    onMutate: async ({ entry, category }) => {
+    mutationFn: ({ entry, change }: { entry: CatalogSong; change: SetSongCategoryInput }) =>
+      api.setSongCategory(entry.id, change),
+    // Where it is going at once, and back as it was if the server refuses.
+    onMutate: async ({ entry, change }) => {
       setMoveFailed(null)
       await queryClient.cancelQueries({ queryKey: MOVED })
       const before = queryClient.getQueryData<Moves>(MOVED)
+      const earlier = before?.items.find((item) => item.songId === entry.id)
       queryClient.setQueryData<Moves>(MOVED, {
         items: [
           ...(before?.items ?? []).filter((item) => item.songId !== entry.id),
-          { songId: entry.id, category },
+          {
+            songId: entry.id,
+            genre: change.genre ?? earlier?.genre ?? null,
+            moods: change.moods ?? earlier?.moods ?? null,
+          },
         ],
       })
       return { before }
@@ -138,6 +178,7 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
     setFailed(null)
     setImportError(null)
     setEditing(false)
+    setChoosing(null)
     setMoveFailed(null)
   }, [open])
 
@@ -192,39 +233,68 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
   const sought = fold(query.trim())
   const searching = sought.length > 0
   // A search looks everywhere: someone typing a name is not thinking about
-  // which shelf it is on.
-  const categories =
-    searching || shelf === 'all'
-      ? SONG_CATEGORIES
-      : SONG_CATEGORIES.filter((category) => category.id === shelf)
-  const sections = categories
-    .map((category) => ({
-      category,
-      songs: SONG_CATALOG.filter(
-        (entry) =>
-          shelfOf(entry) === category.id &&
-          (!searching ||
-            fold(`${entry.title} ${entry.composer} ${entry.edition ?? ''}`).includes(sought)),
-      ),
-    }))
-    .filter((section) => section.songs.length > 0)
+  // which genre it is in, or which mood it has.
+  const genre = searching || shelf === 'all' || shelf === 'mine' ? null : shelf
+  const moods = searching ? [] : chosenMoods
+  const browsing = !searching && shelf !== 'mine'
+  /** The songs of the shelf, before the moods narrow them: what the moods count. */
+  const shelved = placed.filter((song) => genre === null || song.genre === genre)
+  const found = shelved.filter(
+    ({ entry }) =>
+      !searching ||
+      fold(`${entry.title} ${entry.composer} ${entry.edition ?? ''}`).includes(sought),
+  )
+  // The song whose moods are being chosen stays while they are: switched off
+  // the mood it was found under, it would otherwise go from under the pointer.
+  const wanted = (song: Placed) =>
+    moods.length === 0 ||
+    song.moods.some((mood) => moods.includes(mood)) ||
+    (editing && song.entry.id === choosing)
+  // One genre is laid out mood by mood. Everything is laid out genre by genre,
+  // and so is a genre being edited: each song once, with its own two choices.
+  const sections: readonly Section[] = (
+    genre !== null && !editing
+      ? SONG_MOODS.filter((mood) => moods.length === 0 || moods.includes(mood.id)).map((mood) => ({
+          id: mood.id,
+          title: mood.label,
+          songs: found.filter((song) => song.moods.includes(mood.id)),
+        }))
+      : SONG_GENRES.map((entry) => ({
+          id: entry.id,
+          title: entry.label,
+          songs: found.filter((song) => song.genre === entry.id && wanted(song)),
+        }))
+  ).filter((section) => section.songs.length > 0)
   const mine = searching
     ? library.filter((song) => fold(song.title).includes(sought))
-    : shelf === 'all' || shelf === 'mine'
+    : shelf === 'mine' || (shelf === 'all' && moods.length === 0)
       ? library
       : []
   const showMine = searching ? mine.length > 0 : shelf === 'mine' || mine.length > 0
   const nothing = searching && sections.length === 0 && mine.length === 0
+  const empty = browsing && sections.length === 0
+  const listed =
+    new Set(sections.flatMap((section) => section.songs.map((song) => song.entry.id))).size +
+    (showMine ? mine.length : 0)
 
   const shelves: readonly { id: Shelf; label: string; count: number }[] = [
     { id: 'all', label: 'All songs', count: SONG_CATALOG.length + library.length },
-    ...SONG_CATEGORIES.map((category) => ({
-      id: category.id,
-      label: category.label,
-      count: SONG_CATALOG.filter((entry) => shelfOf(entry) === category.id).length,
+    ...SONG_GENRES.map((entry) => ({
+      id: entry.id,
+      label: entry.label,
+      count: placed.filter((song) => song.genre === entry.id).length,
     })),
     { id: 'mine', label: 'My songs', count: library.length },
   ]
+
+  // From what is chosen now rather than what was drawn: two moods pressed
+  // before the list has caught up are both switched.
+  const toggleMood = (mood: SongMood) =>
+    useShelfStore.setState((state) => ({
+      moods: state.moods.includes(mood)
+        ? state.moods.filter((on) => on !== mood)
+        : [...state.moods, mood],
+    }))
 
   return (
     <Dialog
@@ -241,12 +311,15 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
             MusicXML · MuseScore · MIDI. Imported songs stay on this device.
           </p>
           <div className="flex items-center gap-2.5 coarse:gap-3">
-            {/* The rows become choices of category, and back again. */}
+            {/* The rows become choices of genre and mood, and back again. */}
             <Button
               size="sm"
               variant={editing ? 'tonal' : 'text'}
               aria-pressed={editing}
-              onClick={() => setEditing((on) => !on)}
+              onClick={() => {
+                setEditing((on) => !on)
+                setChoosing(null)
+              }}
             >
               {editing ? 'Done' : 'Edit categories'}
             </Button>
@@ -286,14 +359,24 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
           >
             {shelves.map((entry) => {
               const on = !searching && shelf === entry.id
+              // A genre nothing is in yet is there to be seen, and filled from
+              // Edit categories; there is nothing in it to go and look at. The
+              // one being looked at stays, though its last song has just left.
+              const vacant =
+                entry.count === 0 && entry.id !== 'all' && entry.id !== 'mine' && shelf !== entry.id
               return (
                 <button
                   key={entry.id}
                   type="button"
                   aria-pressed={on}
+                  disabled={vacant}
+                  title={vacant ? 'No songs in this genre yet' : undefined}
                   onClick={() => {
                     setQuery('')
-                    useShelfStore.setState({ shelf: entry.id })
+                    setChoosing(null)
+                    // The whole shelf: the moods chosen were a way of looking
+                    // at the one before.
+                    useShelfStore.setState({ shelf: entry.id, moods: [] })
                   }}
                   className={cn(
                     'flex h-8 shrink-0 items-center justify-between gap-3 rounded-[var(--radius-md)] px-3 text-label whitespace-nowrap coarse:h-11',
@@ -305,11 +388,16 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
                     entry.id === 'mine' && 'md:mt-2',
                     on
                       ? 'bg-[var(--ds-layer-selected)] text-[var(--ds-fg)]'
-                      : 'text-[var(--ds-fg-secondary)] hover:bg-[var(--ds-layer-hover)] hover:text-[var(--ds-fg)]',
+                      : vacant
+                        ? 'cursor-default text-[var(--ds-fg-disabled)]'
+                        : 'text-[var(--ds-fg-secondary)] hover:bg-[var(--ds-layer-hover)] hover:text-[var(--ds-fg)]',
                   )}
                 >
                   {entry.label}
-                  <span className="text-caption text-[var(--ds-fg-muted)]" data-tabular>
+                  <span
+                    className={cn('text-caption', !vacant && 'text-[var(--ds-fg-muted)]')}
+                    data-tabular
+                  >
                     {entry.count}
                   </span>
                 </button>
@@ -318,140 +406,286 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
           </div>
         </div>
 
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-5">
-          {failed && (
-            <Notice
-              title={`Could not load ${failed.title}`}
-              detail="The score did not arrive. Check the connection and choose it again."
-            />
-          )}
-          {importError && 'failure' in importError && <ImportError result={importError} />}
-          {moveFailed && (
-            <Notice
-              title={`Could not move ${moveFailed.title}`}
-              detail="The server did not take the change, so the song is back where it was. Check that the Sonara API is running and move it again."
-            />
-          )}
-          {editing && (
-            <p className="text-body-sm text-[var(--ds-fg-muted)]">
-              Choose a category for any song. A move is saved as it is made, for everyone who uses
-              this Sonara.
-            </p>
-          )}
-
-          {nothing && (
-            <p className="text-body-sm text-[var(--ds-fg-muted)]">
-              No song matches “{query.trim()}”.
-            </p>
-          )}
-
-          {showMine && (
-            <Shelved title="My songs">
-              {mine.length === 0 ? (
-                <p className="text-body-sm text-[var(--ds-fg-muted)]">
-                  Nothing imported yet. A MusicXML or MuseScore file is the one to bring if you have
-                  a choice: those carry the staves, the dynamics, the pedaling and the fingering.
-                  MIDI keeps a performance exactly as played, and carries none of those — the format
-                  has nowhere to put them.
-                </p>
-              ) : (
-                <ul className="grid grid-cols-1 gap-2 lg:grid-cols-2">
-                  {mine.map((song) => (
-                    <ImportedRow
-                      key={song.id}
-                      song={song}
-                      current={song.id === currentId}
-                      onChoose={() => {
-                        openSong(song.id)
-                        onClose()
-                      }}
-                      onRemove={() => remove(song.id)}
-                    />
-                  ))}
-                </ul>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          {/* The moods, the same under every genre: any number of them on at
+              once, and none of them on is all of them. Not there for a search,
+              which looks past them, or for the player's own songs, which have
+              none. */}
+          {browsing && (
+            <div
+              role="group"
+              aria-label="Moods"
+              className="scrollbar-none flex shrink-0 items-center gap-2 overflow-x-auto border-b border-[var(--ds-border-subtle)] px-6 py-3 md:flex-wrap md:overflow-x-visible md:pt-5 md:pb-4 coarse:md:gap-y-4"
+            >
+              {SONG_MOODS.map((mood) => {
+                const on = moods.includes(mood.id)
+                const count = shelved.filter((song) => song.moods.includes(mood.id)).length
+                return (
+                  <FilterChip
+                    key={mood.id}
+                    selected={on}
+                    count={count}
+                    // Nothing to show is nothing to switch on. One that is on
+                    // can always be switched off.
+                    disabled={count === 0 && !on}
+                    onClick={() => toggleMood(mood.id)}
+                  >
+                    {mood.label}
+                  </FilterChip>
+                )
+              })}
+              {moods.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => useShelfStore.setState({ moods: [] })}
+                  className={cn(
+                    'touch-target shrink-0 rounded-[var(--radius-sm)] px-1 text-caption text-[var(--ds-accent-text)] underline-offset-4 hover:underline',
+                    focusRing,
+                  )}
+                >
+                  Clear
+                </button>
               )}
-            </Shelved>
+            </div>
           )}
 
-          {shelf !== 'mine' || searching
-            ? sections.map(({ category, songs }) => (
-                <Shelved key={category.id} title={category.label}>
-                  {/* One to a line while they are being moved: beside a choice
-                      of category, half a line is too short to tell four
-                      editions of one piece apart. */}
-                  <ul className={cn('grid grid-cols-1 gap-2', !editing && 'lg:grid-cols-2')}>
-                    {songs.map((entry) =>
-                      editing ? (
-                        <li key={entry.id} className={cn(row, rowIdle)}>
-                          <span className="flex min-w-0 flex-1 flex-col">
-                            <span className="truncate text-ui text-[var(--ds-fg)]">
-                              {entry.title}
-                            </span>
-                            <span className="truncate text-caption text-[var(--ds-fg-muted)]">
-                              {entry.composer}
-                              {entry.edition && ` · ${entry.edition}`}
-                            </span>
-                          </span>
-                          <div className="w-44 shrink-0">
-                            <Select
-                              size="sm"
-                              aria-label={`Category for ${entry.title}${entry.edition ? `, ${entry.edition}` : ''}`}
-                              value={shelfOf(entry)}
-                              onChange={(event) =>
-                                move.mutate({
-                                  entry,
-                                  category: event.target.value as SongCategory,
-                                })
-                              }
-                              options={SONG_CATEGORIES.map((option) => ({
-                                value: option.id,
-                                label: option.label,
-                              }))}
-                            />
-                          </div>
-                        </li>
-                      ) : (
-                        <li key={entry.id}>
-                          <button
-                            type="button"
-                            aria-busy={loading === entry.id || undefined}
-                            aria-current={catalogSongId(entry) === currentId ? 'true' : undefined}
-                            onClick={() => void chooseBuiltIn(entry)}
-                            className={cn(
-                              row,
-                              focusRing,
-                              catalogSongId(entry) === currentId ? rowCurrent : rowIdle,
-                            )}
-                          >
-                            <span className="flex min-w-0 flex-1 flex-col">
-                              <span className="truncate text-ui text-[var(--ds-fg)]">
-                                {entry.title}
-                              </span>
-                              <span className="truncate text-caption text-[var(--ds-fg-muted)]">
-                                {entry.composer}
-                                {entry.edition && ` · ${entry.edition}`}
-                              </span>
-                            </span>
-                            {loading === entry.id ? (
-                              <Loader2
-                                size={16}
-                                className="shrink-0 animate-spin text-[var(--ds-fg-muted)]"
-                                aria-label="Loading"
-                              />
-                            ) : (
-                              catalogSongId(entry) === currentId && <OpenMark />
-                            )}
-                          </button>
-                        </li>
-                      ),
-                    )}
+          <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-5">
+            {/* Said rather than shown: what a mood switched on or off did to
+                the list, for someone who cannot see it change. */}
+            <p className="sr-only" aria-live="polite">
+              {listed} {listed === 1 ? 'song' : 'songs'}
+            </p>
+            {failed && (
+              <Notice
+                title={`Could not load ${failed.title}`}
+                detail="The score did not arrive. Check the connection and choose it again."
+              />
+            )}
+            {importError && 'failure' in importError && <ImportError result={importError} />}
+            {moveFailed && (
+              <Notice
+                title={`Could not change ${moveFailed.title}`}
+                detail="The server did not take the change, so the song is as it was. Check that the Sonara API is running and make the change again."
+              />
+            )}
+            {editing && (
+              <p className="text-body-sm text-[var(--ds-fg-muted)]">
+                Choose a genre and one or more moods for any song. A change is saved as it is made,
+                for everyone who uses this Sonara.
+              </p>
+            )}
+
+            {nothing && (
+              <p className="text-body-sm text-[var(--ds-fg-muted)]">
+                No song matches “{query.trim()}”.
+              </p>
+            )}
+            {empty && (
+              <p className="text-body-sm text-[var(--ds-fg-muted)]">
+                {shelved.length === 0
+                  ? `Nothing in ${SONG_GENRES.find((entry) => entry.id === genre)?.label} yet. To put a song here, choose Edit categories and give it this genre.`
+                  : `No song here has ${moods.length === 1 ? 'that mood' : 'any of those moods'}.`}
+              </p>
+            )}
+
+            {showMine && (
+              <Shelved title="My songs">
+                {mine.length === 0 ? (
+                  <p className="text-body-sm text-[var(--ds-fg-muted)]">
+                    Nothing imported yet. A MusicXML or MuseScore file is the one to bring if you
+                    have a choice: those carry the staves, the dynamics, the pedaling and the
+                    fingering. MIDI keeps a performance exactly as played, and carries none of those
+                    — the format has nowhere to put them.
+                  </p>
+                ) : (
+                  <ul className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+                    {mine.map((song) => (
+                      <ImportedRow
+                        key={song.id}
+                        song={song}
+                        current={song.id === currentId}
+                        onChoose={() => {
+                          openSong(song.id)
+                          onClose()
+                        }}
+                        onRemove={() => remove(song.id)}
+                      />
+                    ))}
                   </ul>
-                </Shelved>
-              ))
-            : null}
+                )}
+              </Shelved>
+            )}
+
+            {shelf !== 'mine' || searching
+              ? sections.map((section) => (
+                  <Shelved key={section.id} title={section.title}>
+                    {/* One to a line while they are being changed: beside two
+                        choices, half a line is too short to tell four editions
+                        of one piece apart. */}
+                    <ul className={cn('grid grid-cols-1 gap-2', !editing && 'lg:grid-cols-2')}>
+                      {section.songs.map((song) => {
+                        const { entry } = song
+                        return editing ? (
+                          <EditRow
+                            key={entry.id}
+                            song={song}
+                            choosing={choosing === entry.id}
+                            onChoosing={() =>
+                              setChoosing((id) => (id === entry.id ? null : entry.id))
+                            }
+                            onChange={(change) => move.mutate({ entry, change })}
+                          />
+                        ) : (
+                          <li key={entry.id}>
+                            <button
+                              type="button"
+                              aria-busy={loading === entry.id || undefined}
+                              aria-current={catalogSongId(entry) === currentId ? 'true' : undefined}
+                              onClick={() => void chooseBuiltIn(entry)}
+                              className={cn(
+                                row,
+                                focusRing,
+                                catalogSongId(entry) === currentId ? rowCurrent : rowIdle,
+                              )}
+                            >
+                              <span className="flex min-w-0 flex-1 flex-col">
+                                <span className="truncate text-ui text-[var(--ds-fg)]">
+                                  {entry.title}
+                                </span>
+                                <span className="truncate text-caption text-[var(--ds-fg-muted)]">
+                                  {entry.composer}
+                                  {entry.edition && ` · ${entry.edition}`}
+                                </span>
+                              </span>
+                              {loading === entry.id ? (
+                                <Loader2
+                                  size={16}
+                                  className="shrink-0 animate-spin text-[var(--ds-fg-muted)]"
+                                  aria-label="Loading"
+                                />
+                              ) : (
+                                catalogSongId(entry) === currentId && <OpenMark />
+                              )}
+                            </button>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </Shelved>
+                ))
+              : null}
+          </div>
         </div>
       </div>
     </Dialog>
+  )
+}
+
+/**
+ * A built-in song as two choices rather than something to open: its genre,
+ * and its moods.
+ *
+ * The genre is one of ten, and a native select. The moods are any number of
+ * eight, which no native control does well, so they are the same switches the
+ * list is narrowed with, folded away under a field that reads out what is
+ * chosen: open on the one song being worked on, not eight pills on every row.
+ * They unfold in the row rather than float over it. A floating panel inside a
+ * dialog is beneath the dialog, and Escape would shut both.
+ */
+function EditRow({
+  song,
+  choosing,
+  onChoosing,
+  onChange,
+}: {
+  song: Placed
+  /** Whether its moods are laid out to choose from. */
+  choosing: boolean
+  onChoosing: () => void
+  onChange: (change: SetSongCategoryInput) => void
+}) {
+  const { entry } = song
+  const name = nameOf(entry)
+  const panelId = React.useId()
+  const chosen = SONG_MOODS.filter((mood) => song.moods.includes(mood.id))
+    .map((mood) => mood.label)
+    .join(', ')
+
+  return (
+    <li className={cn(row, rowIdle, 'flex-wrap')}>
+      <span className="flex min-w-0 flex-1 basis-40 flex-col">
+        <span className="truncate text-ui text-[var(--ds-fg)]">{entry.title}</span>
+        <span className="truncate text-caption text-[var(--ds-fg-muted)]">
+          {entry.composer}
+          {entry.edition && ` · ${entry.edition}`}
+        </span>
+      </span>
+      <div className="flex w-full gap-2 sm:w-auto">
+        <div className="min-w-0 flex-1 sm:w-40 sm:flex-none">
+          <Select
+            size="sm"
+            aria-label={`Genre for ${name}`}
+            value={song.genre}
+            onChange={(event) => onChange({ genre: event.target.value as SongGenre })}
+            options={SONG_GENRES.map((option) => ({ value: option.id, label: option.label }))}
+          />
+        </div>
+        <button
+          type="button"
+          aria-expanded={choosing}
+          aria-controls={panelId}
+          aria-label={`Moods for ${name}: ${chosen}`}
+          onClick={onChoosing}
+          className={cn(
+            controlShell(),
+            // The select's own measurements, so the two read as a pair.
+            'relative h-8 min-w-0 flex-1 cursor-pointer rounded-[var(--radius-md)] pr-9 pl-3 text-left text-body-sm text-[var(--ds-fg)] sm:w-52 sm:flex-none',
+          )}
+        >
+          <span className="block truncate">{chosen}</span>
+          <ChevronDown
+            size={15}
+            aria-hidden
+            className={cn(
+              'pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-[var(--ds-fg-muted)] transition-transform duration-[120ms]',
+              choosing && 'rotate-180',
+            )}
+          />
+        </button>
+      </div>
+      {choosing && (
+        <div
+          id={panelId}
+          role="group"
+          aria-label={`Moods for ${name}`}
+          className="flex w-full flex-wrap gap-2 coarse:gap-y-4"
+        >
+          {SONG_MOODS.map((mood) => {
+            const on = song.moods.includes(mood.id)
+            // A song has a mood: its last one stays until another is chosen.
+            const last = on && song.moods.length === 1
+            return (
+              <FilterChip
+                key={mood.id}
+                selected={on}
+                aria-disabled={last || undefined}
+                title={last ? 'A song keeps at least one mood' : undefined}
+                onClick={() => {
+                  if (last) return
+                  onChange({
+                    moods: SONG_MOODS.map((each) => each.id).filter((id) =>
+                      id === mood.id ? !on : song.moods.includes(id),
+                    ),
+                  })
+                }}
+              >
+                {mood.label}
+              </FilterChip>
+            )
+          })}
+        </div>
+      )}
+    </li>
   )
 }
 
