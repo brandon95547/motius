@@ -7,6 +7,7 @@ import {
   type Accidental,
   type Pitch,
 } from './pitch.js'
+import { FALLING_SCALE_FORMS, LIBRARY_SCALE_TYPES } from './scale-library.js'
 
 /**
  * Scale definitions.
@@ -16,21 +17,61 @@ import {
  * Adding a mode is one entry in this table and it appears everywhere the app
  * offers scales.
  *
+ * The fourteen a method book teaches are below. The other hundred and six are
+ * in `scale-library.ts`, and the two together are `SCALE_TYPES`.
+ *
+ * A scale is here once, under the name it is best known by. What else it is
+ * called is in `aliases`: the same notes are Major, Ionian, the thaat Bilawal
+ * and the raga Dheerasankarabharanam, and that is one scale, not four.
+ *
  * `degrees` is not redundant with `steps`. It carries the *spelling* intent:
  * that the third of a natural minor is a flattened third, not a sharpened
  * second, and therefore takes the letter a third above the root. The two are
  * checked against each other in the tests.
  */
 
+/**
+ * The headings the scales are listed under, in the order they are offered: the
+ * ones everybody learns first, then the families built from them, then the
+ * scales of particular places.
+ */
+export const SCALE_GROUPS = [
+  { id: 'major-minor', label: 'Major & Minor' },
+  { id: 'modes', label: 'Modes' },
+  { id: 'pentatonic', label: 'Pentatonic' },
+  { id: 'blues-bebop', label: 'Blues & Bebop' },
+  { id: 'symmetric', label: 'Symmetric' },
+  { id: 'melodic-minor-modes', label: 'Melodic Minor Modes' },
+  { id: 'harmonic-minor-modes', label: 'Harmonic Minor Modes' },
+  { id: 'harmonic-major-modes', label: 'Harmonic Major Modes' },
+  { id: 'double-harmonic', label: 'Double Harmonic & Hungarian' },
+  { id: 'neapolitan', label: 'Neapolitan' },
+  { id: 'other', label: 'Other Scales' },
+  { id: 'japanese', label: 'Japanese' },
+  { id: 'ethiopian', label: 'Ethiopian' },
+  { id: 'balinese', label: 'Balinese' },
+  { id: 'hindustani', label: 'Hindustani' },
+  { id: 'carnatic', label: 'Carnatic' },
+] as const
+export type ScaleGroupId = (typeof SCALE_GROUPS)[number]['id']
+
 export interface ScaleType {
   readonly id: string
   readonly name: string
+  /** What else these notes are called, for finding the scale by another name. */
+  readonly aliases?: readonly string[]
   /** Semitones between consecutive notes, root to octave. Sums to 12. */
   readonly steps: readonly number[]
   /** Degree names, one per note, root first. Drives letter choice when spelling. */
   readonly degrees: readonly string[]
-  /** Groups the picker; also decides which spelling of a root reads better. */
+  /**
+   * What kind of scale it is, for what can be done with it: a major or a minor
+   * has a key, a cadence and a page in the fingering book. Also decides which
+   * spelling of a root reads better.
+   */
   readonly family: 'major' | 'minor' | 'mode' | 'pentatonic' | 'other'
+  /** The heading it is listed under where a scale is chosen. */
+  readonly group: ScaleGroupId
   readonly description: string
   /**
    * The form this scale takes coming back down, when it is not the same one.
@@ -73,22 +114,26 @@ export interface ScaleType {
   readonly respellDoubles?: boolean
 }
 
-export const SCALE_TYPES: readonly ScaleType[] = [
+const CORE_SCALE_TYPES: readonly ScaleType[] = [
   {
     id: 'major',
     name: 'Major',
+    aliases: ['Ionian', 'Bilawal', 'Dheerasankarabharanam'],
     steps: [2, 2, 1, 2, 2, 2, 1],
     degrees: ['1', '2', '3', '4', '5', '6', '7'],
     family: 'major',
+    group: 'major-minor',
     signatureDegree: 1,
     description: 'The reference scale. Bright, and the one every other is described against.',
   },
   {
     id: 'natural-minor',
     name: 'Natural Minor',
+    aliases: ['Aeolian', 'Asavari', 'Natabhairavi'],
     steps: [2, 1, 2, 2, 1, 2, 2],
     degrees: ['1', '2', '♭3', '4', '5', '♭6', '♭7'],
     family: 'minor',
+    group: 'major-minor',
     signatureDegree: 6,
     description:
       'The plain minor. Same notes as its relative major, started three half steps lower.',
@@ -96,18 +141,22 @@ export const SCALE_TYPES: readonly ScaleType[] = [
   {
     id: 'harmonic-minor',
     name: 'Harmonic Minor',
+    aliases: ['Keeravani'],
     steps: [2, 1, 2, 2, 1, 3, 1],
     degrees: ['1', '2', '♭3', '4', '5', '♭6', '7'],
     family: 'minor',
+    group: 'major-minor',
     signatureDegree: 6,
     description: 'Natural minor with the seventh raised, which is what gives it the leading tone.',
   },
   {
     id: 'melodic-minor',
     name: 'Melodic Minor',
+    aliases: ['Gourimanohari'],
     steps: [2, 1, 2, 2, 2, 2, 1],
     degrees: ['1', '2', '♭3', '4', '5', '6', '7'],
     family: 'minor',
+    group: 'major-minor',
     signatureDegree: 6,
     description:
       'Sixth and seventh raised going up, smoothing the leap harmonic minor has; both drop back on the way down.',
@@ -116,36 +165,44 @@ export const SCALE_TYPES: readonly ScaleType[] = [
   {
     id: 'dorian',
     name: 'Dorian',
+    aliases: ['Kafi', 'Kharaharapriya'],
     steps: [2, 1, 2, 2, 2, 1, 2],
     degrees: ['1', '2', '♭3', '4', '5', '6', '♭7'],
     family: 'mode',
+    group: 'modes',
     signatureDegree: 2,
     description: 'Minor with a raised sixth. The sound of a great deal of folk and jazz.',
   },
   {
     id: 'phrygian',
     name: 'Phrygian',
+    aliases: ['Bhairavi', 'Hanumatodi'],
     steps: [1, 2, 2, 2, 1, 2, 2],
     degrees: ['1', '♭2', '♭3', '4', '5', '♭6', '♭7'],
     family: 'mode',
+    group: 'modes',
     signatureDegree: 3,
     description: 'Minor with a flattened second. Spanish, and unmistakable from the first step.',
   },
   {
     id: 'lydian',
     name: 'Lydian',
+    aliases: ['Kalyan', 'Mechakalyani'],
     steps: [2, 2, 2, 1, 2, 2, 1],
     degrees: ['1', '2', '3', '♯4', '5', '6', '7'],
     family: 'mode',
+    group: 'modes',
     signatureDegree: 4,
     description: 'Major with a raised fourth. Floating, unresolved, film-score bright.',
   },
   {
     id: 'mixolydian',
     name: 'Mixolydian',
+    aliases: ['Khamaj', 'Harikambhoji'],
     steps: [2, 2, 1, 2, 2, 1, 2],
     degrees: ['1', '2', '3', '4', '5', '6', '♭7'],
     family: 'mode',
+    group: 'modes',
     signatureDegree: 5,
     description: 'Major with a flattened seventh. The dominant-seventh sound.',
   },
@@ -155,33 +212,40 @@ export const SCALE_TYPES: readonly ScaleType[] = [
     steps: [1, 2, 2, 1, 2, 2, 2],
     degrees: ['1', '♭2', '♭3', '4', '♭5', '♭6', '♭7'],
     family: 'mode',
+    group: 'modes',
     signatureDegree: 7,
     description: 'The one with no perfect fifth. Restless, and rarely used on its own.',
   },
   {
     id: 'major-pentatonic',
     name: 'Major Pentatonic',
+    aliases: ['Ryo', 'Tizita Major'],
     steps: [2, 2, 3, 2, 3],
     degrees: ['1', '2', '3', '5', '6'],
     family: 'pentatonic',
+    group: 'pentatonic',
     signatureDegree: 1,
     description: 'Major with the two half steps removed. Nothing in it can clash.',
   },
   {
     id: 'minor-pentatonic',
     name: 'Minor Pentatonic',
+    aliases: ['Minyo', 'Bati Minor'],
     steps: [3, 2, 2, 3, 2],
     degrees: ['1', '♭3', '4', '5', '♭7'],
     family: 'pentatonic',
+    group: 'pentatonic',
     signatureDegree: 6,
     description: 'The other five-note scale. Blues and rock live here.',
   },
   {
     id: 'blues',
     name: 'Blues',
+    aliases: ['Minor Blues'],
     steps: [3, 2, 1, 1, 3, 2],
     degrees: ['1', '♭3', '4', '♭5', '5', '♭7'],
     family: 'other',
+    group: 'blues-bebop',
     signatureDegree: 6,
     respellDoubles: true,
     description:
@@ -195,6 +259,7 @@ export const SCALE_TYPES: readonly ScaleType[] = [
     // Falling, the same twelve keys are lowered notes: C B B♭ A A♭ G G♭ …
     descendingDegrees: ['1', '♭2', '2', '♭3', '3', '4', '♭5', '5', '♭6', '6', '♭7', '7'],
     family: 'other',
+    group: 'symmetric',
     // E chromatic's ♯2 is an F𝄪 by the letter rule; it is written G.
     respellDoubles: true,
     description: 'Every key in order. A technique exercise more than a color.',
@@ -205,13 +270,25 @@ export const SCALE_TYPES: readonly ScaleType[] = [
     steps: [2, 2, 2, 2, 2, 2],
     degrees: ['1', '2', '3', '♯4', '♯5', '♯6'],
     family: 'other',
+    group: 'symmetric',
     respellDoubles: true,
     description: 'Nothing but whole steps. No leading tone, so no gravity at all.',
   },
 ]
 
+/**
+ * Every scale there is to choose, under its heading and in the order the
+ * headings come.
+ */
+export const SCALE_TYPES: readonly ScaleType[] = SCALE_GROUPS.flatMap((group) =>
+  [...CORE_SCALE_TYPES, ...LIBRARY_SCALE_TYPES].filter((type) => type.group === group.id),
+)
+
+/** A scale by its id, the falling forms that are never offered included. */
 export function findScaleType(id: string): ScaleType | undefined {
-  return SCALE_TYPES.find((type) => type.id === id)
+  return (
+    SCALE_TYPES.find((type) => type.id === id) ?? FALLING_SCALE_FORMS.find((type) => type.id === id)
+  )
 }
 
 /** Cumulative semitones from the root, one per note. Excludes the octave. */
@@ -242,7 +319,9 @@ export function octaveNotes(pitchClass: number, type: ScaleType, start = 60): nu
 
 export function scaleFormula(type: ScaleType): string {
   return type.steps
-    .map((step) => (step === 2 ? 'W' : step === 1 ? 'H' : step === 3 ? 'W+H' : `${step}`))
+    .map((step) =>
+      step === 2 ? 'W' : step === 1 ? 'H' : step === 3 ? 'W+H' : step === 4 ? 'W+W' : `${step}`,
+    )
     .join(' ')
 }
 

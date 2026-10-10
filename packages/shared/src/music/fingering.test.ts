@@ -428,8 +428,20 @@ describe('every scale the app can build', () => {
       // it, and breaking it is far better than running out of fingers. So the
       // rule is enforced only where it can be kept.
       for (const { where, pitchClass, type, fingers, notes } of combinations) {
-        const whiteKeys = octaveNotes(pitchClass, type).filter((note) => !isBlack(note)).length
+        const octave = octaveNotes(pitchClass, type)
+        const whiteKeys = octave.filter((note) => !isBlack(note)).length
         if (whiteKeys < 3) continue
+        // Nor can it be kept across four black keys in a row, which D Enigmatic
+        // and the Prometheus scale have: the thumb takes three fingers up with
+        // it, and the fourth key needs it again.
+        const colours = octave.slice(0, -1).map((note) => isBlack(note))
+        let run = 0
+        let longestBlackRun = 0
+        for (const black of [...colours, ...colours]) {
+          run = black ? run + 1 : 0
+          longestBlackRun = Math.max(longestBlackRun, run)
+        }
+        if (longestBlackRun >= 4) continue
         fingers.forEach((finger, index) => {
           if (finger !== 1) return
           expect(isBlack(notes[index]!), `${where} thumb at ${index}`).toBe(false)

@@ -18,6 +18,13 @@ import { SCALE_TYPES } from '../music/scales.js'
 const build = (spec: Partial<ScaleSpec> = {}, options: ScaleExerciseOptions = {}) =>
   buildScaleExercise({ ...DEFAULT_SCALE_SPEC, ...spec }, options)
 
+/**
+ * Room for a test that builds every scale in every key, width and direction:
+ * tens of thousands of exercises, which is longer than a test is given by
+ * default once the rest of the suite is running beside it.
+ */
+const EXHAUSTIVE = { timeout: 30_000 }
+
 describe('buildScaleExercise', () => {
   it('describes the scale the way the dashboard prints it', () => {
     const exercise = build()
@@ -74,7 +81,7 @@ describe('buildScaleExercise', () => {
     expect(noteName(build().notes[0]!)).toBe('A3')
   })
 
-  it('puts the left hand an octave below the right, as the scale books do', () => {
+  it('puts the left hand an octave below the right, as the scale books do', EXHAUSTIVE, () => {
     // The regression: both hands were given the same keys. The Brown Scale
     // Book prints A minor "in octaves" with the right hand from A3 and the
     // left from A2.
@@ -364,7 +371,7 @@ describe('both hands together', () => {
     expect(both().steps[0]!.notes.map(noteName)).toEqual(['A2', 'A3'])
   })
 
-  it('is each hand playing exactly what it plays alone', () => {
+  it('is each hand playing exactly what it plays alone', EXHAUSTIVE, () => {
     for (const { id: scaleTypeId } of SCALE_TYPES) {
       for (let pitchClass = 0; pitchClass < 12; pitchClass++) {
         for (const direction of ['up', 'down', 'up-down'] as const) {

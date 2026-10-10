@@ -17,7 +17,9 @@ import { Drawer } from '@/ui/Drawer'
 import { Divider } from '@/ui/Display'
 import { useLearningStore } from '@/state/learning-store'
 import { KeyCircle } from '@/features/theory/KeyCircle'
-import { Disclosure, Row, Section } from '@/features/theory/parts'
+import { Disclosure, Prose, Row, Section } from '@/features/theory/parts'
+
+const OTHER_NAMES = new Intl.ListFormat('en', { style: 'long', type: 'conjunction' })
 
 /**
  * "Understand this scale."
@@ -91,6 +93,17 @@ export function ScaleTheoryDialog({ open, onClose }: { open: boolean; onClose: (
       description={`${scale.root.name} ${type.name}`}
     >
       <div className="flex flex-col gap-6">
+        {/* What it is, and what else it goes by: most of these scales have
+            more than one name, and the one in the picker is only the usual. */}
+        <Section title="About this scale">
+          <Prose>{type.description}</Prose>
+          {type.aliases && type.aliases.length > 0 && (
+            <Prose quiet>Also called {OTHER_NAMES.format(type.aliases)}.</Prose>
+          )}
+        </Section>
+
+        <Divider />
+
         {halves && (
           <Section title="Scale construction">
             <div className="flex flex-col gap-1.5 rounded-[var(--radius-md)] bg-[var(--ds-surface-inset)] px-3 py-2.5">

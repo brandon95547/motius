@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { parsePitch } from './pitch.js'
+import { FALLING_SCALE_FORMS } from './scale-library.js'
 import {
   degreeNumber,
   findScaleType,
@@ -7,6 +8,7 @@ import {
   scaleFormula,
   scaleOffsets,
   scaleSpellings,
+  SCALE_GROUPS,
   SCALE_TYPES,
   spellScale,
   spellScaleFrom,
@@ -52,6 +54,68 @@ describe('the scale table', () => {
     const ids = SCALE_TYPES.map((type) => type.id)
     expect(new Set(ids).size).toBe(ids.length)
   })
+
+  it('has each scale once, whatever it is called', () => {
+    // The Acoustic scale, the Overtone scale, Lydian ♭7 and the raga Vachaspati
+    // are seven notes and one entry. Two entries with the same steps would be
+    // the same scale offered twice under two names.
+    const bySteps = new Map<string, string[]>()
+    for (const type of SCALE_TYPES) {
+      const steps = type.steps.join(' ')
+      bySteps.set(steps, [...(bySteps.get(steps) ?? []), type.name])
+    }
+    expect([...bySteps.values()].filter((names) => names.length > 1)).toEqual([])
+  })
+
+  it('gives no name to two scales', () => {
+    // A name or an alias leads to one scale. "Hijaz" is Phrygian dominant and
+    // "Hijazkiar" the double harmonic; neither is anything else as well.
+    const owners = new Map<string, string[]>()
+    for (const type of SCALE_TYPES) {
+      for (const name of [type.name, ...(type.aliases ?? [])]) {
+        const key = name.toLowerCase()
+        owners.set(key, [...(owners.get(key) ?? []), type.id])
+      }
+    }
+    expect([...owners].filter(([, ids]) => ids.length > 1)).toEqual([])
+  })
+
+  it('lists the scales under their headings, in the order the headings come', () => {
+    const order = SCALE_GROUPS.map((group) => group.id as string)
+    const seen = SCALE_TYPES.map((type) => order.indexOf(type.group))
+    expect(seen).not.toContain(-1)
+    expect(seen).toEqual([...seen].sort((a, b) => a - b))
+    // No heading with nothing under it.
+    expect(new Set(seen).size).toBe(order.length)
+    // The fourteen a method book teaches come first, as they always did.
+    expect(SCALE_TYPES.slice(0, 4).map((type) => type.id)).toEqual([
+      'major',
+      'natural-minor',
+      'harmonic-minor',
+      'melodic-minor',
+    ])
+  })
+
+  it('finds a scale by the other things it is called', () => {
+    const called = (name: string) =>
+      SCALE_TYPES.find((type) => type.name === name || type.aliases?.includes(name))?.id
+    expect(called('Ionian')).toBe('major')
+    expect(called('Aeolian')).toBe('natural-minor')
+    expect(called('Acoustic')).toBe('lydian-dominant')
+    expect(called('Vachaspati')).toBe('lydian-dominant')
+    expect(called('Super Locrian')).toBe('altered')
+    expect(called('Bhairav')).toBe('double-harmonic')
+    expect(called('Tizita Minor')).toBe('hirajoshi')
+  })
+
+  it('keeps the way down of a two-way scale out of the list, and findable', () => {
+    for (const falling of FALLING_SCALE_FORMS) {
+      expect(SCALE_TYPES.map((type) => type.id)).not.toContain(falling.id)
+      expect(findScaleType(falling.id)).toBe(falling)
+      expect(falling.steps.reduce((sum, step) => sum + step, 0)).toBe(12)
+    }
+    expect(findScaleType('enigmatic')?.descendingTypeId).toBe('enigmatic-descending')
+  })
 })
 
 describe('scaleFormula', () => {
@@ -62,6 +126,10 @@ describe('scaleFormula', () => {
 
   it('names the augmented second in harmonic minor rather than calling it a whole step', () => {
     expect(scaleFormula(findScaleType('harmonic-minor')!)).toBe('W H W W H W+H H')
+  })
+
+  it('writes the major third a five-note scale leaps as two whole steps', () => {
+    expect(scaleFormula(findScaleType('hirajoshi')!)).toBe('W H W+W H W+W')
   })
 })
 
@@ -144,6 +212,30 @@ describe('spelling', () => {
   it('keeps pentatonic degrees on their own letters', () => {
     expect(names(0, 'major-pentatonic')).toBe('C D E G A')
     expect(names(9, 'minor-pentatonic')).toBe('A C D E G')
+  })
+
+  it('spells the scales beyond the method book the way they are written', () => {
+    expect(names(0, 'lydian-dominant')).toBe('C D E F♯ G A B♭')
+    expect(names(0, 'altered')).toBe('C D♭ E♭ F♭ G♭ A♭ B♭')
+    expect(names(4, 'phrygian-dominant')).toBe('E F G♯ A B C D')
+    expect(names(0, 'double-harmonic')).toBe('C D♭ E F G A♭ B')
+    expect(names(9, 'hungarian-minor')).toBe('A B C D♯ E F G♯')
+    expect(names(0, 'hirajoshi')).toBe('C D E♭ G A♭')
+    expect(names(0, 'bebop-dominant')).toBe('C D E F G A B♭ B')
+    expect(names(0, 'diminished-half-whole')).toBe('C D♭ D♯ E F♯ G A B♭')
+    expect(names(0, 'enigmatic')).toBe('C D♭ E F♯ G♯ A♯ B')
+    expect(
+      spellScale(0, findScaleType('enigmatic-descending')!)
+        .notes.map((note) => note.name)
+        .join(' '),
+    ).toBe('C D♭ E F G♯ A♯ B')
+  })
+
+  it('keeps the double flats a melakarta is written with', () => {
+    // Kanakangi's third is a lowered third lowered again, on the letter E. It
+    // sounds as D, and written as D the scale would have two seconds and no third.
+    expect(names(0, 'kanakangi')).toBe('C D♭ E𝄫 F G A♭ B𝄫')
+    expect(names(0, 'rupavati')).toBe('C D♭ E♭ F G A♯ B')
   })
 
   it('agrees with parsePitch', () => {

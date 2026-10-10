@@ -32,11 +32,19 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
   the whole keyboard; Learn walks you through one note at a time with the
   recommended finger on the key; Practice takes the guidance away and keeps
   score.
-- **Fourteen scale types** — major, all three minors, the five modes, both
-  pentatonics, blues, chromatic and whole tone — in every key, one to three
-  octaves, ascending, descending or both. Right hand, left hand, or both
-  together: the left hand sits an octave below the right, the way scale books
-  print a scale "in octaves".
+- **A hundred and twenty scale types** — major, all three minors, the five
+  modes, both pentatonics, blues, chromatic and whole tone, and after them the
+  bebop scales, the symmetric ones, the modes of the melodic minor, the
+  harmonic minor and the harmonic major, the double harmonic and Hungarian
+  scales, the Neapolitans, Japanese and Ethiopian pentatonics, Balinese pelog,
+  the thaats of Hindustani music and the melakartas of Carnatic — in every key,
+  one to three octaves, ascending, descending or both. Right hand, left hand,
+  or both together: the left hand sits an octave below the right, the way scale
+  books print a scale "in octaves".
+- **One scale, one name.** A set of notes is in the list once, under the name
+  it usually goes by, and is found by any of its others: the picker is typed
+  into, and "acoustic", "overtone" and "Vachaspati" all find Lydian Dominant.
+  "Understand this scale" says what each is and what else it is called.
 - **The other lines of the page.** With both hands: contrary motion from a
   shared note, and the hands a third or a sixth apart — each starting where
   The Brown Scale Book starts it when the connected keyboard reaches that far,
@@ -349,7 +357,8 @@ A system is asked, separately, which fingers it puts on them
 table, and no scale definition changes.
 
 _Worked out_ covers everything else — the modes, the pentatonics, blues, whole
-tone. For scales with no published fingering the
+tone, and the hundred-odd scales of `music/scale-library.ts`. For scales with
+no published fingering the
 thumb positions are planned across the whole passage by shortest path and the
 fingers filled in afterwards, which makes the result playable by construction —
 no finger reachable twice, the little finger only at an end. Run over the notes

@@ -590,9 +590,9 @@ export function buildScaleExercise(spec: ScaleSpec, options: ScaleExerciseOption
     apart ? INTERVAL_SEMITONES[apart] : undefined,
   )
 
-  // A scale whose way down is not its way up. Only the melodic minor has one,
-  // and reversing the ascending notes for it plays the raised sixth and seventh
-  // coming down — two wrong notes on every turn.
+  // A scale whose way down is not its way up: the melodic minor, and the
+  // Enigmatic scale. Reversing the ascending notes of a melodic minor plays the
+  // raised sixth and seventh coming down — two wrong notes on every turn.
   const descendingType = type.descendingTypeId
     ? (findScaleType(type.descendingTypeId) ?? type)
     : type
@@ -751,7 +751,7 @@ export function buildScaleExercise(spec: ScaleSpec, options: ScaleExerciseOption
       // puts it back going down, saying so on the page. Mirroring the ascending
       // fingering would carry the ascending hand into the descent and contradict
       // that, so the descending form is fingered as itself.
-      const descendingFingering = differsDescending
+      const ownDescent = differsDescending
         ? scaleFingering({
             rootName: descendingScale.root.name,
             scaleTypeId: descendingType.id,
@@ -763,6 +763,15 @@ export function buildScaleExercise(spec: ScaleSpec, options: ScaleExerciseOption
             startDegree: plan.startDegree,
           })
         : fingering
+      // That is for a way down a source has printed. Where nobody has — the
+      // Enigmatic scale, which lowers one note coming back — the hand keeps the
+      // shape it went up with. Two fingerings worked out separately do not
+      // agree about the note at the turn, and one of them would be asked for
+      // it and the note beside it with the same finger.
+      const descendingFingering =
+        differsDescending && fingering.source === 'derived' && ownDescent.source === 'derived'
+          ? fingering
+          : ownDescent
 
       // A hand that sets off downwards — the left, in contrary motion — opens at
       // the top of its run, so the way down is its opening. For every other hand

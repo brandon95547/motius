@@ -27,6 +27,7 @@ import {
   scaleHasIntervals,
   scaleMotionsFor,
   scaleTexturesFor,
+  SCALE_GROUPS,
   SCALE_TYPES,
   scaleSpellings,
   spellScale,
@@ -40,7 +41,7 @@ import {
   type ScaleTexture,
 } from '@sonara/shared'
 import { cn } from '@/lib/cn'
-import { Field, SegmentedControl, Select, Switch } from '@/ui/Controls'
+import { Combobox, Field, SegmentedControl, Select, Switch } from '@/ui/Controls'
 import { Divider } from '@/ui/Display'
 import { BarTabs } from '@/ui/BarTabs'
 import { TempoField } from '@/ui/TempoField'
@@ -105,6 +106,14 @@ const TEXTURE_UNAVAILABLE: Partial<Record<ScaleTexture, string>> = {
   'staccato-thirds': 'For seven-note scales.',
   'staccato-sixths': 'For seven-note scales.',
 }
+
+/** Every scale under its heading, with the other names it is looked for by. */
+const SCALE_OPTIONS = SCALE_TYPES.map((entry) => ({
+  value: entry.id,
+  label: entry.name,
+  group: SCALE_GROUPS.find((group) => group.id === entry.group)?.label,
+  also: entry.aliases,
+}))
 
 const typeOf = (scaleTypeId: string) =>
   SCALE_TYPES.find((type) => type.id === scaleTypeId) ?? SCALE_TYPES[0]!
@@ -280,13 +289,16 @@ export function ScaleOptions() {
                 options={roots.map((root) => ({ value: String(root.value), label: root.label }))}
               />
             </div>
+            {/* A hundred and twenty of them, so typed for rather than scrolled
+                to; and found by any of their names. */}
             <div className="min-w-0 flex-1">
-              <Select
+              <Combobox
                 id={typeId}
                 size="sm"
                 value={spec.scaleTypeId}
-                onChange={(event) => updateSpec({ scaleTypeId: event.target.value })}
-                options={SCALE_TYPES.map((entry) => ({ value: entry.id, label: entry.name }))}
+                onChange={(scaleTypeId) => updateSpec({ scaleTypeId })}
+                options={SCALE_OPTIONS}
+                emptyText="No scale by that name"
               />
             </div>
           </div>
