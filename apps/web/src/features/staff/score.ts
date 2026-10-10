@@ -896,6 +896,19 @@ export interface Placed extends Measured {
 }
 
 /**
+ * How much later a line starts for the rests in front of its first chord.
+ *
+ * A rest before a chord stands in the gap that leads to it, and the first
+ * chord of a line has no gap: left where it was measured, the rest is drawn
+ * on top of the time signature. So the rest furthest in front takes the place
+ * the chord would have had, and the chord follows at the distance they were
+ * measured apart.
+ */
+function leadIn(first: Measured | undefined): number {
+  return Math.max(0, ...(first?.rests ?? []).map((rest) => rest.back))
+}
+
+/**
  * Lay a run of chords out from a starting point, keeping their measured gaps.
  *
  * `stretch` justifies a system: engraved music fills its line, and a page of
@@ -903,7 +916,7 @@ export interface Placed extends Measured {
  * draft rather than as a score.
  */
 export function place(measured: readonly Measured[], startX: number, stretch = 1): Placed[] {
-  let x = startX
+  let x = startX + leadIn(measured[0])
   const placed = measured.map((entry, index): Placed => {
     if (index > 0) x += entry.gap * stretch
     // A rest in front of the chord keeps its share of the room as the line is
@@ -1134,7 +1147,7 @@ export function breakIntoSystems(
   let from = 0
 
   while (from < measured.length) {
-    const start = headerEnd(fifths, from === 0)
+    const start = headerEnd(fifths, from === 0) + leadIn(measured[from])
     let x = start
     let to = from + 1
     let lastBar = -1
@@ -1172,7 +1185,7 @@ function stretchFor(
   width: number,
 ): number {
   if (to >= measured.length) return 1
-  const start = headerEnd(fifths, from === 0)
+  const start = headerEnd(fifths, from === 0) + leadIn(measured[from])
   let gaps = 0
   for (let i = from + 1; i < to; i++) gaps += measured[i]!.gap
   if (gaps <= 0) return 1

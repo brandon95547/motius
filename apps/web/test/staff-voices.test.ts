@@ -207,4 +207,23 @@ describe('rests', () => {
     expect(drawn.x).toBeGreaterThan(placed[0]!.x + placed[0]!.extent.right)
     expect(drawn.x).toBeLessThan(placed[1]!.x - placed[1]!.extent.left)
   })
+
+  it('starts a line later for a rest in front of its first chord, so the rest is clear of the time signature', () => {
+    // Both hands rest for a quarter before anything is struck. There is no
+    // gap in front of a line's first chord for the rest to stand in.
+    const opening = measured([
+      rest(1, 'quarter', 1, 1) +
+        pitched('D', 5, 1, 'quarter', 1, 1) +
+        pitched('E', 5, 2, 'half', 1, 1) +
+        back(4) +
+        rest(1, 'quarter', 5, 2) +
+        pitched('D', 3, 1, 'quarter', 5, 2) +
+        pitched('E', 3, 2, 'half', 5, 2),
+    ])
+    const inFront = opening[0]!.rests!.find((mark) => mark.back > 0)!
+    const placed = place(opening, 100)
+    // The rest is where the chord would have been, and the chord comes after it.
+    expect(placed[0]!.restsAt!.find((mark) => mark.back > 0)!.x).toBe(100)
+    expect(placed[0]!.x).toBe(100 + inFront.back)
+  })
 })

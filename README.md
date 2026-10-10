@@ -61,7 +61,7 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
 
 ### Songs
 
-- **Seventy-eight pieces come with it**, from Bach to Fats Waller, in a chooser that
+- **Seventy-nine pieces come with it**, from Bach to Fats Waller, in a chooser that
   Songs opens on: shelved by genre — Classical, Gospel, Jazz, Blues, Pop, Rock,
   Country, Soul & R&B, Folk & Traditional, New Age — and under every genre by
   the same eight moods: Dramatic & Powerful, Dreamy & Atmospheric, Joyful &
@@ -420,7 +420,8 @@ back with the app, and the stored library is for what the player brought.
 `song-catalog.test.ts` reads every one of them, so a score that loses a hand
 on import fails there rather than in front of a player. The scores are from the
 [MuseTrainer library](https://github.com/musetrainer/library) and the
-[PDMX](https://zenodo.org/records/15571083) collection.
+[PDMX](https://zenodo.org/records/15571083) collection, but for Liszt's
+"Nuages gris", typed in from its first edition (Breitkopf & Härtel, 1927).
 
 Fifteen are recent pieces their own composers published under CC0, giving up their
 rights in them; `catalog.ts` has the page each was released on. One more is not in

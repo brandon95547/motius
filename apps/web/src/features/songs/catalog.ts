@@ -167,6 +167,16 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
     genre: 'classical',
     moods: ['romantic'],
   },
+  // Typed in from the first edition (Breitkopf & Härtel, 1927), not taken from
+  // either library. The left hand's tremolo is written out as the
+  // thirty-second notes its three beams stand for.
+  {
+    id: 'liszt-nuages-gris',
+    title: 'Nuages gris',
+    composer: 'Franz Liszt',
+    genre: 'classical',
+    moods: ['mysterious'],
+  },
   {
     id: 'schubert-serenade',
     title: 'Serenade (Ständchen)',
