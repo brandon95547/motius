@@ -28,6 +28,10 @@ import { BEAM_LINES, staffOfLine, voiceOn, type BeamLine, type Placed } from './
  * - **Stems reach the beam, never the other way round.** The beam is placed so
  *   that the note nearest it has a stem of the normal length, and every other
  *   stem is lengthened to meet it. None is ever shortened.
+ *
+ * A beam that crosses from one staff to the other is the exception to the
+ * first: it lies between the staves, the upper staff's stems come down to it
+ * and the lower staff's go up.
  */
 
 /** How one chord's stem is drawn when a beam decides it. */
@@ -47,8 +51,8 @@ export interface BeamBar {
 
 export interface BeamShape {
   readonly key: string
-  /** The staff it is drawn on. */
-  readonly staff: 'treble' | 'bass'
+  /** The staff it is drawn on, or null for one that lies between the two and joins both. */
+  readonly staff: 'treble' | 'bass' | null
   /** The steps it joins, for deciding whether it is behind the player yet. */
   readonly indices: readonly number[]
   readonly bars: readonly BeamBar[]
@@ -64,6 +68,8 @@ const PITCH = STEP * 1.6
 const MAX_RISE = STEP * 2
 /** How long the stub of a lone short note is: about a notehead. */
 const STUB = STEP * 2.4
+/** The shortest stem a beam between the staves leaves a note: two staff spaces. */
+const CROSS_STEM = STEP * 4
 
 interface Member {
   readonly index: number
@@ -75,7 +81,61 @@ interface Member {
   readonly tuplet?: { readonly id: number; readonly actual: number }
 }
 
-export function beamsIn(placed: readonly Placed[]): {
+/**
+ * The bars of one beam: the long one, and under it the shorter ones for the
+ * notes with more than one flag.
+ *
+ * `edge` is the beam's outer side at an x, the side away from the noteheads;
+ * the further levels are stacked in from it, down where the stems go up.
+ */
+function barsOf(
+  members: readonly Pick<Member, 'x' | 'flags'>[],
+  edge: (x: number) => number,
+  up: boolean,
+): BeamBar[] {
+  const first = members[0]!
+  const last = members.at(-1)!
+  /** One bar of the beam, `level` beams in from the outer edge. */
+  const bar = (from: number, to: number, level: number): BeamBar => {
+    const inward = (up ? 1 : -1) * level * PITCH
+    const thick = (up ? 1 : -1) * THICKNESS
+    const a = edge(from) + inward
+    const b = edge(to) + inward
+    return {
+      points: `${from},${a} ${to},${b} ${to},${b + thick} ${from},${a + thick}`,
+    }
+  }
+
+  const bars: BeamBar[] = [bar(first.x, last.x, 0)]
+  const levels = Math.max(...members.map((member) => member.flags))
+  for (let level = 1; level < levels; level++) {
+    let start: Pick<Member, 'x' | 'flags'> | null = null
+    members.forEach((member, at) => {
+      const has = member.flags > level
+      const next = members[at + 1]
+      if (has && start === null) start = member
+      if (start !== null && (!has || !next || next.flags <= level)) {
+        const end = has ? member : members[at - 1]!
+        if (end.x > start.x) bars.push(bar(start.x, end.x, level))
+        else {
+          // A short note with no short neighbour: a stub, towards the
+          // rest of its group.
+          const towards = at === 0 || (has && next && !members[at - 1]) ? 1 : -1
+          const tip = start.x + towards * STUB
+          bars.push(bar(Math.min(start.x, tip), Math.max(start.x, tip), level))
+        }
+        start = null
+      }
+    })
+  }
+  return bars
+}
+
+export function beamsIn(
+  placed: readonly Placed[],
+  /** How far the two staves have been opened (`spreadOf`): a beam between them is drawn where they are. */
+  spread = 0,
+): {
   stems: Map<number, StepStems>
   beams: BeamShape[]
 } {
@@ -147,39 +207,7 @@ export function beamsIn(placed: readonly Placed[]): {
         })
       }
 
-      /** One bar of the beam, `level` beams in from the outer edge. */
-      const bar = (from: number, to: number, level: number): BeamBar => {
-        const inward = (up ? 1 : -1) * level * PITCH
-        const thick = (up ? 1 : -1) * THICKNESS
-        const a = edge(from) + inward
-        const b = edge(to) + inward
-        return {
-          points: `${from},${a} ${to},${b} ${to},${b + thick} ${from},${a + thick}`,
-        }
-      }
-
-      const bars: BeamBar[] = [bar(first.x, last.x, 0)]
-      const levels = Math.max(...members.map((member) => member.flags))
-      for (let level = 1; level < levels; level++) {
-        let start: Member | null = null
-        members.forEach((member, at) => {
-          const has = member.flags > level
-          const next = members[at + 1]
-          if (has && start === null) start = member
-          if (start !== null && (!has || !next || next.flags <= level)) {
-            const end = has ? member : members[at - 1]!
-            if (end.x > start.x) bars.push(bar(start.x, end.x, level))
-            else {
-              // A short note with no short neighbour: a stub, towards the
-              // rest of its group.
-              const towards = at === 0 || (has && next && !members[at - 1]) ? 1 : -1
-              const tip = start.x + towards * STUB
-              bars.push(bar(Math.min(start.x, tip), Math.max(start.x, tip), level))
-            }
-            start = null
-          }
-        })
-      }
+      const bars = barsOf(members, edge, up)
 
       // A beam that is exactly one tuplet says so with its number, on the
       // stem side, clear of the beam.
@@ -206,6 +234,88 @@ export function beamsIn(placed: readonly Placed[]): {
           : {}),
       })
     }
+  }
+
+  /*
+   * The beams that cross from one staff to the other.
+   *
+   * Worked out where the staves are, which is not where `yOn` says once a
+   * system has opened: the upper staff is higher by the spread and the lower
+   * one lower. The beam is drawn there, and each stem is told where to end in
+   * its own staff's terms.
+   */
+  const crossing = new Map<number, { entry: Placed; line: BeamLine }[]>()
+  for (const entry of placed)
+    for (const line of BEAM_LINES) {
+      const id = entry.cross?.[line]
+      if (id === undefined) continue
+      crossing.set(id, [...(crossing.get(id) ?? []), { entry, line }])
+    }
+  for (const [id, joined] of crossing) {
+    const members = joined.map(({ entry, line }) => {
+      const voice = voiceOn(entry, line)!
+      const staff = staffOfLine(line)
+      const steps = voice.notes.map((note) => placementOf(note).steps).sort((a, b) => a - b)
+      const part = entry.parts?.find((candidate) => candidate.notes === voice.notes)
+      // The lower staff's stems rise to the beam and the upper staff's fall to it.
+      const up = staff === 'bass'
+      const moved = staff === 'treble' ? -spread : spread
+      return {
+        index: entry.index,
+        line,
+        up,
+        moved,
+        x: stemXFor(entry.x + (part?.dx ?? 0), up),
+        flags: voice.value.flags,
+        /** The head nearest the beam, where the page has it. */
+        near: yOn(up ? steps.at(-1)! : steps[0]!, staff) + moved,
+        tuplet: entry.tuplet?.[staff],
+      }
+    })
+    const above = members.filter((member) => !member.up)
+    const below = members.filter((member) => member.up)
+    // A line break can leave a beam with one end of itself, or one staff's
+    // share: those notes keep their flags.
+    if (members.length < 2 || above.length === 0 || below.length === 0) continue
+
+    const levels = Math.max(...members.map((member) => member.flags))
+    const depth = THICKNESS + (levels - 1) * PITCH
+    /** As high as the beam may go and as low, leaving every note a stem. */
+    const highest = Math.max(...above.map((member) => member.near)) + CROSS_STEM
+    const lowest = Math.min(...below.map((member) => member.near)) - CROSS_STEM - depth
+    // The notes of the two staves pass each other: no beam goes between.
+    if (lowest < highest) continue
+    // Midway between the staves, which is where the eye looks for it.
+    const top = Math.min(lowest, Math.max(highest, -depth / 2))
+
+    for (const member of members) {
+      // A stem from below goes through every bar of the beam to its top. One
+      // from above stops at the last bar it has.
+      const end = member.up ? top : top + (member.flags - 1) * PITCH + THICKNESS
+      stems.set(member.index, {
+        ...stems.get(member.index),
+        [member.line]: { up: member.up, end: end - member.moved },
+      })
+    }
+
+    const first = members[0]!
+    const last = members.at(-1)!
+    const tuplet = first.tuplet
+    const whole =
+      tuplet !== undefined &&
+      members.length === tuplet.actual &&
+      members.every((member) => member.tuplet?.id === tuplet.id)
+    beams.push({
+      key: `cross-${id}-${first.index}`,
+      staff: null,
+      indices: members.map((member) => member.index),
+      bars: barsOf(members, () => top, true),
+      ...(whole
+        ? {
+            tuplet: { x: (first.x + last.x) / 2, y: top - STEP * 0.9, text: String(tuplet.actual) },
+          }
+        : {}),
+    })
   }
 
   return { stems, beams }

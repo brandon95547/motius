@@ -363,20 +363,26 @@ export function Beams({
     <>
       {beams.map((beam) => {
         const played = beam.indices.every((index) => roleFor(index) === 'played')
-        // A beam is on a staff, and goes where its staff has gone.
-        return (
+        const drawn = (
+          <g key={beam.key} className="staff__beam" data-played={played ? 'true' : undefined}>
+            {beam.bars.map((bar, at) => (
+              <polygon key={at} points={bar.points} />
+            ))}
+            {beam.tuplet && (
+              <text x={beam.tuplet.x} y={beam.tuplet.y} className="staff__tuplet">
+                {beam.tuplet.text}
+              </text>
+            )}
+          </g>
+        )
+        // A beam is on a staff, and goes where its staff has gone. One between
+        // the staves was worked out where they are, and is drawn as it stands.
+        return beam.staff ? (
           <OnStaff key={beam.key} staff={beam.staff}>
-            <g className="staff__beam" data-played={played ? 'true' : undefined}>
-              {beam.bars.map((bar, at) => (
-                <polygon key={at} points={bar.points} />
-              ))}
-              {beam.tuplet && (
-                <text x={beam.tuplet.x} y={beam.tuplet.y} className="staff__tuplet">
-                  {beam.tuplet.text}
-                </text>
-              )}
-            </g>
+            {drawn}
           </OnStaff>
+        ) : (
+          drawn
         )
       })}
     </>

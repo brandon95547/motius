@@ -116,6 +116,12 @@ export interface DrawnNote {
    * on, whichever hand plays it.
    */
   readonly row?: Staff
+  /**
+   * The voice it is in, where that voice is written on both staves in this
+   * bar: a line that crosses from one staff to the other, to be beamed as the
+   * one line it is.
+   */
+  readonly voice?: number
   readonly finger?: number
   /** Whether this pitch is under a finger right now. */
   readonly sounding?: boolean

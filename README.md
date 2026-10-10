@@ -101,6 +101,14 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
   where both happen in one bar the system is opened until the two are clear of
   each other, as a printed page does. One distance for a line — the staff does
   not move under the player — and none added to music that keeps to its staves.
+- **A hand written on the other staff is still that hand.** A right hand
+  that runs down into the bass is often written on the lower staff, to spare
+  the ledger lines, and beamed to its notes on the upper one. It is drawn
+  there, with one beam between the staves and the stems of each coming to it,
+  and it is asked of the right hand.
+- **A tied note is written wherever the score writes it**, including where
+  nothing is struck beside it: a chord held through the last bar has its
+  noteheads, its ties and its bar.
 - **Three staves, or four, where the score has them.** Piano music too thick
   for two staves is printed on more — the end of Rachmaninoff's Prelude in
   C-sharp Minor on four, two to a hand — and is drawn on the staves it was
@@ -412,6 +420,16 @@ the first in the treble clef and the second in the bass, are one piano written
 a staff to a hand, and are read as its right and left. And where several parts
 are called a piano, the one on two staves is the piano; a one-staff part beside
 it is a line of ornaments, heard and not asked for.
+
+A note's hand is its voice's, not its staff's. A voice has a staff of its own,
+the one it is written on when it is not visiting the other: MuseScore numbers
+them (1 to 4 on the upper staff, 5 to 8 on the lower) and otherwise it is the
+staff most of the voice is on. A note written on the other staff keeps its
+voice's hand, and carries `staff` to say where it is drawn — unless the other
+hand has nothing of its own sounding just then, which is a run shared between
+the hands, each taking what is on its own staff. A file whose voice numbers
+name nothing (the same number for a line on each staff) is read by staff, as
+all files were.
 
 A MusicXML piano part on three staves or four keeps them. Every note, rest and
 clef carries the number of the staff it is on (`staff`, with `Song.staves`

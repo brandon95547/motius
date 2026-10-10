@@ -347,6 +347,7 @@ export function FlowView({
               <StaffLayer key={index} place={place}>
                 <Music
                   placed={entries}
+                  spread={place.spread}
                   span={span}
                   barLines={barLines}
                   opening={opening}
@@ -375,6 +376,7 @@ export function FlowView({
  */
 function Music({
   placed,
+  spread,
   span,
   barLines,
   opening,
@@ -386,6 +388,8 @@ function Music({
   position,
 }: {
   placed: readonly Placed[]
+  /** How far this pair of staves has opened, for a beam that lies between them. */
+  spread: number
   /** The stretch being drawn, or null where all of it is. */
   span: { from: number; to: number } | null
   barLines: readonly BarLine[]
@@ -400,7 +404,7 @@ function Music({
 }) {
   // Where the beams run, and the stems they have decided. Once per layout:
   // the stems are handed to memoised chords and must stay the same objects.
-  const beaming = React.useMemo(() => beamsIn(placed), [placed])
+  const beaming = React.useMemo(() => beamsIn(placed, spread), [placed, spread])
   const shown = React.useMemo(
     () => (span ? placed.filter((entry) => entry.x >= span.from && entry.x <= span.to) : placed),
     [placed, span],

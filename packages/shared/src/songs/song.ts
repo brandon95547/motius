@@ -110,8 +110,10 @@ export interface SongNote {
   readonly hand: Hand
   /**
    * Which of the piano's staves it is written on, counted from the top, where
-   * the piano has more than two. The hand says who plays it; this says where
-   * on the page it goes.
+   * that is not simply its hand's: on a piano written on more than two staves,
+   * and on the usual two where a hand is written on the other one's staff —
+   * a right hand that has run down into the bass and is kept off the ledger
+   * lines. The hand says who plays it; this says where on the page it goes.
    */
   readonly staff?: number
   /**

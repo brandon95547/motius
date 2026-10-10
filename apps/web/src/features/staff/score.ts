@@ -161,6 +161,11 @@ export interface Measured {
    * of the group. Absent for a note that stands alone and keeps its flags.
    */
   readonly beam?: Partial<Record<BeamLine, number>>
+  /**
+   * The beam it is under where that beam crosses from one staff to the other:
+   * the same number on the chords of both staves that it joins.
+   */
+  readonly cross?: Partial<Record<BeamLine, number>>
   /** The tuplet its notes on each staff belong to, where the score said. */
   readonly tuplet?: Partial<Record<Staff, { readonly id: number; readonly actual: number }>>
 }
@@ -388,9 +393,24 @@ export function measureScore(
   layer?: ScoreLayer,
 ): Measured[] {
   const staves = song?.staves ?? 2
-  /** The staff of this pair a note is written on. Its hand's, on a piano's usual two. */
+  /**
+   * The staff of this pair a note is written on. On a piano's usual two that
+   * is its hand's, unless the score wrote it on the other: a hand that goes
+   * onto the other staff is drawn there, and is still that hand.
+   */
   const rowOf = (note: SongNote): Staff =>
-    layer ? (rowIn(layer, staffNumberOf(note, staves)) ?? 'treble') : staffFor(note.note, note.hand)
+    layer
+      ? (rowIn(layer, staffNumberOf(note, staves)) ?? 'treble')
+      : note.staff === 1
+        ? 'treble'
+        : note.staff === 2
+          ? 'bass'
+          : staffFor(note.note, note.hand)
+  /**
+   * The staff a note keeps busy, for the rests: its hand's own. A rest says a
+   * hand is waiting, and a hand playing on the other staff is not.
+   */
+  const busies = (note: SongNote): Staff => (layer ? rowOf(note) : staffFor(note.note, note.hand))
   // Every place something is written, of the whole score, so that the pairs
   // of a score on several staves count the same places.
   const columns = columnsOf(every)
@@ -467,6 +487,11 @@ export function measureScore(
         )
     }
   }
+
+  /** Whether a voice is written on both staves in a bar: a line that crosses between them. */
+  const crosses = (bar: number, voice: number) =>
+    voicesIn.get(`${bar}:treble`)?.includes(voice) === true &&
+    voicesIn.get(`${bar}:bass`)?.includes(voice) === true
 
   /*
    * Tied notes: where each is written again.
@@ -547,7 +572,7 @@ export function measureScore(
     const filled = new Set<string>()
     for (const step of steps)
       for (const note of step.notes) {
-        const staff = rowOf(note)
+        const staff = busies(note)
         sounding[staff].push([note.startMs, note.startMs + note.durationMs])
         // Every bar the note sounds in, not only the one it starts in.
         const last = barIndexAt(measures, note.startMs + note.durationMs - 1)
@@ -667,7 +692,8 @@ export function measureScore(
       const on = rowOf(note)
       const drawn = {
         note: note.note,
-        ...(layer ? { row: on } : {}),
+        ...(layer || note.staff !== undefined ? { row: on } : {}),
+        ...(note.voice !== undefined && crosses(bar, note.voice) ? { voice: note.voice } : {}),
         ...(clefs[on] !== on ? { clef: clefs[on] } : {}),
         finger: !hints || hints.has(note) ? note.finger : undefined,
         rolled: note.rolled,
@@ -901,12 +927,15 @@ function beamed(
   /** The bars as the score wrote them, where it did: each has its own start, tempo and metre. */
   measures?: Song['measures'],
 ): Measured[] {
-  const beamOf: Record<BeamLine, Map<number, number>> = {
+  const lines = (): Record<BeamLine, Map<number, number>> => ({
     treble: new Map(),
     bass: new Map(),
     treble2: new Map(),
     bass2: new Map(),
-  }
+  })
+  const beamOf = lines()
+  /** The beams that cross from one staff to the other, by the line each chord under one is on. */
+  const crossOf = lines()
   let nextId = 0
 
   /**
@@ -935,29 +964,39 @@ function beamed(
     }
   }
 
-  for (const line of BEAM_LINES) {
+  /** One chord of a line of music: what it is written as, and the line it is on. */
+  type Link = { entry: Measured; voice: NonNullable<ReturnType<typeof voiceOn>>; on: BeamLine }
+  /** A place in a line: its chord, or null where the line is broken there. */
+  type Place = { entry: Measured; link: Link | null }
+
+  /**
+   * The runs of a line that share a beam: each a list of the chords it joins.
+   *
+   * A line is the chords of one voice in order, with a null wherever something
+   * else stands in it and a beam cannot pass.
+   */
+  function runs(line: readonly Place[]): Link[][] {
     /** The beam being gathered, if one is open. */
     interface Group {
-      members: number[]
+      members: Link[]
       bar: number
       beat: number
       end: number
       plain: boolean
     }
+    const found: Link[][] = []
     const open: { group: Group | null } = { group: null }
     const close = () => {
-      if (open.group && open.group.members.length > 1) {
-        const id = nextId++
-        for (const index of open.group.members) beamOf[line].set(index, id)
-      }
+      if (open.group && open.group.members.length > 1) found.push(open.group.members)
       open.group = null
     }
 
-    for (const entry of measured) {
-      // Each voice is beamed by itself: the hands keep their own rhythm, and
-      // so do two voices in one hand.
-      const voice = voiceOn(entry, line)
-      if (!voice) continue
+    for (const { entry, link } of line) {
+      if (!link) {
+        close()
+        continue
+      }
+      const voice = link.voice
       const value = voice.value
       const tuplet = entry.step.notes.find(
         (note) => note.written?.tuplet && voice.notes.some((drawn) => drawn.note === note.note),
@@ -992,13 +1031,13 @@ function beamed(
             bar.quarters === 4 &&
             Math.floor(onBeat / 2) === Math.floor(current.beat / 2)))
       ) {
-        current.members.push(entry.index)
+        current.members.push(link)
         current.end = start + length
         current.plain = current.plain && plain
       } else {
         close()
         open.group = {
-          members: [entry.index],
+          members: [link],
           bar: entry.bar,
           beat: onBeat,
           end: start + length,
@@ -1007,15 +1046,71 @@ function beamed(
       }
     }
     close()
+    return found
   }
 
-  return measured.map((entry) => {
-    const beam: Partial<Record<BeamLine, number>> = {}
-    for (const line of BEAM_LINES) {
-      const id = beamOf[line].get(entry.index)
-      if (id !== undefined) beam[line] = id
+  /*
+   * First the beams that cross from one staff to the other.
+   *
+   * A line written across both staves — a right hand that runs down into the
+   * bass, an arpeggio handed from one hand to the other — is one line, and its
+   * short notes are beamed as one: the beam between the staves, the upper
+   * staff's stems coming down to it and the lower staff's going up. Taken a
+   * staff at a time, as everything below is, each of those notes stood alone
+   * with a flag, and three notes of a triplet were a quaver and a pair.
+   */
+  const crossing = new Set<number>()
+  for (const entry of measured)
+    for (const note of entry.notes) if (note.voice !== undefined) crossing.add(note.voice)
+  for (const number of crossing) {
+    const line = measured.flatMap((entry): Place[] => {
+      const on = BEAM_LINES.filter((each) =>
+        voiceOn(entry, each)?.notes.some((note) => note.voice === number),
+      )
+      if (on.length === 0) return []
+      // On both staves at one moment: a chord split between them, which no
+      // one beam can be drawn to.
+      if (on.length > 1) return [{ entry, link: null }]
+      return [{ entry, link: { entry, voice: voiceOn(entry, on[0]!)!, on: on[0]! } }]
+    })
+    for (const run of runs(line)) {
+      // All on one staff is no crossing: that staff's own beams, below.
+      if (new Set(run.map((member) => staffOfLine(member.on))).size < 2) continue
+      const id = nextId++
+      for (const member of run) crossOf[member.on].set(member.entry.index, id)
     }
-    return Object.keys(beam).length > 0 ? { ...entry, beam } : entry
+  }
+
+  for (const line of BEAM_LINES) {
+    // Each voice is beamed by itself: the hands keep their own rhythm, and
+    // so do two voices in one hand.
+    const chords = measured.flatMap((entry): Place[] => {
+      const voice = voiceOn(entry, line)
+      if (!voice) return []
+      // Under a beam that crosses the staves already, and not under two.
+      if (crossOf[line].has(entry.index)) return [{ entry, link: null }]
+      return [{ entry, link: { entry, voice, on: line } }]
+    })
+    for (const run of runs(chords)) {
+      const id = nextId++
+      for (const member of run) beamOf[line].set(member.entry.index, id)
+    }
+  }
+
+  const under = (marks: Record<BeamLine, Map<number, number>>, index: number) => {
+    const found: Partial<Record<BeamLine, number>> = {}
+    for (const line of BEAM_LINES) {
+      const id = marks[line].get(index)
+      if (id !== undefined) found[line] = id
+    }
+    return Object.keys(found).length > 0 ? found : undefined
+  }
+  return measured.map((entry) => {
+    const beam = under(beamOf, entry.index)
+    const cross = under(crossOf, entry.index)
+    return beam || cross
+      ? { ...entry, ...(beam ? { beam } : {}), ...(cross ? { cross } : {}) }
+      : entry
   })
 }
 

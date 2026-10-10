@@ -174,7 +174,7 @@ export function SheetView({
         )
           .map((entries, index) => ({
             entries,
-            beaming: beamsIn(entries),
+            beaming: beamsIn(entries, layout.layers[index]!.spread),
             place: layout.layers[index]!,
           }))
           .filter(({ place }) => place.rows.treble || place.rows.bass),
