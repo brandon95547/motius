@@ -759,6 +759,39 @@ describe('the notation a score carries beyond its notes', () => {
     expect(song.notes[1]!.tied).toBeUndefined()
   })
 
+  it('holds a note tied from one voice into another', () => {
+    // A suspension: the C is a half note in the lower voice, and is written
+    // again in the upper voice's chord at the start of the next bar.
+    const song = score(
+      `<measure number="1">${opening}${xnote('G', 4, 4, '<voice>1</voice><type>whole</type><staff>1</staff>')}` +
+        `<backup><duration>4</duration></backup>${xnote('B', 3, 2, '<voice>2</voice><type>half</type><staff>1</staff>')}` +
+        `${xnote('C', 4, 2, '<tie type="start"/><voice>2</voice><type>half</type><staff>1</staff>')}</measure>` +
+        `<measure number="2">${xnote('C', 4, 2, '<tie type="stop"/><voice>1</voice><type>half</type><staff>1</staff>')}` +
+        `${xnote('D', 4, 2, '<voice>1</voice><type>half</type><staff>1</staff>')}</measure>`,
+    )
+    // The C is one key press, four quarters long, not two of two.
+    expect(song.notes.map((note) => [note.note, note.startQ, note.durationQ])).toEqual([
+      [59, 0, 2],
+      [67, 0, 4],
+      [60, 2, 4],
+      [62, 6, 2],
+    ])
+  })
+
+  it('does not join a tie to a note of the same pitch that ended earlier', () => {
+    // The first C is not tied on; the stop in bar 2 has nothing to come from.
+    const song = score(
+      `<measure number="1">${opening}${xnote('C', 4, 2, '<tie type="start"/><voice>2</voice><type>half</type><staff>1</staff>')}` +
+        `${xnote('E', 4, 2, '<voice>2</voice><type>half</type><staff>1</staff>')}</measure>` +
+        `<measure number="2">${xnote('C', 4, 4, '<tie type="stop"/><voice>1</voice><type>whole</type><staff>1</staff>')}</measure>`,
+    )
+    expect(song.notes.map((note) => [note.note, note.startQ, note.durationQ])).toEqual([
+      [60, 0, 2],
+      [64, 2, 2],
+      [60, 4, 4],
+    ])
+  })
+
   it('keeps the rests, on the staff they are written on, and knows a whole bar of one', () => {
     const rest = (inside: string) => `<note>${inside}</note>`
     const song = score(

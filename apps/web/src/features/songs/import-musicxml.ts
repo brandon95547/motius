@@ -561,8 +561,19 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
 
         const tieKey = `${staff ?? 0}:${voice}:${midi}`
         if (/<tie[^>]*type="stop"/.test(content)) {
-          const held = tied.get(tieKey)
-          if (held) {
+          // The note this one is tied from. In its own voice, as a rule — but
+          // a suspension is often held in one voice and written again in
+          // another, and a tie joins a pitch to itself whatever line of the
+          // counterpoint each end is in. So failing its own voice, the held
+          // note of this pitch that ends where this one begins.
+          const heldKey = tied.has(tieKey)
+            ? tieKey
+            : [...tied].find(
+                ([, open]) =>
+                  open.note === midi && Math.abs(open.startQ + open.durationQ - startQ) < 1e-3,
+              )?.[0]
+          const held = heldKey === undefined ? undefined : tied.get(heldKey)
+          if (held && heldKey !== undefined) {
             // Replace the held note with a longer one rather than adding a second.
             const index = notes.lastIndexOf(held)
             if (index >= 0) {
@@ -577,8 +588,8 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
                 ],
               }
               notes[index] = extended
+              tied.delete(heldKey)
               if (/<tie[^>]*type="start"/.test(content)) tied.set(tieKey, extended)
-              else tied.delete(tieKey)
             }
             if (!isChord && !isGrace) {
               previousStart = start
