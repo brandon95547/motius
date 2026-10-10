@@ -630,6 +630,77 @@ describe('a piano written as more than one part', () => {
     ])
   })
 
+  it('takes two parts named for the hands as the hands, whatever else they are called', () => {
+    // No instrument named and no program: nothing but the names says so. And
+    // both in the treble clef, which would otherwise make them two instruments.
+    const upper = `<part id="P1">${bar('G', xnote('E', 5, 4))}</part>`
+    const lower = `<part id="P2">${bar('G', xnote('C', 4, 4))}</part>`
+    for (const [right, left] of [
+      ['Right Hand', 'Left Hand'],
+      ['Piano, RH', 'Piano, LH'],
+      ['Piano, rh:', 'Piano, lh:'],
+      ['Main droite', 'Main gauche'],
+    ])
+      expect(hands(upper + lower, scorePart('P1', right!) + scorePart('P2', left!)), right).toEqual(
+        [
+          [60, 'keyboard', 'left'],
+          [76, 'keyboard', 'right'],
+        ],
+      )
+  })
+
+  it('reads two such parts of two staves each as one piano on four', () => {
+    const pair = (id: string, clef: 'G' | 'F', octave: number) =>
+      `<part id="${id}"><measure number="1"><attributes><divisions>1</divisions><staves>2</staves><clef number="1"><sign>${clef}</sign></clef><clef number="2"><sign>${clef}</sign></clef></attributes>${
+        xnote('E', octave + 1, 4, '<voice>1</voice><staff>1</staff>') +
+        '<backup><duration>4</duration></backup>' +
+        xnote('C', octave, 4, '<voice>5</voice><staff>2</staff>')
+      }</measure></part>`
+    const song = importMusicXml(
+      xml(
+        pair('P1', 'G', 4) + pair('P2', 'F', 2),
+        scorePart('P1', 'Right Hand') + scorePart('P2', 'Left Hand'),
+      ),
+      'four',
+    )!
+    expect(song.staves).toBe(4)
+    // The right hand's part is the upper two staves and the left hand's the lower.
+    expect(song.notes.map((note) => [note.note, note.role, note.hand, note.staff])).toEqual([
+      [36, 'keyboard', 'left', 4],
+      [52, 'keyboard', 'left', 3],
+      [60, 'keyboard', 'right', 2],
+      [76, 'keyboard', 'right', 1],
+    ])
+    expect(song.clefs!.map((clef) => [clef.staff, clef.hand, clef.clef])).toEqual([
+      [1, 'right', 'treble'],
+      [2, 'right', 'treble'],
+      [3, 'left', 'bass'],
+      [4, 'left', 'bass'],
+    ])
+    // Each staff's line is a voice of its own, the two parts' numbers apart.
+    expect(new Set(song.notes.map((note) => note.voice)).size).toBe(4)
+  })
+
+  it('leaves two parts that are each a piano as two pianos: the second is someone else’s', () => {
+    const pair = (id: string, octave: number) =>
+      `<part id="${id}"><measure number="1"><attributes><divisions>1</divisions><staves>2</staves><clef number="1"><sign>G</sign></clef><clef number="2"><sign>F</sign></clef></attributes>${
+        xnote('E', octave + 1, 4, '<staff>1</staff>') +
+        '<backup><duration>4</duration></backup>' +
+        xnote('C', octave, 4, '<staff>2</staff>')
+      }</measure></part>`
+    const song = importMusicXml(
+      xml(pair('P1', 4) + pair('P2', 2), scorePart('P1', 'Piano') + scorePart('P2', 'Piano')),
+      'duet',
+    )!
+    expect(song.staves).toBeUndefined()
+    expect(song.notes.map((note) => [note.note, note.role, note.hand])).toEqual([
+      [36, 'accompaniment', 'left'],
+      [52, 'accompaniment', 'right'],
+      [60, 'keyboard', 'left'],
+      [76, 'keyboard', 'right'],
+    ])
+  })
+
   it('takes the part on two staves for the piano, over a one-staff part that comes first', () => {
     const ornaments = `<part id="P1">${bar('G', xnote('G', 5, 4))}</part>`
     const piano = `<part id="P2">${bar(

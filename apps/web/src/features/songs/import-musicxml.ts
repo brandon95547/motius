@@ -225,11 +225,24 @@ function readPartList(text: string): PartInfo[] {
 
 const KEYBOARD_NAME = /piano|keyboard|klavier|clavier|harpsichord|organ|celest|rhodes|synth/i
 
+/** A part named for the hand that plays it, in the languages scores are published in. */
+const RIGHT_HAND =
+  /\bright\s*hand\b|\br\.?h\b|\bmain\s+droite\b|\bmano\s+(?:derecha|destra)\b|\brechte\s+hand\b/i
+const LEFT_HAND =
+  /\bleft\s*hand\b|\bl\.?h\b|\bmain\s+gauche\b|\bmano\s+(?:izquierda|sinistra)\b|\blinke\s+hand\b/i
+
 /** The parts under the player's fingers. */
 interface Piano {
   readonly parts: ReadonlySet<string>
   /** The hand a part is, where the score gives each hand a part of its own. */
   readonly hands: ReadonlyMap<string, Hand>
+  /**
+   * Where each hand's part begins among the piano's staves, counted from
+   * none, and how many staves the piano has in all: a hand's part can be on
+   * two staves itself, and the two hands' together are then a piano on four.
+   */
+  readonly staffBase?: ReadonlyMap<string, number>
+  readonly staves?: number
 }
 
 /**
@@ -250,6 +263,12 @@ interface Piano {
  * accompaniment, the left hand was heard and never asked for. Only two
  * keyboards in those two clefs are joined this way; any other pair of
  * one-staff parts is still two instruments.
+ *
+ * Unless the score says so itself: two parts named for the right hand and the
+ * left are the two hands of one piano, however many staves each is on. That is
+ * the one thing a part list can say about hands, and it is taken at its word.
+ * Two parts that are each simply a piano are two pianos — a duet, in nearly
+ * every file there is — and the second is still someone else's.
  */
 function choosePiano(
   parts: readonly PartInfo[],
@@ -259,6 +278,27 @@ function choosePiano(
   if (parts.length === 0) return null
   const only = (id: string): Piano => ({ parts: new Set([id]), hands: new Map() })
   const grand = (part: PartInfo) => (staves.get(part.id) ?? 1) >= 2
+  /** Two parts as the two hands of one piano, the right hand's staves above the left's. */
+  const hands = (right: PartInfo, left: PartInfo): Piano => {
+    const above = staves.get(right.id) ?? 1
+    return {
+      parts: new Set([right.id, left.id]),
+      hands: new Map<string, Hand>([
+        [right.id, 'right'],
+        [left.id, 'left'],
+      ]),
+      staffBase: new Map([
+        [right.id, 0],
+        [left.id, above],
+      ]),
+      staves: above + (staves.get(left.id) ?? 1),
+    }
+  }
+
+  const rights = parts.filter((part) => RIGHT_HAND.test(part.name))
+  const lefts = parts.filter((part) => LEFT_HAND.test(part.name))
+  if (rights.length === 1 && lefts.length === 1 && rights[0] !== lefts[0])
+    return hands(rights[0]!, lefts[0]!)
 
   const named = parts.filter((part) => KEYBOARD_NAME.test(part.name))
   const keyboards =
@@ -277,15 +317,8 @@ function choosePiano(
     lower &&
     clefs.get(upper.id) === 'G' &&
     clefs.get(lower.id) === 'F'
-  ) {
-    return {
-      parts: new Set([upper.id, lower.id]),
-      hands: new Map<string, Hand>([
-        [upper.id, 'right'],
-        [lower.id, 'left'],
-      ]),
-    }
-  }
+  )
+    return hands(upper, lower)
   return only(keyboards[0]!.id)
 }
 
@@ -416,8 +449,12 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
      * upper half the right hand's, the lower the left's. With an odd number
      * the middle staff could be either, and goes by the clef it opens in.
      */
-    const staffCount = role === 'keyboard' && !partHand ? (stavesOf.get(part.id) ?? 1) : 1
-    const manyStaves = staffCount > 2 ? staffCount : 0
+    const staffCount = role === 'keyboard' ? (stavesOf.get(part.id) ?? 1) : 1
+    /** Where this part's staves begin among the piano's, where the piano is a part to a hand. */
+    const base = piano?.staffBase?.get(part.id) ?? 0
+    /** How many staves the piano is on, where that is more than two: this part's, or both hands' parts together. */
+    const whole = partHand ? (piano?.staves ?? 1) : staffCount
+    const manyStaves = whole > 2 ? whole : 0
     if (manyStaves) pianoStaves = manyStaves
     const rightStaves =
       manyStaves % 2 === 0
@@ -447,7 +484,10 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
      * set apart, so that two lines are never taken for one that crosses.
      */
     const voiceOn = (voice: string, staff: number | undefined): number =>
-      (Number(voice) || 1) + (staffCount >= 2 && !homes && staff ? (staff - 1) * 100 : 0)
+      (Number(voice) || 1) +
+      // A hand's part has voices of its own, whatever the other hand's are called.
+      base * 4 +
+      (staffCount >= 2 && !homes && staff ? (staff - 1) * 100 : 0)
     /** Where this part's notes begin, and those written on the other hand's staff. */
     const firstNote = notes.length
     const visiting: number[] = []
@@ -502,9 +542,9 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
               if (manyStaves) {
                 // Each staff says its own clef, the one it opens in included:
                 // nothing about a third staff's clef can be assumed.
-                const last = clefsQ.findLast((entry) => entry.staff === staffNumber)
-                if (last?.clef !== kind)
-                  clefsQ.push({ hand, staff: staffNumber, startQ, clef: kind })
+                const on = base + staffNumber
+                const last = clefsQ.findLast((entry) => entry.staff === on)
+                if (last?.clef !== kind) clefsQ.push({ hand, staff: on, startQ, clef: kind })
                 continue
               }
               const last = clefsQ.findLast((entry) => entry.hand === hand)
@@ -644,7 +684,7 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
               startMs: 0,
               durationQ: duration / divisions,
               hand: handOn(onStaff) ?? 'right',
-              ...(manyStaves ? { staff: onStaff ?? 1 } : {}),
+              ...(manyStaves ? { staff: base + (onStaff ?? 1) } : {}),
               voice: voiceOn(voice, onStaff),
               ...(restType
                 ? {
@@ -775,7 +815,11 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
           durationQ,
           hand,
           // The staff it is written on, where that is not simply its hand's.
-          ...(manyStaves ? { staff: staff ?? 1 } : away && staff !== undefined ? { staff } : {}),
+          ...(manyStaves
+            ? { staff: base + (staff ?? 1) }
+            : away && staff !== undefined
+              ? { staff }
+              : {}),
           role: unpitched ? 'percussion' : role,
           spelling,
           voice: voiceOn(voice, staff),

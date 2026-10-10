@@ -444,8 +444,16 @@ under one another with the room between any two neighbors that their notes
 ask for (`layoutOf`). A staff with nothing on it for eight bars or more is left
 off the page for as long as it is empty (`regionsOf`), never leaving fewer than
 two: the page view starts a new line where the staves change, and the moving
-staff shows one such stretch at a time. Two piano parts of two staves each are
-still read as a piano and its accompaniment.
+staff shows one such stretch at a time.
+
+Two parts named for the hands ("Right Hand" and "Left Hand", "Piano, RH" and
+"Piano, LH", and the like in French, Spanish, Italian and German) are the two
+hands of one piano, however many staves each is on: two of two staves are a
+piano on four. That is the one thing a part list can say about hands. Two
+parts that are each simply a piano stay two pianos, the first played and the
+second heard — of the 218 such files in the PDMX piano collection nearly all
+are duets or pieces for two pianos, and nothing in a file tells those from one
+pianist's music written on four staves.
 
 A song keeps what is written apart from how it is played. Its notes and bars
 are the score, once, in score time; `sections` is the order the bars are played
