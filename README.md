@@ -69,7 +69,7 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
 
 ### Songs
 
-- **Eighty-one pieces come with it**, from Bach to Fats Waller, in a chooser that
+- **Eighty-three pieces come with it**, from Bach to Fats Waller, in a chooser that
   Songs opens on: shelved by genre — Classical, Gospel, Jazz, Blues, Pop, Rock,
   Country, Soul & R&B, Folk & Traditional, New Age — and under every genre by
   the same eight moods: Dramatic & Powerful, Dreamy & Atmospheric, Joyful &
@@ -435,6 +435,9 @@ from old editions, bar by bar: Liszt's "Nuages gris" from its first edition
 Breitkopf & Härtel collected edition (1880), and Rachmaninoff's Prelude in
 C-sharp Minor, a PDMX engraving corrected against Godowsky's edition (Art
 Publication Society, 1923) and put on two staves where that goes onto four.
+The first and third movements of Beethoven's Pathétique are likewise a PDMX
+engraving corrected against the Peters edition, its left-hand tremolo
+shorthand written out as the eighth notes it stands for.
 
 Fifteen are recent pieces their own composers published under CC0, giving up their
 rights in them; `catalog.ts` has the page each was released on. One more is not in
