@@ -6,6 +6,7 @@ import {
   scoreMsAt,
   scoreWindows,
   sectionsFor,
+  skipBars,
   type MeasureRepeat,
 } from './performance.js'
 import type { SongStep } from './song.js'
@@ -112,5 +113,61 @@ describe('a performance, timed', () => {
     const steps = [0, 1000, 2000, 3000].map((startMs) => ({ startMs, notes: [] }) as SongStep)
     expect(playedSteps(song, steps)).toEqual([0, 1, 2, 0, 1, 3])
     expect(playedSteps({}, steps)).toEqual([0, 1, 2, 3])
+  })
+})
+
+/**
+ * Stepping a bar at a time.
+ *
+ * The buttons either side of Play go a bar back and a bar on. They went by the
+ * length of the piece's first bar, which is right until the piece changes
+ * speed: a slow introduction of eight-second bars, and each press in the
+ * Allegro after it went ten bars.
+ */
+describe('a step of a bar', () => {
+  // Two slow bars of eight seconds, then four quick ones of one.
+  const measures = [
+    { startMs: 0, durationMs: 8000 },
+    { startMs: 8000, durationMs: 8000 },
+    ...Array.from({ length: 4 }, (_, index) => ({
+      startMs: 16000 + index * 1000,
+      durationMs: 1000,
+    })),
+  ]
+  const song = { durationMs: 20000, measureMs: 8000, measures }
+
+  it('is as long as the bar it crosses', () => {
+    expect(skipBars(song, 16000, 1)).toBe(17000)
+    expect(skipBars(song, 17000, 2)).toBe(19000)
+    expect(skipBars(song, 18000, -1)).toBe(17000)
+    expect(skipBars(song, 0, 1)).toBe(8000)
+  })
+
+  it('keeps its place in the bar across a change of speed', () => {
+    // Halfway through the last slow bar, to halfway through the first quick one, and back.
+    expect(skipBars(song, 12000, 1)).toBe(16500)
+    expect(skipBars(song, 16500, -1)).toBe(12000)
+  })
+
+  it('stops at either end', () => {
+    expect(skipBars(song, 19500, 1)).toBe(20000)
+    expect(skipBars(song, 2000, -1)).toBe(0)
+  })
+
+  it('goes where the music goes across a repeat', () => {
+    const repeated = {
+      durationMs: 4000,
+      measureMs: 1000,
+      measures: timed(4),
+      sections: sectionsFor(timed(4), [0, 1, 2, 0, 1, 3]),
+    }
+    // From the third bar the first time round, on into the first bar again.
+    expect(skipBars(repeated, 2250, 1)).toBe(3250)
+    expect(scoreMsAt(repeated, skipBars(repeated, 2250, 1))).toBe(250)
+    expect(skipBars(repeated, 3250, -1)).toBe(2250)
+  })
+
+  it('goes by the first bar’s length where a song has no bars of its own', () => {
+    expect(skipBars({ durationMs: 10000, measureMs: 2000 }, 3000, 1)).toBe(5000)
   })
 })

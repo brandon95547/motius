@@ -1,5 +1,5 @@
 import type { Song, SongStep } from './song.js'
-import type { SongMeasure } from './meter.js'
+import { barIndexAt, type SongMeasure } from './meter.js'
 
 /**
  * A score, and the order it is played in.
@@ -145,6 +145,49 @@ export function scoreMsAt(song: Pick<Song, 'sections'>, playMs: number): number 
   if (!song.sections?.length) return playMs
   const section = sectionAt(song.sections, playMs)
   return Math.min(section.toMs, section.fromMs + Math.max(0, playMs - section.startMs))
+}
+
+/**
+ * Where a step of whole bars from a moment of the performance lands.
+ *
+ * A bar is as long as the bar it is. A piece that changes its speed or its
+ * metre has bars of many lengths, and stepping by the length of the first one
+ * went ten bars at a time through an Allegro that follows a Grave. So each
+ * step is the length of the bar it crosses, and the place within the bar is
+ * kept as a share of it: from halfway through one bar to halfway through the
+ * next, however long either is. In performance time, so a step across a
+ * repeat sign goes where the music goes.
+ */
+export function skipBars(
+  song: Pick<Song, 'durationMs' | 'sections' | 'measureMs'> & {
+    readonly measures?: readonly Pick<SongMeasure, 'startMs' | 'durationMs'>[]
+  },
+  playMs: number,
+  bars: number,
+): number {
+  const total = playDuration(song)
+  const within = (ms: number) => Math.max(0, Math.min(total, ms))
+  const measures = song.measures as readonly SongMeasure[] | undefined
+  if (!measures?.length) return within(playMs + bars * song.measureMs)
+
+  const barAt = (ms: number) => measures[barIndexAt(measures, scoreMsAt(song, ms))]!
+  let at = within(playMs)
+  for (let step = 0; step < Math.abs(bars); step++) {
+    const bar = barAt(at)
+    const into = Math.max(0, Math.min(bar.durationMs, scoreMsAt(song, at) - bar.startMs))
+    const share = bar.durationMs > 0 ? into / bar.durationMs : 0
+    if (bars > 0) {
+      const next = at + (bar.durationMs - into)
+      if (next >= total) return total
+      // Half a millisecond in, to be asking about the bar that begins there.
+      at = next + share * barAt(next + 0.5).durationMs
+    } else {
+      const start = at - into
+      if (start <= 0) return 0
+      at = start - (1 - share) * barAt(start - 0.5).durationMs
+    }
+  }
+  return within(at)
 }
 
 /**

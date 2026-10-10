@@ -1,5 +1,5 @@
 import { ListMusic, Pause, Play, SkipBack, SkipForward } from 'lucide-react'
-import { playDuration } from '@sonara/shared'
+import { skipBars } from '@sonara/shared'
 import { cn } from '@/lib/cn'
 import { Button } from '@/ui/Button'
 import { Field, SegmentedControl } from '@/ui/Controls'
@@ -218,8 +218,7 @@ export function SongTransport() {
   }
 
   const learn = mode === 'learn'
-  const skip = (measures: number) =>
-    seek(Math.max(0, Math.min(playDuration(song), positionMs + measures * song.measureMs)))
+  const skip = (bars: number) => seek(skipBars(song, positionMs, bars))
 
   return (
     <div className="bar-swap">
