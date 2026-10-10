@@ -12,8 +12,9 @@ import { useSongStore } from '@/state/song-store'
  * The song chooser: the dialog Songs opens on.
  *
  * It is the only way to a song, so what is pinned is the way through it: the
- * genres are shelves, the moods narrow a shelf, a search looks past both, and
- * pressing a built-in song fetches its score, opens it and gets out of the way.
+ * genres are shelves, one mood at a time narrows a shelf, a search looks past
+ * both, and pressing a built-in song fetches its score, opens it and gets out
+ * of the way.
  */
 
 // jsdom has no layout and so no media queries; the dialog asks one to know
@@ -148,28 +149,39 @@ describe('the song chooser', () => {
     expect(rows().filter((row) => row.textContent?.startsWith('Ballade No. 1'))).toHaveLength(2)
   })
 
-  it('narrows a genre to the moods switched on, and widens it again', () => {
+  it('narrows a genre to one mood at a time, and All widens it again', () => {
     show()
     fireEvent.click(shelf('Classical'))
     const classical = inGenre('classical')
     const dreamy = withMood('dreamy', classical)
     expect(dreamy.length).toBeGreaterThan(1)
-    // Each mood says how many of this genre it would show.
+    // Every mood to begin with, and each says how many of this genre it would show.
+    expect(mood('All').getAttribute('aria-pressed')).toBe('true')
+    expect(mood('All').textContent).toBe(`All${classical.length}`)
     expect(mood('Dreamy').textContent).toBe(`${label('dreamy')}${dreamy.length}`)
 
     fireEvent.click(mood('Dreamy'))
     expect(mood('Dreamy').getAttribute('aria-pressed')).toBe('true')
+    expect(mood('All').getAttribute('aria-pressed')).toBe('false')
     expect(headings()).toEqual([label('dreamy')])
     // The catalog's own Dreamy songs, in its order, and no other mood's.
     expect(rows().map((row) => row.textContent)).toEqual(dreamy.map(written))
 
-    // A second mood adds its songs rather than asking for both at once.
+    // Another mood takes its place rather than joining it.
     fireEvent.click(mood('Romantic'))
-    expect(headings()).toEqual([label('dreamy'), label('romantic')])
-    expect(rows()).toHaveLength(dreamy.length + withMood('romantic', classical).length)
-
-    fireEvent.click(starting('[aria-label="Moods"] button', 'Clear'))
+    expect(mood('Romantic').getAttribute('aria-pressed')).toBe('true')
     expect(mood('Dreamy').getAttribute('aria-pressed')).toBe('false')
+    expect(headings()).toEqual([label('romantic')])
+    expect(rows().map((row) => row.textContent)).toEqual(
+      withMood('romantic', classical).map(written),
+    )
+    // Pressed again it stays: All is the way back.
+    fireEvent.click(mood('Romantic'))
+    expect(mood('Romantic').getAttribute('aria-pressed')).toBe('true')
+
+    fireEvent.click(mood('All'))
+    expect(mood('All').getAttribute('aria-pressed')).toBe('true')
+    expect(mood('Romantic').getAttribute('aria-pressed')).toBe('false')
     expect(headings().length).toBeGreaterThan(2)
   })
 
@@ -194,6 +206,7 @@ describe('the song chooser', () => {
 
     fireEvent.click(shelf('Jazz'))
     expect(withMood('ominous', inGenre('jazz'))).toEqual([])
+    expect(mood('All').getAttribute('aria-pressed')).toBe('true')
     expect(mood('Ominous').getAttribute('aria-pressed')).toBe('false')
     expect(mood('Ominous').disabled).toBe(true)
     expect(mood('Playful').disabled).toBe(false)
@@ -236,7 +249,6 @@ describe('the song chooser', () => {
 
     fireEvent.click(starting('footer button', 'Done'))
     expect(listed()).toBe(false)
-    fireEvent.click(mood('Dreamy'))
     fireEvent.click(mood('Romantic'))
     expect(listed()).toBe(true)
   })

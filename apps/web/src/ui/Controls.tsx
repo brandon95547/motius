@@ -160,10 +160,10 @@ export function SegmentedControl<T extends string>({
  * A filter chip: a pill that is on or off — UI Bible spec.
  *
  * 28px, between a badge and a button: something to press, but not what the
- * view is for. `aria-pressed` rather than `aria-selected`, because a row of
- * them is a set of independent switches, not the options of a list where one
- * is chosen. On, it changes fill, border and text together, so the state
- * survives a row of a dozen and a screen without color.
+ * view is for. `aria-pressed` rather than `aria-selected`: each is a button
+ * that is on or off, whether the row lets several be on or only one, and not
+ * an option in a listbox. On, it changes fill, border and text together, so
+ * the state survives a row of a dozen and a screen without color.
  *
  * Off, it is an outline with nothing in it, where the Bible fills it with the
  * page's surface. A chip here lands in a dialog, and the page's surface inside

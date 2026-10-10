@@ -67,10 +67,10 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
   the same eight moods: Dramatic & Powerful, Dreamy & Atmospheric, Joyful &
   Uplifting, Mysterious & Dark, Ominous & Apocalyptic, Playful & Energetic,
   Romantic, Storytelling. A piece is in one genre and can have several moods;
-  the moods are switches over the list, any number on at once, and the list is
-  searchable by title or composer. Either can be changed for any piece from the
-  chooser ("Edit categories"), and the change is kept by the server for
-  everyone. Your own songs are in the same chooser.
+  the moods are a row over the list — all of them, or one at a time — and the
+  list is searchable by title or composer. Either can be changed for any piece
+  from the chooser ("Edit categories"), and the change is kept by the server
+  for everyone. Your own songs are in the same chooser.
 - **Import MusicXML (`.musicxml`, `.xml`), Compressed MusicXML (`.mxl`),
   MuseScore (`.mscz`) and MIDI (`.mid`, `.midi`)** — normalized into one score
   model on the way in, so playback, the keyboard, the staff and Learn never know

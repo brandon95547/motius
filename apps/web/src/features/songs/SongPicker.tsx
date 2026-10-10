@@ -31,10 +31,11 @@ import { readSong, type ImportFailure, type ImportResult } from './read-song'
  * fact about where the files are kept.
  *
  * The genres are the shelves, down the side, and a song is on one. The moods
- * divide every genre the same way, so they are one row of switches over the
- * list rather than a list of their own under each genre: with a genre chosen
- * the list is laid out mood by mood, and the switches say which moods to show.
- * A song is under each mood it has, so one that is two of them is listed twice.
+ * divide every genre the same way, so they are one row over the list rather
+ * than a list of their own under each genre: all of them, or one at a time.
+ * With a genre chosen and all its moods showing, the list is laid out mood by
+ * mood, and a song is under each mood it has, so one that is two of them is
+ * listed twice.
  *
  * Which genre a piece is in and which moods it has are opinions. The catalog
  * has them for every piece; "Edit categories" turns each row into those two
@@ -70,13 +71,14 @@ type Moves = { items: SongCategoryChoice[] }
 
 // Outside the component, so the menu's Import can turn to the player's own
 // songs before the chooser is on screen.
-const useShelfStore = create<{ shelf: Shelf; moods: readonly SongMood[] }>(() => ({
+const useShelfStore = create<{ shelf: Shelf; mood: SongMood | null }>(() => ({
   shelf: 'all',
-  moods: [],
+  // The one mood the shelf is narrowed to, or none: all of them.
+  mood: null,
 }))
 
 /** Turns the chooser to the player's own songs, where importing happens. */
-export const showMySongs = () => useShelfStore.setState({ shelf: 'mine', moods: [] })
+export const showMySongs = () => useShelfStore.setState({ shelf: 'mine', mood: null })
 
 /** Named for what the file is, not for what it is closest to. */
 const SOURCE_LABELS: Record<string, string> = {
@@ -107,7 +109,7 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
   const currentId = useSongStore((state) => state.currentId)
   const { add, open: openSong, openBuiltIn, remove } = useSongStore.getState()
   const shelf = useShelfStore((state) => state.shelf)
-  const chosenMoods = useShelfStore((state) => state.moods)
+  const chosenMood = useShelfStore((state) => state.mood)
   const [query, setQuery] = React.useState('')
   /** The built-in song being fetched, by its catalog id. */
   const [loading, setLoading] = React.useState<string | null>(null)
@@ -235,9 +237,9 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
   // A search looks everywhere: someone typing a name is not thinking about
   // which genre it is in, or which mood it has.
   const genre = searching || shelf === 'all' || shelf === 'mine' ? null : shelf
-  const moods = searching ? [] : chosenMoods
+  const mood = searching ? null : chosenMood
   const browsing = !searching && shelf !== 'mine'
-  /** The songs of the shelf, before the moods narrow them: what the moods count. */
+  /** The songs of the shelf, before a mood narrows them: what the moods count. */
   const shelved = placed.filter((song) => genre === null || song.genre === genre)
   const found = shelved.filter(
     ({ entry }) =>
@@ -247,17 +249,15 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
   // The song whose moods are being chosen stays while they are: switched off
   // the mood it was found under, it would otherwise go from under the pointer.
   const wanted = (song: Placed) =>
-    moods.length === 0 ||
-    song.moods.some((mood) => moods.includes(mood)) ||
-    (editing && song.entry.id === choosing)
+    mood === null || song.moods.includes(mood) || (editing && song.entry.id === choosing)
   // One genre is laid out mood by mood. Everything is laid out genre by genre,
   // and so is a genre being edited: each song once, with its own two choices.
   const sections: readonly Section[] = (
     genre !== null && !editing
-      ? SONG_MOODS.filter((mood) => moods.length === 0 || moods.includes(mood.id)).map((mood) => ({
-          id: mood.id,
-          title: mood.label,
-          songs: found.filter((song) => song.moods.includes(mood.id)),
+      ? SONG_MOODS.filter((each) => mood === null || each.id === mood).map((each) => ({
+          id: each.id,
+          title: each.label,
+          songs: found.filter((song) => song.moods.includes(each.id)),
         }))
       : SONG_GENRES.map((entry) => ({
           id: entry.id,
@@ -267,7 +267,7 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
   ).filter((section) => section.songs.length > 0)
   const mine = searching
     ? library.filter((song) => fold(song.title).includes(sought))
-    : shelf === 'mine' || (shelf === 'all' && moods.length === 0)
+    : shelf === 'mine' || (shelf === 'all' && mood === null)
       ? library
       : []
   const showMine = searching ? mine.length > 0 : shelf === 'mine' || mine.length > 0
@@ -286,15 +286,6 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
     })),
     { id: 'mine', label: 'My songs', count: library.length },
   ]
-
-  // From what is chosen now rather than what was drawn: two moods pressed
-  // before the list has caught up are both switched.
-  const toggleMood = (mood: SongMood) =>
-    useShelfStore.setState((state) => ({
-      moods: state.moods.includes(mood)
-        ? state.moods.filter((on) => on !== mood)
-        : [...state.moods, mood],
-    }))
 
   return (
     <Dialog
@@ -374,9 +365,9 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
                   onClick={() => {
                     setQuery('')
                     setChoosing(null)
-                    // The whole shelf: the moods chosen were a way of looking
-                    // at the one before.
-                    useShelfStore.setState({ shelf: entry.id, moods: [] })
+                    // The whole shelf: the mood chosen was a way of looking at
+                    // the one before.
+                    useShelfStore.setState({ shelf: entry.id, mood: null })
                   }}
                   className={cn(
                     'flex h-8 shrink-0 items-center justify-between gap-3 rounded-[var(--radius-md)] px-3 text-label whitespace-nowrap coarse:h-11',
@@ -407,45 +398,39 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
         </div>
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          {/* The moods, the same under every genre: any number of them on at
-              once, and none of them on is all of them. Not there for a search,
-              which looks past them, or for the player's own songs, which have
-              none. */}
+          {/* The moods, the same under every genre: all of them, or one at a
+              time. Not there for a search, which looks past them, or for the
+              player's own songs, which have none. */}
           {browsing && (
             <div
               role="group"
               aria-label="Moods"
               className="scrollbar-none flex shrink-0 items-center gap-2 overflow-x-auto border-b border-[var(--ds-border-subtle)] px-6 py-3 md:flex-wrap md:overflow-x-visible md:pt-5 md:pb-4 coarse:md:gap-y-4"
             >
-              {SONG_MOODS.map((mood) => {
-                const on = moods.includes(mood.id)
-                const count = shelved.filter((song) => song.moods.includes(mood.id)).length
+              <FilterChip
+                selected={mood === null}
+                count={shelved.length}
+                onClick={() => useShelfStore.setState({ mood: null })}
+              >
+                All
+              </FilterChip>
+              {SONG_MOODS.map((each) => {
+                const on = mood === each.id
+                const count = shelved.filter((song) => song.moods.includes(each.id)).length
                 return (
                   <FilterChip
-                    key={mood.id}
+                    key={each.id}
                     selected={on}
                     count={count}
-                    // Nothing to show is nothing to switch on. One that is on
-                    // can always be switched off.
+                    // Nothing to show is nothing to choose. The one that is
+                    // chosen stays, though its last song has just left it.
                     disabled={count === 0 && !on}
-                    onClick={() => toggleMood(mood.id)}
+                    onClick={() => useShelfStore.setState({ mood: each.id })}
                   >
-                    {mood.label}
+                    {each.label}
                   </FilterChip>
                 )
               })}
-              {moods.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => useShelfStore.setState({ moods: [] })}
-                  className={cn(
-                    'touch-target shrink-0 rounded-[var(--radius-sm)] px-1 text-caption text-[var(--ds-accent-text)] underline-offset-4 hover:underline',
-                    focusRing,
-                  )}
-                >
-                  Clear
-                </button>
-              )}
             </div>
           )}
 
@@ -484,7 +469,7 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
               <p className="text-body-sm text-[var(--ds-fg-muted)]">
                 {shelved.length === 0
                   ? `Nothing in ${SONG_GENRES.find((entry) => entry.id === genre)?.label} yet. To put a song here, choose Edit categories and give it this genre.`
-                  : `No song here has ${moods.length === 1 ? 'that mood' : 'any of those moods'}.`}
+                  : 'No song here has that mood.'}
               </p>
             )}
 
