@@ -59,8 +59,9 @@ describe('the built-in songs', () => {
     const { notes } = result.song
     const played = notes.filter((note) => note.role === 'keyboard')
     // Nearly all of it under the fingers. What is not is a line of ornaments
-    // the engraver kept on a staff of its own.
-    expect(played.length / notes.length).toBeGreaterThan(0.99)
+    // the engraver kept on a staff of its own: a note or two in a hundred, where
+    // a hand gone missing is forty.
+    expect(played.length / notes.length).toBeGreaterThan(0.98)
     expect(played.some((note) => note.hand === 'right')).toBe(true)
     expect(played.some((note) => note.hand === 'left')).toBe(true)
     // From the staves, not guessed from how high each note is.

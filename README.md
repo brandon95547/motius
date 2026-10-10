@@ -61,7 +61,7 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
 
 ### Songs
 
-- **Sixty-three pieces come with it**, from Bach to Fats Waller, in a chooser that
+- **Sixty-nine pieces come with it**, from Bach to Fats Waller, in a chooser that
   Songs opens on: shelved by genre — Classical, Gospel, Jazz, Blues, Pop, Rock,
   Country, Soul & R&B, Folk & Traditional, New Age — and under every genre by
   the same eight moods: Dramatic & Powerful, Dreamy & Atmospheric, Joyful &
@@ -422,7 +422,9 @@ on import fails there rather than in front of a player. The scores are from the
 [MuseTrainer library](https://github.com/musetrainer/library) and the
 [PDMX](https://zenodo.org/records/15571083) collection.
 
-One of them is not in the public domain and is here under its license: "Amazing
+Six are recent pieces their own composers published under CC0, giving up their
+rights in them; `catalog.ts` has the page each was released on. One more is not in
+the public domain and is here under its license: "Amazing
 Plan" by Kevin MacLeod ([incompetech.com](https://incompetech.com)), licensed
 under [Creative Commons: By Attribution 4.0](https://creativecommons.org/licenses/by/4.0/),
 transcribed here as a piano score.

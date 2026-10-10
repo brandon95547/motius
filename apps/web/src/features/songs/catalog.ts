@@ -501,6 +501,59 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
     // Not public domain: free to use under Creative Commons Attribution, which
     // asks for the credit the README gives it. That credit goes where this goes.
   },
+  // The six below are recent pieces their own composers published on MuseScore under CC0:
+  // given away, not out of copyright by age. Each has the page it was released on.
+  {
+    // https://musescore.com/user/252611/scores/5985641
+    id: 'hortal-xia',
+    title: 'Xia',
+    composer: 'Jordi Hortal',
+    genre: 'classical',
+    moods: ['dreamy'],
+  },
+  {
+    // https://musescore.com/user/32246825/scores/5832126
+    id: 'composing-hub-waltz-in-c-sharp-minor',
+    title: 'Waltz in C-sharp Minor',
+    composer: "John's Composing Hub",
+    genre: 'classical',
+    moods: ['mysterious'],
+  },
+  {
+    // https://musescore.com/user/1225286/scores/6333771
+    id: 'harle-sad-dream',
+    title: 'Sad Dream',
+    composer: 'A. R. Härle',
+    genre: 'classical',
+    moods: ['storytelling'],
+  },
+  {
+    // https://musescore.com/user/31612550/scores/5881112
+    // The Russian folk song, long out of copyright, in the arranger's own setting. Named for
+    // the song and not for the game that made it famous, whose name is a trademark.
+    id: 'korobeiniki',
+    title: 'Korobeiniki',
+    composer: 'Traditional',
+    genre: 'classical',
+    moods: ['mysterious'],
+    edition: 'Arr. Tobin Waling',
+  },
+  {
+    // https://musescore.com/user/2758676/scores/5911219
+    id: 'kingavery-ranmal-nordom-fantasia-2',
+    title: 'Ranmal Nordom Fantasia, 2nd Movement',
+    composer: 'KingAvery',
+    genre: 'new-age',
+    moods: ['dreamy'],
+  },
+  {
+    // https://musescore.com/user/9181221/scores/5968819
+    id: 'pineda-afterwords-of-you',
+    title: 'Afterwords of You',
+    composer: 'Joshua Pineda',
+    genre: 'soul',
+    moods: ['storytelling'],
+  },
 ]
 
 /** The id a built-in song has once it is open, which no imported song can have. */
