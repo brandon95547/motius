@@ -47,6 +47,8 @@ export interface BeamBar {
 
 export interface BeamShape {
   readonly key: string
+  /** The staff it is drawn on. */
+  readonly staff: 'treble' | 'bass'
   /** The steps it joins, for deciding whether it is behind the player yet. */
   readonly indices: readonly number[]
   readonly bars: readonly BeamBar[]
@@ -190,6 +192,7 @@ export function beamsIn(placed: readonly Placed[]): {
 
       beams.push({
         key: `${line}-${id}-${first.index}`,
+        staff,
         indices: members.map((member) => member.index),
         bars,
         ...(whole

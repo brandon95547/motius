@@ -90,6 +90,12 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
 - **Repeats are played as written.** A repeat sign sends the song back, a first
   ending is taken the first time and stepped over the second, and the page
   shows the signs and the brackets rather than the passage written out twice.
+- **A line of music gets the room it needs between its staves.** Each hand is
+  on its own staff, so a right hand written far below middle C hangs under the
+  treble staff while a left hand written far above it stands over the bass;
+  where both happen in one bar the system is opened until the two are clear of
+  each other, as a printed page does. One distance for a line — the staff does
+  not move under the player — and none added to music that keeps to its staves.
 - **Fingering is worked out for files that have none** — see below.
 - **Drums are played as drums.** A MIDI file's percussion channel is routed to a
   synthesized kit rather than onto the piano, and accompaniment parts sound

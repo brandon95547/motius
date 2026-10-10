@@ -1,6 +1,15 @@
 import * as React from 'react'
 import { useElementSize } from '@/lib/hooks'
-import { GUTTER, STAFF_BANDS, STAFF_START, StaffGutter, StaffLines, STEP } from './staff-frame'
+import {
+  GUTTER,
+  shiftOf,
+  SpreadContext,
+  STAFF_BANDS,
+  STAFF_START,
+  StaffGutter,
+  StaffLines,
+  STEP,
+} from './staff-frame'
 import {
   BarLines,
   BarRests,
@@ -25,6 +34,7 @@ import {
   barRestsIn,
   endOf,
   frameOf,
+  spreadOf,
   headerEnd,
   place,
   voltasIn,
@@ -113,7 +123,11 @@ export function FlowView({
     () => place(measured, headerEnd(fifths, withTime)),
     [measured, fifths, withTime],
   )
-  const frame = React.useMemo(() => frameOf(measured, marks), [measured, marks])
+  // One distance between the staves for the whole of the line: it scrolls
+  // under the player, and a staff that moved as it went would be the worst
+  // thing on the page.
+  const spread = React.useMemo(() => spreadOf(measured), [measured])
+  const frame = React.useMemo(() => frameOf(measured, marks, spread), [measured, marks, spread])
   const height = frame.bottom - frame.top
   // Where the beams run, and the stems they have decided. Once per layout:
   // the stems are handed to memoised chords and must stay the same objects.
@@ -240,77 +254,79 @@ export function FlowView({
 
   // Where the paper goes, in pixels: the same bands PaperCards draws in units.
   const band = (staff: 'treble' | 'bass') => ({
-    top: (STAFF_BANDS[staff].top - frame.top) * scale,
+    top: (STAFF_BANDS[staff].top + shiftOf(staff, spread) - frame.top) * scale,
     height: (STAFF_BANDS[staff].bottom - STAFF_BANDS[staff].top) * scale,
     left: insetPx,
     right: insetPx,
   })
 
   return (
-    <div ref={frameRef} className="staff-fit staff-score">
-      <div className="staff-card" style={band('treble')} aria-hidden />
-      <div className="staff-card" style={band('bass')} aria-hidden />
+    <SpreadContext.Provider value={spread}>
+      <div ref={frameRef} className="staff-fit staff-score">
+        <div className="staff-card" style={band('treble')} aria-hidden />
+        <div className="staff-card" style={band('bass')} aria-hidden />
 
-      <svg
-        className="staff-gutter"
-        viewBox={`0 ${frame.top} ${GUTTER} ${height}`}
-        width={gutterPx || undefined}
-        height="100%"
-        preserveAspectRatio="xMinYMid meet"
-        aria-hidden
-      >
-        <StaffGutter />
-      </svg>
-
-      <div
-        ref={scrollRef}
-        className="staff-scroll"
-        style={{ left: gutterPx, right: insetPx }}
-        onScroll={(event) => setPage(Math.floor(event.currentTarget.scrollLeft / stride))}
-      >
         <svg
-          viewBox={`${GUTTER} ${frame.top} ${musicWidth} ${height}`}
-          width={pixelWidth || undefined}
+          className="staff-gutter"
+          viewBox={`0 ${frame.top} ${GUTTER} ${height}`}
+          width={gutterPx || undefined}
           height="100%"
           preserveAspectRatio="xMinYMid meet"
-          className="staff"
-          role="img"
-          aria-label={label}
+          aria-hidden
         >
-          <StaffLines from={GUTTER} to={totalWidth} />
-          <Signatures fifths={fifths} beats={beats} beatType={beatType} withTime={withTime} />
-          <BarLines lines={shownBars} numbered={numbered} />
-          {placed.length > 0 && (
-            <SystemEnd
-              x={endOf(placed)}
-              final
-              repeat={marks?.get(placed.at(-1)!.bar)?.repeat?.times !== undefined}
-            />
-          )}
-          {placed[0] && marks?.get(placed[0].bar)?.repeat?.start && (
-            <RepeatSign x={opening} opens />
-          )}
-          <Voltas voltas={shownVoltas} />
-          <BarRests rests={shownBarRests} />
-          {PLAYHEAD_SHOWN && placed[here] && <Playhead x={placed[here]!.x} />}
-          <Beams beams={shownBeams} roleFor={roleFor} />
-          {runs.map((run) => (
-            <Run
-              key={run[0]!.index}
-              entries={run}
-              // A scale watches every chord, so every run of one is live.
-              phase={watchAll ? 'live' : phaseOf(roleFor, run[0]!.index, run.at(-1)!.index + 1)}
-              roleFor={roleFor}
-              watchAll={watchAll}
-              fifths={fifths}
-              watched={watched}
-              position={position}
-              stems={beaming.stems}
-            />
-          ))}
+          <StaffGutter />
         </svg>
+
+        <div
+          ref={scrollRef}
+          className="staff-scroll"
+          style={{ left: gutterPx, right: insetPx }}
+          onScroll={(event) => setPage(Math.floor(event.currentTarget.scrollLeft / stride))}
+        >
+          <svg
+            viewBox={`${GUTTER} ${frame.top} ${musicWidth} ${height}`}
+            width={pixelWidth || undefined}
+            height="100%"
+            preserveAspectRatio="xMinYMid meet"
+            className="staff"
+            role="img"
+            aria-label={label}
+          >
+            <StaffLines from={GUTTER} to={totalWidth} />
+            <Signatures fifths={fifths} beats={beats} beatType={beatType} withTime={withTime} />
+            <BarLines lines={shownBars} numbered={numbered} />
+            {placed.length > 0 && (
+              <SystemEnd
+                x={endOf(placed)}
+                final
+                repeat={marks?.get(placed.at(-1)!.bar)?.repeat?.times !== undefined}
+              />
+            )}
+            {placed[0] && marks?.get(placed[0].bar)?.repeat?.start && (
+              <RepeatSign x={opening} opens />
+            )}
+            <Voltas voltas={shownVoltas} />
+            <BarRests rests={shownBarRests} />
+            {PLAYHEAD_SHOWN && placed[here] && <Playhead x={placed[here]!.x} />}
+            <Beams beams={shownBeams} roleFor={roleFor} />
+            {runs.map((run) => (
+              <Run
+                key={run[0]!.index}
+                entries={run}
+                // A scale watches every chord, so every run of one is live.
+                phase={watchAll ? 'live' : phaseOf(roleFor, run[0]!.index, run.at(-1)!.index + 1)}
+                roleFor={roleFor}
+                watchAll={watchAll}
+                fifths={fifths}
+                watched={watched}
+                position={position}
+                stems={beaming.stems}
+              />
+            ))}
+          </svg>
+        </div>
       </div>
-    </div>
+    </SpreadContext.Provider>
   )
 }
 

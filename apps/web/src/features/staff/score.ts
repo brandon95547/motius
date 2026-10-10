@@ -19,6 +19,7 @@ import { HALF_HEIGHT, KEY_X, keyWidth, STEP, yOn } from './staff-frame'
 import {
   chordExtent,
   partsExtent,
+  type Extent,
   placementOf,
   REST_HALF,
   staffOf,
@@ -119,7 +120,7 @@ export interface Measured {
   /** The ties leaving its notes: which note, and the step each goes to. */
   readonly tiesOut?: readonly { readonly note: number; readonly toIndex: number }[]
   /** How far its ink reaches, so a page can make room for it. */
-  readonly extent: { left: number; right: number; top: number; bottom: number }
+  readonly extent: Extent
   /** How far after the previous chord this one sits. Zero for the first. */
   readonly gap: number
   /** Which bar it falls in, counting from one. */
@@ -871,6 +872,8 @@ export function frameOf(
   measured: readonly Measured[],
   /** The marked bars, where the run may have an ending bracket over it. */
   marks?: BarMarks,
+  /** How far the system's staves have been moved apart (`spreadOf`). */
+  spread = 0,
 ): { top: number; bottom: number } {
   let top = Math.min(-HALF_HEIGHT, yOn(14, 'treble') - BAR_NUMBER_INK)
   // A bracket over an ending stands above the bar numbers, and its number
@@ -882,7 +885,51 @@ export function frameOf(
     top = Math.min(top, extent.top)
     bottom = Math.max(bottom, extent.bottom)
   }
-  return { top: Math.floor(top), bottom: Math.ceil(bottom) }
+  // An opened system is taller by what it opened: the treble staff and all it
+  // carries went up by the spread, and the bass staff down.
+  return { top: Math.floor(top - spread), bottom: Math.ceil(bottom + spread) }
+}
+
+/** The least room kept between one staff's ink and the other's: a staff space. */
+const STAFF_CLEAR = STEP * 2
+
+/**
+ * How far to move the staves of a system apart so the two hands are not drawn
+ * through each other.
+ *
+ * Each staff is its hand's, whatever the pitch: a right hand below middle C is
+ * written under the treble staff on ledger lines, and a left hand above it
+ * over the bass staff. At the plain distance that works until both happen in
+ * one bar. Then the treble's lowest ink — a notehead, the end of a stem, a
+ * numeral — is lower on the page than the bass's highest, and the bar is a
+ * thicket nobody can read. A printed page gives that system more room between
+ * its staves. This says how much: enough that in every bar the two keep a
+ * staff space clear of each other.
+ *
+ * By the bar because that is what collides: a beam runs across its bar, and a
+ * stem two chords along is as much in the way as the one beside it. And one
+ * answer for the whole run, the worst bar's, because a system has one distance
+ * between its staves — spacing that changed from chord to chord would have the
+ * staff itself moving under the player's eye.
+ *
+ * Zero for most music, which is the point: a piece that keeps to its staves is
+ * drawn exactly as it always was.
+ */
+export function spreadOf(measured: readonly Measured[]): number {
+  const bars = new Map<number, { treble: number; bass: number }>()
+  for (const { bar, extent } of measured) {
+    const reach = bars.get(bar) ?? { treble: -Infinity, bass: Infinity }
+    if (extent.inner.treble !== undefined)
+      reach.treble = Math.max(reach.treble, extent.inner.treble)
+    if (extent.inner.bass !== undefined) reach.bass = Math.min(reach.bass, extent.inner.bass)
+    bars.set(bar, reach)
+  }
+  let overlap = 0
+  for (const { treble, bass } of bars.values())
+    if (Number.isFinite(treble) && Number.isFinite(bass))
+      overlap = Math.max(overlap, treble - bass + STAFF_CLEAR)
+  // Each staff takes half of it.
+  return Math.ceil(overlap / 2)
 }
 
 export interface Placed extends Measured {

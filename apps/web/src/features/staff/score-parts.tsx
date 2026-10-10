@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { KEY_X, STEP, yOn } from './staff-frame'
+import { KEY_X, OnStaff, STEP, useSpread, useSystemSpan, yOn } from './staff-frame'
 import { Chord, KeySignature, Rest, TimeSignature } from './StaffNotes'
 import { useKeyboardStore } from '@/state/keyboard-store'
 import {
@@ -45,10 +45,6 @@ export function Signatures({
   )
 }
 
-/** The top and bottom of a grand staff: where a line through both staves runs. */
-const SYSTEM_TOP = yOn(10, 'treble')
-const SYSTEM_BOTTOM = yOn(-10, 'bass')
-
 /**
  * The bar lines of one system, each numbered the way a part is.
  *
@@ -65,6 +61,8 @@ export function BarLines({
   lines: readonly BarLine[]
   numbered?: boolean
 }) {
+  const span = useSystemSpan()
+  const spread = useSpread()
   return (
     <>
       {lines.map(({ x, bar, closes, opens }) => (
@@ -72,11 +70,12 @@ export function BarLines({
           {closes || opens ? (
             <RepeatSign x={x} closes={closes} opens={opens} />
           ) : (
-            <line x1={x} y1={SYSTEM_TOP} x2={x} y2={SYSTEM_BOTTOM} className="staff__bar" />
+            <line x1={x} y1={span.top} x2={x} y2={span.bottom} className="staff__bar" />
           )}
-          {/* Numbered, so a player can say where they are out loud. */}
+          {/* Numbered, so a player can say where they are out loud. Over the
+              treble staff, and so wherever it has gone. */}
           {numbered && (
-            <text x={x + STEP * 1.4} y={yOn(14, 'treble')} className="staff__bar-number">
+            <text x={x + STEP * 1.4} y={yOn(14, 'treble') - spread} className="staff__bar-number">
               {bar}
             </text>
           )}
@@ -95,9 +94,15 @@ const DOT_GAP = STEP * 1.1
 
 /** The two dots of a repeat sign on each staff: in the spaces either side of the middle line. */
 function RepeatDots({ x }: { x: number }) {
+  const spread = useSpread()
   return (
     <>
-      {[yOn(7, 'treble'), yOn(5, 'treble'), yOn(-5, 'bass'), yOn(-7, 'bass')].map((y) => (
+      {[
+        yOn(7, 'treble') - spread,
+        yOn(5, 'treble') - spread,
+        yOn(-5, 'bass') + spread,
+        yOn(-7, 'bass') + spread,
+      ].map((y) => (
         <circle key={y} cx={x} cy={y} r={STEP * 0.42} className="staff__dot" />
       ))}
     </>
@@ -112,17 +117,18 @@ function RepeatDots({ x }: { x: number }) {
  * ends, after it where one begins, and both where one ends as the next begins.
  */
 export function RepeatSign({ x, closes, opens }: { x: number; closes?: boolean; opens?: boolean }) {
+  const span = useSystemSpan()
   const thin = (at: number) => (
-    <line x1={at} y1={SYSTEM_TOP} x2={at} y2={SYSTEM_BOTTOM} className="staff__system-line" />
+    <line x1={at} y1={span.top} x2={at} y2={span.bottom} className="staff__system-line" />
   )
   const left = x - THICK / 2
   return (
     <>
       <rect
         x={left}
-        y={SYSTEM_TOP}
+        y={span.top}
         width={THICK}
-        height={SYSTEM_BOTTOM - SYSTEM_TOP}
+        height={span.bottom - span.top}
         className="staff__final-bar"
       />
       {closes && thin(left - THIN_GAP)}
@@ -148,7 +154,7 @@ export function BarRests({ rests }: { rests: readonly BarRest[] }) {
 export function Voltas({ voltas }: { voltas: readonly Volta[] }) {
   const hook = STEP * 2
   return (
-    <>
+    <OnStaff staff="treble">
       {voltas.map(({ from, to, label, closed }) => (
         <g key={from} className="staff__volta">
           <path
@@ -167,7 +173,7 @@ export function Voltas({ voltas }: { voltas: readonly Volta[] }) {
           )}
         </g>
       ))}
-    </>
+    </OnStaff>
   )
 }
 
@@ -188,23 +194,24 @@ export function SystemEnd({
   /** A repeat ends here: the line is a repeat sign, whether or not it is the last. */
   repeat?: boolean
 }) {
+  const span = useSystemSpan()
   if (repeat) return <RepeatSign x={x - THICK / 2} closes />
   if (!final)
-    return <line x1={x} y1={SYSTEM_TOP} x2={x} y2={SYSTEM_BOTTOM} className="staff__system-line" />
+    return <line x1={x} y1={span.top} x2={x} y2={span.bottom} className="staff__system-line" />
   return (
     <>
       <line
         x1={x - THICK - THIN_GAP}
-        y1={SYSTEM_TOP}
+        y1={span.top}
         x2={x - THICK - THIN_GAP}
-        y2={SYSTEM_BOTTOM}
+        y2={span.bottom}
         className="staff__system-line"
       />
       <rect
         x={x - THICK}
-        y={SYSTEM_TOP}
+        y={span.top}
         width={THICK}
-        height={SYSTEM_BOTTOM - SYSTEM_TOP}
+        height={span.bottom - span.top}
         className="staff__final-bar"
       />
     </>
@@ -227,8 +234,15 @@ export function SystemEnd({
 export const PLAYHEAD_SHOWN = false
 
 export function Playhead({ x }: { x: number }) {
+  const spread = useSpread()
   return (
-    <line x1={x} y1={yOn(12, 'treble')} x2={x} y2={yOn(-12, 'bass')} className="staff__playhead" />
+    <line
+      x1={x}
+      y1={yOn(12, 'treble') - spread}
+      x2={x}
+      y2={yOn(-12, 'bass') + spread}
+      className="staff__playhead"
+    />
   )
 }
 
@@ -323,17 +337,20 @@ export function Beams({
     <>
       {beams.map((beam) => {
         const played = beam.indices.every((index) => roleFor(index) === 'played')
+        // A beam is on a staff, and goes where its staff has gone.
         return (
-          <g key={beam.key} className="staff__beam" data-played={played ? 'true' : undefined}>
-            {beam.bars.map((bar, at) => (
-              <polygon key={at} points={bar.points} />
-            ))}
-            {beam.tuplet && (
-              <text x={beam.tuplet.x} y={beam.tuplet.y} className="staff__tuplet">
-                {beam.tuplet.text}
-              </text>
-            )}
-          </g>
+          <OnStaff key={beam.key} staff={beam.staff}>
+            <g className="staff__beam" data-played={played ? 'true' : undefined}>
+              {beam.bars.map((bar, at) => (
+                <polygon key={at} points={bar.points} />
+              ))}
+              {beam.tuplet && (
+                <text x={beam.tuplet.x} y={beam.tuplet.y} className="staff__tuplet">
+                  {beam.tuplet.text}
+                </text>
+              )}
+            </g>
+          </OnStaff>
         )
       })}
     </>

@@ -48,6 +48,57 @@ export const SYSTEM_GAP = 6
 export const yOn = (steps: number, staff: 'treble' | 'bass') =>
   -(steps + (staff === 'treble' ? SYSTEM_GAP : -SYSTEM_GAP)) * STEP
 
+/**
+ * How far the staves of a system have been moved apart, in units: each by
+ * this much, the treble up and the bass down.
+ *
+ * Nothing, for most music. But a right hand written far below middle C hangs
+ * its ledger lines down into the room between the staves, and a left hand
+ * written far above it climbs up into the same room, and at `SYSTEM_GAP` the
+ * two are drawn through each other. A printed page gives such a system more
+ * room between its staves, and so does this: the page measures how far the
+ * two reach towards each other (`spreadOf`) and opens the system by that.
+ *
+ * One amount for a whole system, set by whoever draws it. A staff that moved
+ * with every chord would have the music jumping under the player's eye.
+ */
+export const SpreadContext = React.createContext(0)
+export const useSpread = () => React.useContext(SpreadContext)
+
+/** Which way a staff goes when its system opens: the treble up, the bass down. */
+export const shiftOf = (staff: 'treble' | 'bass', spread: number) =>
+  staff === 'treble' ? -spread : spread
+
+/** The `transform` that carries a mark with its staff. None at all on a plain system. */
+export const carried = (staff: 'treble' | 'bass', spread: number) =>
+  spread ? `translate(0 ${shiftOf(staff, spread)})` : undefined
+
+/**
+ * One staff's marks, carried with their staff.
+ *
+ * Everything on a staff is placed by `yOn`, which knows the plain system only.
+ * Rather than tell every one of those places how far the staff has moved, what
+ * is drawn on a staff is drawn in a group that has moved with it. On a plain
+ * system there is no group: the picture is the one it always was.
+ */
+export function OnStaff({
+  staff,
+  children,
+}: {
+  staff: 'treble' | 'bass'
+  children: React.ReactNode
+}) {
+  const spread = useSpread()
+  if (!spread) return <>{children}</>
+  return <g transform={carried(staff, spread)}>{children}</g>
+}
+
+/** The top and bottom of a system: where a line through both its staves runs. */
+export function useSystemSpan(): { top: number; bottom: number } {
+  const spread = useSpread()
+  return { top: yOn(10, 'treble') - spread, bottom: yOn(-10, 'bass') + spread }
+}
+
 /** Where the staff lines begin, in units from the drawing's left edge. */
 export const STAFF_START = 20
 /** How far short of a drawing's right edge its staff lines stop. */
@@ -69,13 +120,14 @@ export const STAFF_BANDS = {
 
 /** The two strips of paper, for a drawing that does not scroll. See `STAFF_BANDS`. */
 export function PaperCards({ width }: { width: number }) {
+  const spread = useSpread()
   return (
     <>
       {(['treble', 'bass'] as const).map((staff) => (
         <rect
           key={staff}
           x={STAFF_START}
-          y={STAFF_BANDS[staff].top}
+          y={STAFF_BANDS[staff].top + shiftOf(staff, spread)}
           width={Math.max(0, width - PAPER_MARGIN - STAFF_START)}
           height={STAFF_BANDS[staff].bottom - STAFF_BANDS[staff].top}
           rx={1}
@@ -122,10 +174,11 @@ export function keyWidth(fifths: number): number {
 
 /** The ten lines, from `from` to `to`. */
 export function StaffLines({ from, to }: { from: number; to: number }) {
+  const spread = useSpread()
   return (
     <>
       {(['treble', 'bass'] as const).map((staff) => (
-        <g key={staff}>
+        <g key={staff} transform={carried(staff, spread)}>
           {STAFF_LINES[staff].map((steps) => (
             <line
               key={steps}
@@ -156,8 +209,10 @@ export function StaffLines({ from, to }: { from: number; to: number }) {
  * system is both of them.
  */
 export function StaffGutter() {
-  const top = yOn(10, 'treble')
-  const bottom = yOn(-10, 'bass')
+  const spread = useSpread()
+  // The brace and the opening line hold the two staves together, so they are
+  // as tall as the system is, however far it has opened.
+  const { top, bottom } = useSystemSpan()
   const middle = (top + bottom) / 2
   // A curl either side of the middle, its point towards the margin.
   const brace = STAFF_START - STEP * 0.9
@@ -174,7 +229,7 @@ export function StaffGutter() {
       />
       <line x1={STAFF_START} y1={top} x2={STAFF_START} y2={bottom} className="staff__system-line" />
       {(['treble', 'bass'] as const).map((staff) => (
-        <g key={staff}>
+        <g key={staff} transform={carried(staff, spread)}>
           {STAFF_LINES[staff].map((steps) => (
             <line
               key={steps}

@@ -4,6 +4,7 @@ import {
   HALF_HEIGHT,
   PAPER_MARGIN,
   PaperCards,
+  SpreadContext,
   STAFF_START,
   StaffFrame,
   STEP,
@@ -34,6 +35,7 @@ import {
   breakIntoSystems,
   frameOf,
   headerEnd,
+  spreadOf,
   place,
   voltasIn,
   type BarMarks,
@@ -131,7 +133,10 @@ export function SheetView({
     let y = spacing / 2
     return breakIntoSystems(measured, fifths, pageWidth).map((system) => {
       const slice = measured.slice(system.from, system.to)
-      const frame = frameOf(slice, marks)
+      // Each line has the room between its staves that its own bars ask for,
+      // as each line of a printed page does. It does not move once drawn.
+      const spread = spreadOf(slice)
+      const frame = frameOf(slice, marks, spread)
       const placed = place(slice, headerEnd(fifths, system.from === 0), system.stretch)
       const height = frame.bottom - frame.top
       const top = y
@@ -141,6 +146,7 @@ export function SheetView({
         placed,
         // A line at a time: a beam does not cross a system break.
         beaming: beamsIn(placed),
+        spread,
         top,
         height,
         origin: top - frame.top,
@@ -232,6 +238,8 @@ interface RowProps {
     readonly from: number
     readonly to: number
     readonly origin: number
+    /** How far this line's staves have been moved apart. */
+    readonly spread: number
     readonly placed: readonly Placed[]
     readonly beaming: ReturnType<typeof beamsIn>
   }
@@ -274,50 +282,56 @@ const SystemRow = React.memo(
     // Where the first bar's own marks go: just in front of its first ink.
     const opening = first ? first.x - first.extent.left - STEP * 3 : 0
     return (
-      <g transform={`translate(0 ${system.origin})`}>
-        <PaperCards width={pageWidth} />
-        <StaffFrame width={pageWidth} />
-        {/* Every line of music closes on a bar line, and the last on the final
+      <SpreadContext.Provider value={system.spread}>
+        <g transform={`translate(0 ${system.origin})`}>
+          <PaperCards width={pageWidth} />
+          <StaffFrame width={pageWidth} />
+          {/* Every line of music closes on a bar line, and the last on the final
             one — or on a repeat sign, where the bar it ends on leads back.
             Each after the first says which bar it starts on. */}
-        <SystemEnd
-          x={end}
-          final={final}
-          repeat={marks?.get(system.placed.at(-1)?.bar ?? -1)?.repeat?.times !== undefined}
-        />
-        {first && marks?.get(first.bar)?.repeat?.start && <RepeatSign x={opening} opens />}
-        <Voltas voltas={voltasIn(system.placed, lines, marks, opening, end)} />
-        {system.from > 0 && (
-          <text x={STAFF_START} y={yOn(14, 'treble')} className="staff__bar-number">
-            {system.placed[0]?.bar}
-          </text>
-        )}
-        {/* The key is restated on every line, the way printed music does it;
-            the metre is stated once and then assumed. */}
-        <Signatures
-          fifths={fifths}
-          beats={beats}
-          beatType={beatType}
-          withTime={system.from === 0}
-        />
-        <BarLines lines={lines} />
-        <BarRests rests={barRestsIn(system.placed, lines, opening, end)} />
-        {PLAYHEAD_SHOWN && here >= system.from && here < system.to && (
-          <Playhead x={system.placed[here - system.from]!.x} />
-        )}
-        <Beams beams={system.beaming.beams} roleFor={roleFor} />
-        {system.placed.map((entry) => (
-          <StepAt
-            key={entry.index}
-            placed={entry}
-            role={roleFor(entry.index)}
-            fifths={fifths}
-            watched={watched}
-            position={here}
-            stems={system.beaming.stems.get(entry.index)}
+          <SystemEnd
+            x={end}
+            final={final}
+            repeat={marks?.get(system.placed.at(-1)?.bar ?? -1)?.repeat?.times !== undefined}
           />
-        ))}
-      </g>
+          {first && marks?.get(first.bar)?.repeat?.start && <RepeatSign x={opening} opens />}
+          <Voltas voltas={voltasIn(system.placed, lines, marks, opening, end)} />
+          {system.from > 0 && (
+            <text
+              x={STAFF_START}
+              y={yOn(14, 'treble') - system.spread}
+              className="staff__bar-number"
+            >
+              {system.placed[0]?.bar}
+            </text>
+          )}
+          {/* The key is restated on every line, the way printed music does it;
+            the metre is stated once and then assumed. */}
+          <Signatures
+            fifths={fifths}
+            beats={beats}
+            beatType={beatType}
+            withTime={system.from === 0}
+          />
+          <BarLines lines={lines} />
+          <BarRests rests={barRestsIn(system.placed, lines, opening, end)} />
+          {PLAYHEAD_SHOWN && here >= system.from && here < system.to && (
+            <Playhead x={system.placed[here - system.from]!.x} />
+          )}
+          <Beams beams={system.beaming.beams} roleFor={roleFor} />
+          {system.placed.map((entry) => (
+            <StepAt
+              key={entry.index}
+              placed={entry}
+              role={roleFor(entry.index)}
+              fifths={fifths}
+              watched={watched}
+              position={here}
+              stems={system.beaming.stems.get(entry.index)}
+            />
+          ))}
+        </g>
+      </SpreadContext.Provider>
     )
   },
   (before, after) =>
