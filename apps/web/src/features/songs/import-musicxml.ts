@@ -302,6 +302,8 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
   >()
   const pedalsQ: { fromQ: number; toQ: number }[] = []
   const chordsQ: { startQ: number; text: string }[] = []
+  /** The clefs the piano's staves are put in, in the order the file says so. */
+  const clefsQ: { hand: Hand; startQ: number; clef: 'treble' | 'bass' }[] = []
   let leadNamesStaves = false
   let tupletCounter = 0
 
@@ -356,6 +358,21 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
             mode = written === 'minor' ? 'minor' : written === 'major' ? 'major' : null
           }
           divisions = num(content, 'divisions') ?? divisions
+          // The clef a staff is read in from here on. A G or an F clef, which
+          // is what a piano is written in; any other is left as it was.
+          if (role === 'keyboard')
+            for (const [, attrs = '', clef = ''] of content.matchAll(
+              /<clef\b([^>]*)>([\s\S]*?)<\/clef>/g,
+            )) {
+              const sign = inner(clef, 'sign')?.trim()
+              const kind = sign === 'G' ? 'treble' : sign === 'F' ? 'bass' : null
+              if (!kind) continue
+              const staffNumber = Number(/number="(\d+)"/.exec(attrs)?.[1] ?? '1')
+              const hand: Hand = partHand ?? (staffNumber === 2 ? 'left' : 'right')
+              const last = clefsQ.findLast((entry) => entry.hand === hand)
+              if ((last?.clef ?? (hand === 'right' ? 'treble' : 'bass')) !== kind)
+                clefsQ.push({ hand, startQ: measureStartQ + cursor / divisions, clef: kind })
+            }
           const newBeats = num(content, 'beats')
           const newBeatType = num(content, 'beat-type')
           if (newBeats && newBeatType) {
@@ -775,6 +792,9 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
     // The order the bars are played in, where a repeat or an ending makes that
     // something other than once through. The notes above stay as written.
     rests: rests.map((rest) => ({ ...rest, startMs: toMs(rest.startQ) })),
+    ...(clefsQ.length > 0
+      ? { clefs: clefsQ.map((clef) => ({ ...clef, startMs: toMs(clef.startQ) })) }
+      : {}),
     sections: sectionsFor(
       measureList,
       playOrder(measureList),

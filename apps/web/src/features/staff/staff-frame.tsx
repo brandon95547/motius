@@ -208,7 +208,12 @@ export function StaffLines({ from, to }: { from: number; to: number }) {
  * lines do: the strips are where the lines of the staff are printed, and the
  * system is both of them.
  */
-export function StaffGutter() {
+export function StaffGutter({
+  clefs,
+}: {
+  /** The clef each staff is in here, where it is not the staff's own. */
+  clefs?: Partial<Record<'treble' | 'bass', 'treble' | 'bass'>>
+}) {
   const spread = useSpread()
   // The brace and the opening line hold the two staves together, so they are
   // as tall as the system is, however far it has opened.
@@ -240,7 +245,7 @@ export function StaffGutter() {
               className="staff__line"
             />
           ))}
-          <Clef staff={staff} />
+          <Clef staff={staff} sign={clefs?.[staff] ?? staff} />
         </g>
       ))}
     </>
@@ -248,10 +253,16 @@ export function StaffGutter() {
 }
 
 /** Clefs and lines together, for a staff that does not scroll. */
-export function StaffFrame({ width }: { width: number }) {
+export function StaffFrame({
+  width,
+  clefs,
+}: {
+  width: number
+  clefs?: Partial<Record<'treble' | 'bass', 'treble' | 'bass'>>
+}) {
   return (
     <>
-      <StaffGutter />
+      <StaffGutter clefs={clefs} />
       <StaffLines from={GUTTER} to={width - PAPER_MARGIN} />
     </>
   )
@@ -307,17 +318,28 @@ const UNMEASURED: Record<'treble' | 'bass', ClefFit> = {
  * glyph is measured once against a codepoint nothing can have, and a letter
  * marker on the line the clef names stands in when it is missing.
  */
-function Clef({ staff }: { staff: 'treble' | 'bass' }) {
+function Clef({
+  staff,
+  sign = staff,
+}: {
+  staff: 'treble' | 'bass'
+  /** The clef drawn there: the staff's own, unless the music has changed it. */
+  sign?: 'treble' | 'bass'
+}) {
   const fits = useClefFits()
+  // A clef sits on a staff the same way whichever staff it is: the treble
+  // clef's curl round the second line, the bass clef's dots either side of the
+  // fourth. So the other staff's clef is its own picture, carried across.
+  const across = STAFF_BANDS[staff].top - STAFF_BANDS[sign].top
   // Each clef names a line: G above middle C, F below it.
-  const line = staff === 'treble' ? 4 : -4
+  const line = sign === 'treble' ? 4 : -4
 
   if (fits === 'missing') {
     return (
       <>
-        <circle cx="32" cy={yOn(line, staff)} r={STEP * 0.8} className="staff__clef-dot" />
-        <text x="41" y={yOn(line, staff) + STEP * 1.4} className="staff__clef-letter">
-          {staff === 'treble' ? 'G' : 'F'}
+        <circle cx="32" cy={yOn(line, sign) + across} r={STEP * 0.8} className="staff__clef-dot" />
+        <text x="41" y={yOn(line, sign) + STEP * 1.4 + across} className="staff__clef-letter">
+          {sign === 'treble' ? 'G' : 'F'}
         </text>
       </>
     )
@@ -326,12 +348,68 @@ function Clef({ staff }: { staff: 'treble' | 'bass' }) {
   return (
     <text
       x="30"
-      y={fits[staff].baseline}
+      y={fits[sign].baseline + across}
       className="staff__clef"
-      style={{ fontSize: fits[staff].size }}
+      style={{ fontSize: fits[sign].size }}
     >
-      {CLEF_GLYPHS[staff]}
+      {CLEF_GLYPHS[sign]}
     </text>
+  )
+}
+
+/** How wide a clef set in the music is drawn, for the room it is given. */
+export const CLEF_CHANGE_WIDTH = STEP * 4.4
+/** A clef in the music is smaller than the one that opens the line. */
+const CLEF_CHANGE_SCALE = 0.72
+
+/**
+ * A change of clef, in the music: a small clef just before the first note read
+ * in it.
+ *
+ * Smaller than the clef at the head of the line, which is how a page tells the
+ * two apart: that one says how the line begins, this one that it has changed.
+ */
+export function ClefChange({
+  x,
+  staff,
+  sign,
+}: {
+  /** Its middle. */
+  x: number
+  staff: 'treble' | 'bass'
+  sign: 'treble' | 'bass'
+}) {
+  const fits = useClefFits()
+  const spread = useSpread()
+  const across = STAFF_BANDS[staff].top - STAFF_BANDS[sign].top
+  const middle = (STAFF_BANDS[staff].top + STAFF_BANDS[staff].bottom) / 2
+  const line = sign === 'treble' ? 4 : -4
+
+  return (
+    <g className="staff__clef-change" transform={carried(staff, spread)}>
+      {fits === 'missing' ? (
+        <text
+          x={x}
+          y={yOn(line, sign) + across + STEP * 1.2}
+          textAnchor="middle"
+          className="staff__clef-letter"
+        >
+          {sign === 'treble' ? 'G' : 'F'}
+        </text>
+      ) : (
+        <text
+          x={x}
+          // Drawn about the middle of its staff, so it shrinks towards the
+          // staff rather than towards its own baseline.
+          y={middle + (fits[sign].baseline + across - middle) * CLEF_CHANGE_SCALE}
+          textAnchor="middle"
+          className="staff__clef"
+          style={{ fontSize: fits[sign].size * CLEF_CHANGE_SCALE }}
+        >
+          {CLEF_GLYPHS[sign]}
+        </text>
+      )}
+    </g>
   )
 }
 

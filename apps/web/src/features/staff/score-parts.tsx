@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { KEY_X, OnStaff, STEP, useSpread, useSystemSpan, yOn } from './staff-frame'
+import { ClefChange, KEY_X, OnStaff, STEP, useSpread, useSystemSpan, yOn } from './staff-frame'
 import { Chord, KeySignature, Rest, TimeSignature } from './StaffNotes'
 import { useKeyboardStore } from '@/state/keyboard-store'
 import {
@@ -9,6 +9,7 @@ import {
   type BarRest,
   type Measured,
   type Placed,
+  type StaffClefs,
   type Volta,
 } from './score'
 import type { BeamShape, StepStems } from './beams'
@@ -29,17 +30,20 @@ export function Signatures({
   beats,
   beatType,
   withTime,
+  clefs,
 }: {
   fifths: number
   beats: number
   beatType: number
+  /** The clef each staff is in at the head of this line, where either is not its own. */
+  clefs?: StaffClefs
   /** The metre is stated once, on the opening system. Sheet music repeats the
       key on every line and the time signature on none of them. */
   withTime: boolean
 }) {
   return (
     <>
-      <KeySignature x={KEY_X} fifths={fifths} />
+      <KeySignature x={KEY_X} fifths={fifths} clefs={clefs} />
       {withTime && <TimeSignature x={timeX(fifths)} beats={beats} beatType={beatType} />}
     </>
   )
@@ -266,10 +270,16 @@ export const Step = React.memo(function Step({
   fifths,
   lit,
   stems,
+  opensLine = false,
 }: {
   placed: Placed
   role: Role
   fifths: number
+  /**
+   * The first chord of its line. A clef that changes there is the clef at the
+   * head of the line, and is not set again in front of the chord.
+   */
+  opensLine?: boolean
   /** The sounding notes of this chord, comma separated. Almost always empty. */
   lit: string
   /**
@@ -281,8 +291,16 @@ export const Step = React.memo(function Step({
 }) {
   const sounding = lit === '' ? null : new Set(lit.split(',').map(Number))
 
+  const change = opensLine ? undefined : placed.clefChange
   return (
     <g className="staff__step" data-role={role}>
+      {change &&
+        (['treble', 'bass'] as const).map(
+          (staff) =>
+            change[staff] && (
+              <ClefChange key={staff} x={placed.x - change.at} staff={staff} sign={change[staff]} />
+            ),
+        )}
       {placed.restsAt?.map((rest) => (
         <Rest
           key={`${rest.staff}:${rest.x}`}
@@ -439,6 +457,7 @@ export function LiveStep({
   watched,
   position,
   stems,
+  opensLine,
 }: {
   placed: Placed
   role: Role
@@ -447,6 +466,7 @@ export function LiveStep({
   /** The step the player is known to be on, or negative where nobody is. */
   position: number
   stems?: StepStems
+  opensLine?: boolean
 }) {
   const lit = useKeyboardStore((state) =>
     litNotes(
@@ -456,7 +476,16 @@ export function LiveStep({
       (note) => state.active[note] !== undefined,
     ).join(','),
   )
-  return <Step placed={placed} role={role} fifths={fifths} lit={lit} stems={stems} />
+  return (
+    <Step
+      placed={placed}
+      role={role}
+      fifths={fifths}
+      lit={lit}
+      stems={stems}
+      opensLine={opensLine}
+    />
+  )
 }
 
 /**

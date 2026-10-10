@@ -104,6 +104,12 @@ const STROKE = 1
 
 export interface DrawnNote {
   readonly note: number
+  /**
+   * The clef its staff is being read in, where that is not the staff's own:
+   * a right hand in the bass clef, a left hand in the treble. It moves where
+   * on the staff the note is written and changes nothing else about it.
+   */
+  readonly clef?: Staff
   readonly finger?: number
   /** Whether this pitch is under a finger right now. */
   readonly sounding?: boolean
@@ -198,8 +204,32 @@ export const VOICE_SHIFT = STEP * 1.35 * 2 + STEP * 0.5
 /** Which staff a note is written on: its hand's, where a hand is known. */
 export const staffOf = (note: DrawnNote): Staff => staffFor(note.note, note.hand)
 
-export const placementOf = (note: DrawnNote): StaffPlacement =>
-  staffPlacement(note.note, note.spelling, staffOf(note))
+/**
+ * How far up its staff a note moves for the clef it is read in, in steps.
+ *
+ * The five lines of a staff are the same five lines whatever the clef; the
+ * clef says which notes they are. In the treble clef the bottom line is the E
+ * above middle C, in the bass clef the G an octave and a sixth below it —
+ * twelve steps. So a note read in the bass clef on the upper staff is written
+ * twelve steps higher up it than the treble clef would put it, and one read in
+ * the treble clef on the lower staff twelve steps further down.
+ */
+export const clefShift = (staff: Staff, clef: Staff | undefined): number =>
+  !clef || clef === staff ? 0 : staff === 'treble' ? 12 : -12
+
+/**
+ * Where a note is written on its staff.
+ *
+ * `steps` is where it goes among the lines, in the clef its staff is in. Under
+ * a changed clef that is not how far the note is from middle C — its letter,
+ * octave and accidental still say what it is.
+ */
+export const placementOf = (note: DrawnNote): StaffPlacement => {
+  const staff = staffOf(note)
+  const placement = staffPlacement(note.note, note.spelling, staff)
+  const shift = clefShift(staff, note.clef)
+  return shift ? { ...placement, steps: placement.steps + shift } : placement
+}
 
 /** Where a chord's stem stands: on the right of the heads going up, the left going down. */
 export const stemXFor = (x: number, up: boolean) => (up ? x + HEAD_RX * 0.95 : x - HEAD_RX * 0.95)
@@ -959,7 +989,16 @@ export function Rest({
 }
 
 /** The key signature, drawn once after the clefs. */
-export function KeySignature({ x, fifths }: { x: number; fifths: number }) {
+export function KeySignature({
+  x,
+  fifths,
+  clefs,
+}: {
+  x: number
+  fifths: number
+  /** The clef each staff is in here, where it is not the staff's own. */
+  clefs?: Partial<Record<Staff, Staff>>
+}) {
   const spread = useSpread()
   if (fifths === 0) return null
   const spacing = STEP * 2.4
@@ -967,11 +1006,16 @@ export function KeySignature({ x, fifths }: { x: number; fifths: number }) {
   return (
     <g className="staff__key">
       {(['treble', 'bass'] as const).flatMap((staff) =>
-        keySignature(fifths, staff).map((mark, index) => (
+        // The signs go where that clef puts them, on whichever staff it is on.
+        keySignature(fifths, clefs?.[staff] ?? staff).map((mark, index) => (
           <text
             key={`${staff}-${index}`}
             x={x + index * spacing}
-            y={yOn(mark.steps, staff) + STEP * 0.9 + shiftOf(staff, spread)}
+            y={
+              yOn(mark.steps + clefShift(staff, clefs?.[staff]), staff) +
+              STEP * 0.9 +
+              shiftOf(staff, spread)
+            }
             className="staff__accidental"
           >
             {mark.sign}

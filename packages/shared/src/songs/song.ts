@@ -70,6 +70,26 @@ export interface SongRest {
   readonly wholeBar?: boolean
 }
 
+/**
+ * The clef a staff is read in, from a moment on.
+ *
+ * A staff is not always in the clef it opens in. A right hand that goes down
+ * into the bass is written in the bass clef for as long as it stays there, and
+ * comes back to the treble when it comes back up — the page changes the clef
+ * rather than hang two bars of music under the staff on ledger lines. The
+ * notes are the same notes either way; this is how to write them.
+ *
+ * Only for a score that says: one whose staves are in the usual clefs
+ * throughout has none.
+ */
+export interface SongClef {
+  /** The staff it is on, as the hand that staff belongs to. */
+  readonly hand: Hand
+  readonly startQ: number
+  readonly startMs: number
+  readonly clef: 'treble' | 'bass'
+}
+
 export interface SongNote {
   readonly note: number
   readonly velocity: number
@@ -256,6 +276,8 @@ export interface Song {
   readonly sections?: readonly SongSection[]
   /** The rests the score writes, for the page. See `SongRest`. */
   readonly rests?: readonly SongRest[]
+  /** The clefs the score's staves are read in, where they are not the usual two throughout. */
+  readonly clefs?: readonly SongClef[]
 }
 
 export function songDuration(notes: readonly SongNote[]): number {
@@ -321,6 +343,7 @@ export function buildSong(input: {
   measures?: readonly SongMeasure[]
   sections?: readonly SongSection[]
   rests?: readonly SongRest[]
+  clefs?: readonly SongClef[]
   /** Chord symbols the file printed. */
   chords?: readonly ChordSymbol[]
 }): Song {

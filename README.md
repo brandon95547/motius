@@ -90,6 +90,11 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
 - **Repeats are played as written.** A repeat sign sends the song back, a first
   ending is taken the first time and stepped over the second, and the page
   shows the signs and the brackets rather than the passage written out twice.
+- **A staff is read in the clef the score puts it in.** A right hand that goes
+  down into the bass is written in the bass clef while it is there, and a left
+  hand that climbs is written in the treble: the notes sit on the staff where
+  the page has them rather than on ledger lines, a small clef in the music
+  marks each change, and the clef at the head of the line is the one in force.
 - **A line of music gets the room it needs between its staves.** Each hand is
   on its own staff, so a right hand written far below middle C hangs under the
   treble staff while a left hand written far above it stands over the bass;

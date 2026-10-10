@@ -274,7 +274,9 @@ export function FlowView({
           preserveAspectRatio="xMinYMid meet"
           aria-hidden
         >
-          <StaffGutter />
+          {/* The clef where the player is: the clefs stay put while the music
+              passes them, so they are the ones the music at hand is read in. */}
+          <StaffGutter clefs={placed[here]?.clefs ?? placed[0]?.clefs} />
         </svg>
 
         <div
@@ -293,7 +295,13 @@ export function FlowView({
             aria-label={label}
           >
             <StaffLines from={GUTTER} to={totalWidth} />
-            <Signatures fifths={fifths} beats={beats} beatType={beatType} withTime={withTime} />
+            <Signatures
+              fifths={fifths}
+              beats={beats}
+              beatType={beatType}
+              withTime={withTime}
+              clefs={placed[0]?.clefs}
+            />
             <BarLines lines={shownBars} numbered={numbered} />
             {placed.length > 0 && (
               <SystemEnd

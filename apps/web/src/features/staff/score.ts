@@ -15,7 +15,7 @@ import {
   type Staff,
   type WrittenValue,
 } from '@sonara/shared'
-import { HALF_HEIGHT, KEY_X, keyWidth, STEP, yOn } from './staff-frame'
+import { CLEF_CHANGE_WIDTH, HALF_HEIGHT, KEY_X, keyWidth, STEP, yOn } from './staff-frame'
 import {
   chordExtent,
   partsExtent,
@@ -121,6 +121,13 @@ export interface Measured {
   readonly tiesOut?: readonly { readonly note: number; readonly toIndex: number }[]
   /** How far its ink reaches, so a page can make room for it. */
   readonly extent: Extent
+  /** The clef each staff is in here, where either is not its own. */
+  readonly clefs?: StaffClefs
+  /**
+   * A clef that changes at this chord: the staff, the clef it goes into, and
+   * how far left of the chord the small clef that says so is drawn.
+   */
+  readonly clefChange?: { readonly at: number; readonly treble?: Staff; readonly bass?: Staff }
   /** How far after the previous chord this one sits. Zero for the first. */
   readonly gap: number
   /** Which bar it falls in, counting from one. */
@@ -205,7 +212,31 @@ export interface ScoreSource {
   readonly beams?: boolean
   /** The rests the score writes, for the hands being shown. */
   readonly rests?: Song['rests']
+  /** The clefs its staves are read in, where the score changes them. */
+  readonly clefs?: Song['clefs']
 }
+
+/** The clef each staff is in. */
+export type StaffClefs = Readonly<Record<Staff, Staff>>
+
+const OWN_CLEFS: StaffClefs = { treble: 'treble', bass: 'bass' }
+
+/** The clef each staff is in at a moment of the score. */
+export function clefsAt(clefs: Song['clefs'], ms: number): StaffClefs {
+  if (!clefs?.length) return OWN_CLEFS
+  let treble: Staff = 'treble'
+  let bass: Staff = 'bass'
+  for (const change of clefs) {
+    if (change.startMs > ms + 1e-6) continue
+    if (change.hand === 'right') treble = change.clef
+    else bass = change.clef
+  }
+  return treble === 'treble' && bass === 'bass' ? OWN_CLEFS : { treble, bass }
+}
+
+/** The clefs a staff's marks should be told about: none, where each staff is in its own. */
+export const changedClefs = (clefs: StaffClefs | undefined): StaffClefs | undefined =>
+  !clefs || (clefs.treble === 'treble' && clefs.bass === 'bass') ? undefined : clefs
 
 /**
  * Every chord of the song, measured and spaced but not placed.
@@ -241,6 +272,8 @@ export function measureScore(
   }
   let openBar = Number.NaN
   let previous = 0
+  /** The clefs at the chord before, to know a change by. Those the piece opens in, to begin with. */
+  let clefWas = clefsAt(song?.clefs, steps[0]?.startMs ?? 0)
   const marks = barMarksOf(measures)
 
   const onStaff = (candidate: SongStep, staff: Staff) =>
@@ -466,11 +499,19 @@ export function measureScore(
      * that the reader's density setting suppresses spaces the whole score for
      * ink that is never laid down.
      */
+    // The clef each staff is in at this moment, and whether either has just
+    // changed. The clef the piece opens in is not a change: the head of the
+    // line says it.
+    const clefs = clefsAt(song?.clefs, step.startMs)
+    const changed = (['treble', 'bass'] as const).filter((staff) => clefs[staff] !== clefWas[staff])
+    clefWas = clefs
     const sorted = [...writtenHere].sort((a, b) => a.note - b.note)
     const notes: DrawnNote[] = sorted.map((note) => {
       const held = heldNotes.has(note)
+      const on = staffFor(note.note, note.hand)
       const drawn = {
         note: note.note,
+        ...(clefs[on] !== on ? { clef: clefs[on] } : {}),
         finger: !hints || hints.has(note) ? note.finger : undefined,
         rolled: note.rolled,
         spelling: note.spelling,
@@ -570,7 +611,10 @@ export function measureScore(
         }
       : value
 
-    const inked = parts ? partsExtent(parts, fifths) : chordExtent(notes, value, fifths)
+    const ink = parts ? partsExtent(parts, fifths) : chordExtent(notes, value, fifths)
+    // A change of clef is set just in front of the chord, in room of its own.
+    const clefRoom = changed.length > 0 ? CLEF_CHANGE_WIDTH + STEP : 0
+    const inked = clefRoom > 0 ? { ...ink, left: ink.left + clefRoom } : ink
     /*
      * The rests with this chord.
      *
@@ -650,6 +694,15 @@ export function measureScore(
       ...(firstOfBar && barRests.has(bar) ? { barRest: barRests.get(bar)! } : {}),
       ...(emptyBars.length > 0 ? { emptyBars } : {}),
       extent,
+      ...(changedClefs(clefs) ? { clefs } : {}),
+      ...(changed.length > 0
+        ? {
+            clefChange: {
+              at: ink.left + STEP * 0.6 + CLEF_CHANGE_WIDTH / 2,
+              ...Object.fromEntries(changed.map((staff) => [staff, clefs[staff]])),
+            },
+          }
+        : {}),
       gap,
       bar,
       ...(tuplet.treble || tuplet.bass ? { tuplet } : {}),

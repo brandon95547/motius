@@ -285,7 +285,8 @@ const SystemRow = React.memo(
       <SpreadContext.Provider value={system.spread}>
         <g transform={`translate(0 ${system.origin})`}>
           <PaperCards width={pageWidth} />
-          <StaffFrame width={pageWidth} />
+          {/* Each line opens in the clefs its first chord is read in. */}
+          <StaffFrame width={pageWidth} clefs={first?.clefs} />
           {/* Every line of music closes on a bar line, and the last on the final
             one — or on a repeat sign, where the bar it ends on leads back.
             Each after the first says which bar it starts on. */}
@@ -312,6 +313,7 @@ const SystemRow = React.memo(
             beats={beats}
             beatType={beatType}
             withTime={system.from === 0}
+            clefs={first?.clefs}
           />
           <BarLines lines={lines} />
           <BarRests rests={barRestsIn(system.placed, lines, opening, end)} />
@@ -328,6 +330,7 @@ const SystemRow = React.memo(
               watched={watched}
               position={here}
               stems={system.beaming.stems.get(entry.index)}
+              opensLine={entry === first}
             />
           ))}
         </g>
@@ -357,6 +360,7 @@ function StepAt({
   watched,
   position,
   stems,
+  opensLine,
 }: {
   placed: Placed
   role: Role
@@ -364,6 +368,7 @@ function StepAt({
   watched: readonly Watched[]
   position: number
   stems?: StepStems
+  opensLine: boolean
 }) {
   return isLive(role) ? (
     <LiveStep
@@ -373,8 +378,9 @@ function StepAt({
       watched={watched}
       position={position}
       stems={stems}
+      opensLine={opensLine}
     />
   ) : (
-    <Step placed={placed} role={role} fifths={fifths} lit="" stems={stems} />
+    <Step placed={placed} role={role} fifths={fifths} lit="" stems={stems} opensLine={opensLine} />
   )
 }
