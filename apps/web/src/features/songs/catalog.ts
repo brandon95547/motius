@@ -16,9 +16,10 @@ import { readSongBytes } from './read-song'
  * song is far larger than its file, which is why none is kept in storage
  * either: the library in `localStorage` is for what the player brought.
  *
- * The scores are the MuseTrainer library's. Where it holds the same piece
- * twice, both are here and the second says what sets it apart, or failing
- * anything better, that it is another version.
+ * The scores are the MuseTrainer library's, and after those the PDMX
+ * collection's: uploads to MuseScore that their uploaders marked public domain
+ * or CC0. Where the same piece is here twice, the second says what sets it
+ * apart, or failing anything better, that it is another version.
  *
  * They are sorted by genre, and under each genre by mood (`SONG_GENRES` and
  * `SONG_MOODS`, in the shared contract): a piece is in one genre, and is as
@@ -462,6 +463,43 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
     composer: 'Johannes Brahms',
     genre: 'classical',
     moods: ['playful'],
+  },
+  {
+    id: 'waller-aint-misbehavin',
+    title: "Ain't Misbehavin'",
+    composer: 'Fats Waller',
+    genre: 'jazz',
+    moods: ['playful'],
+  },
+  {
+    id: 'arndt-desecration-rag',
+    title: 'Desecration Rag',
+    composer: 'Felix Arndt',
+    genre: 'jazz',
+    moods: ['playful'],
+  },
+  {
+    id: 'carmichael-georgia-on-my-mind',
+    title: 'Georgia on My Mind',
+    composer: 'Hoagy Carmichael',
+    genre: 'jazz',
+    moods: ['romantic'],
+  },
+  {
+    id: 'scott-frog-legs-rag',
+    title: 'Frog Legs Rag',
+    composer: 'James Scott',
+    genre: 'jazz',
+    moods: ['playful'],
+  },
+  {
+    id: 'macleod-amazing-plan',
+    title: 'Amazing Plan',
+    composer: 'Kevin MacLeod',
+    genre: 'jazz',
+    moods: ['playful'],
+    // Not public domain: free to use under Creative Commons Attribution, which
+    // asks for the credit the README gives it. That credit goes where this goes.
   },
 ]
 

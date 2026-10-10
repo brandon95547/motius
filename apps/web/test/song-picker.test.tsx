@@ -96,6 +96,18 @@ const inGenre = (genre: SongGenre) => SONG_CATALOG.filter((entry) => entry.genre
 const withMood = (id: SongMood, songs: readonly (typeof SONG_CATALOG)[number][] = SONG_CATALOG) =>
   songs.filter((entry) => entry.moods.includes(id))
 const label = (id: SongMood) => SONG_MOODS.find((each) => each.id === id)!.label
+/** A piece and which score of it: what the controls of its row are named for. */
+const named = (entry: (typeof SONG_CATALOG)[number]) =>
+  `${entry.title}${entry.edition ? `, ${entry.edition}` : ''}`
+/** The shelf with the fewest songs, and another to move them to: an empty one if there is one. */
+const shelvesToMoveBetween = () => {
+  const held = SONG_GENRES.map((genre) => ({ genre, songs: inGenre(genre.id) }))
+  const from = held
+    .filter((each) => each.songs.length > 0)
+    .sort((a, b) => a.songs.length - b.songs.length)[0]!
+  const others = held.filter((each) => each !== from)
+  return { from, to: others.find((each) => each.songs.length === 0) ?? others[0]! }
+}
 
 beforeEach(() => {
   vi.stubGlobal('fetch', serveScores())
@@ -204,12 +216,18 @@ describe('the song chooser', () => {
     fireEvent.click(mood('Ominous'))
     expect(mood('Ominous').getAttribute('aria-pressed')).toBe('true')
 
-    fireEvent.click(shelf('Jazz'))
-    expect(withMood('ominous', inGenre('jazz'))).toEqual([])
+    // A shelf that has songs, and a mood none of them has.
+    const lacking = SONG_GENRES.flatMap((genre) =>
+      SONG_MOODS.filter(
+        (each) => inGenre(genre.id).length > 0 && withMood(each.id, inGenre(genre.id)).length === 0,
+      ).map((each) => ({ genre, missing: each })),
+    )[0]!
+    const had = SONG_MOODS.find((each) => withMood(each.id, inGenre(lacking.genre.id)).length > 0)!
+    fireEvent.click(shelf(lacking.genre.label))
     expect(mood('All').getAttribute('aria-pressed')).toBe('true')
     expect(mood('Ominous').getAttribute('aria-pressed')).toBe('false')
-    expect(mood('Ominous').disabled).toBe(true)
-    expect(mood('Playful').disabled).toBe(false)
+    expect(mood(lacking.missing.label).disabled).toBe(true)
+    expect(mood(had.label).disabled).toBe(false)
   })
 
   it('changes the moods of a song, and tells the server', async () => {
@@ -257,58 +275,61 @@ describe('the song chooser', () => {
     const changes: Change[] = []
     vi.stubGlobal('fetch', serveScores([], changes))
     show()
-    expect(inGenre('jazz').map((entry) => entry.title)).toEqual([
-      'The Entertainer',
-      'Maple Leaf Rag',
-    ])
-    expect(shelf('Blues').disabled).toBe(true)
-    fireEvent.click(shelf('Jazz'))
+    const { from, to } = shelvesToMoveBetween()
+    const arriving = (count: number) => `${to.genre.label}${to.songs.length + count}`
+    expect(shelf(to.genre.label).textContent).toBe(arriving(0))
+    fireEvent.click(shelf(from.genre.label))
     fireEvent.click(starting('footer button', 'Edit categories'))
+    expect(rows()).toHaveLength(from.songs.length)
 
-    fireEvent.change(within(dialog()).getByLabelText('Genre for Maple Leaf Rag'), {
-      target: { value: 'blues' },
-    })
-    await waitFor(() =>
-      expect(changes).toEqual([{ songId: 'joplin-maple-leaf-rag', genre: 'blues' }]),
-    )
-    // Gone from this shelf, and on the other, which is no longer empty.
-    expect(rows().map((row) => row.textContent?.slice(0, 15))).toEqual(['The Entertainer'])
-    expect(shelf('Blues').textContent).toBe('Blues1')
-    expect(shelf('Blues').disabled).toBe(false)
-
+    // One at a time, each gone from this shelf and on the other as it is moved.
+    for (const [index, entry] of from.songs.entries()) {
+      fireEvent.change(within(dialog()).getByLabelText(`Genre for ${named(entry)}`), {
+        target: { value: to.genre.id },
+      })
+      await waitFor(() => expect(changes).toHaveLength(index + 1))
+      expect(changes[index]).toEqual({ songId: entry.id, genre: to.genre.id })
+      expect(rows()).toHaveLength(from.songs.length - index - 1)
+      expect(shelf(to.genre.label).textContent).toBe(arriving(index + 1))
+      expect(shelf(to.genre.label).disabled).toBe(false)
+    }
     // The last song out leaves the shelf empty, and still the one being looked at.
-    fireEvent.change(within(dialog()).getByLabelText('Genre for The Entertainer'), {
-      target: { value: 'blues' },
-    })
-    await waitFor(() => expect(changes).toHaveLength(2))
-    expect(rows()).toHaveLength(0)
-    expect(dialog().textContent).toContain('Nothing in Jazz yet.')
-    expect(shelf('Jazz').disabled).toBe(false)
+    expect(dialog().textContent).toContain(`Nothing in ${from.genre.label} yet.`)
+    expect(shelf(from.genre.label).disabled).toBe(false)
 
     fireEvent.click(starting('footer button', 'Done'))
-    fireEvent.click(shelf('Blues'))
-    expect(shelf('Jazz').disabled).toBe(true)
-    expect(rows().some((row) => row.textContent?.startsWith('Maple Leaf Rag'))).toBe(true)
+    fireEvent.click(shelf(to.genre.label))
+    expect(shelf(from.genre.label).disabled).toBe(true)
+    for (const entry of from.songs) {
+      expect(rows().some((row) => row.textContent?.startsWith(entry.title))).toBe(true)
+    }
   })
 
   it('files a song where the server says it was changed to, and leaves the rest of it alone', async () => {
+    const { from, to } = shelvesToMoveBetween()
+    const moved = from.songs[0]!
     vi.stubGlobal(
       'fetch',
       serveScores([
-        { songId: 'joplin-maple-leaf-rag', genre: 'blues', moods: ['dreamy'] },
+        { songId: moved.id, genre: to.genre.id, moods: ['dreamy'] },
         // Only its moods were changed: it is still in the genre it came in.
         { songId: 'debussy-arabesque-no-1', genre: null, moods: ['playful'] },
       ]),
     )
     show()
-    await waitFor(() => expect(shelf('Blues').disabled).toBe(false))
-    fireEvent.click(shelf('Blues'))
+    await waitFor(() =>
+      expect(shelf(to.genre.label).textContent).toBe(`${to.genre.label}${to.songs.length + 1}`),
+    )
+    fireEvent.click(shelf(to.genre.label))
+    fireEvent.click(mood('Dreamy'))
     expect(headings()).toEqual([label('dreamy')])
-    expect(rows().map((row) => row.textContent)).toEqual(['Maple Leaf RagScott Joplin'])
+    expect(rows().map((row) => row.textContent)).toContain(written(moved))
 
     fireEvent.click(shelf('Classical'))
     fireEvent.click(mood('Playful'))
     expect(rows().some((row) => row.textContent?.startsWith('Arabesque No. 1'))).toBe(true)
+    fireEvent.click(mood('Dreamy'))
+    expect(rows().some((row) => row.textContent?.startsWith('Arabesque No. 1'))).toBe(false)
   })
 
   it('searches every genre and mood at once, without minding accents', () => {

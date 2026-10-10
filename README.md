@@ -61,7 +61,7 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
 
 ### Songs
 
-- **Fifty-eight pieces come with it**, from Bach to Joplin, in a chooser that
+- **Sixty-three pieces come with it**, from Bach to Fats Waller, in a chooser that
   Songs opens on: shelved by genre — Classical, Gospel, Jazz, Blues, Pop, Rock,
   Country, Soul & R&B, Folk & Traditional, New Age — and under every genre by
   the same eight moods: Dramatic & Powerful, Dreamy & Atmospheric, Joyful &
@@ -419,7 +419,13 @@ time as they are chosen, and held in memory rather than in storage: they come
 back with the app, and the stored library is for what the player brought.
 `song-catalog.test.ts` reads every one of them, so a score that loses a hand
 on import fails there rather than in front of a player. The scores are from the
-[MuseTrainer library](https://github.com/musetrainer/library).
+[MuseTrainer library](https://github.com/musetrainer/library) and the
+[PDMX](https://zenodo.org/records/15571083) collection.
+
+One of them is not in the public domain and is here under its license: "Amazing
+Plan" by Kevin MacLeod ([incompetech.com](https://incompetech.com)), licensed
+under [Creative Commons: By Attribution 4.0](https://creativecommons.org/licenses/by/4.0/),
+transcribed here as a piano score.
 
 Where the file names no hands at all, which is most MIDI files, they are worked
 out from the music rather than from each note's pitch. A chord is decided as a
