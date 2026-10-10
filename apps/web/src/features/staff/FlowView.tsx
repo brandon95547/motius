@@ -2,13 +2,15 @@ import * as React from 'react'
 import { useElementSize } from '@/lib/hooks'
 import {
   GUTTER,
-  shiftOf,
-  SpreadContext,
-  STAFF_BANDS,
+  GutterStaves,
+  STAFF_HEIGHT,
   STAFF_START,
-  StaffGutter,
+  StaffLayer,
   StaffLines,
   STEP,
+  SystemBrace,
+  SystemContext,
+  type RowsShown,
 } from './staff-frame'
 import {
   BarLines,
@@ -33,11 +35,12 @@ import {
   barLinesIn,
   barRestsIn,
   endOf,
-  frameOf,
-  spreadOf,
   headerEnd,
+  layoutOf,
+  leadIn,
   place,
   voltasIn,
+  type BarLine,
   type BarMarks,
   type Measured,
   type Placed,
@@ -71,6 +74,8 @@ import { beamsIn, type StepStems } from './beams'
 
 export function FlowView({
   measured,
+  layers,
+  rows,
   marks,
   here,
   fifths,
@@ -79,13 +84,28 @@ export function FlowView({
   roleFor,
   label,
   withTime = true,
+  final = true,
   numbered = true,
   watchAll = false,
   position = here,
 }: {
+  /**
+   * The chords to draw, in order. The whole piece, or — of a piece whose
+   * staves come and go — the stretch of it the player is in, which is drawn on
+   * the same staves from end to end.
+   */
   measured: readonly Measured[]
+  /**
+   * The same chords a pair of staves at a time, where the score is written on
+   * more than two: each pair drawn as a piano's usual two are, one under the
+   * other. Absent for a plain score, whose one pair is `measured` itself.
+   */
+  layers?: readonly (readonly Measured[])[]
+  /** Which staves of each pair are drawn. All of them, where it does not say. */
+  rows?: readonly RowsShown[]
   /** The bars with a repeat sign or an ending bracket, where the music has any. */
   marks?: BarMarks
+  /** The chord the page is turned to, as the piece counts them. */
   here: number
   fifths: number
   beats: number
@@ -94,6 +114,11 @@ export function FlowView({
   label: string
   /** The metre up front. A song states it; a scale has no metre to state. */
   withTime?: boolean
+  /**
+   * The line ends where the piece does, on the final bar line. Not so for a
+   * stretch of a piece that goes on, on other staves, after it.
+   */
+  final?: boolean
   /** Bar numbers, so a player can say where they are. A scale is too short to need them. */
   numbered?: boolean
   /**
@@ -119,19 +144,31 @@ export function FlowView({
   const [frameRef, size] = useElementSize<HTMLDivElement>()
   const scrollRef = React.useRef<HTMLDivElement>(null)
 
+  // Where the player is along the chords drawn, which need not begin at the
+  // piece's first.
+  const base = measured[0]?.index ?? 0
+  const at = here - base
+
   const placed = React.useMemo(
     () => place(measured, headerEnd(fifths, withTime)),
     [measured, fifths, withTime],
   )
+  // Each pair of staves, set out on the same line: the same chords at the
+  // same places, each pair with its own notes on them.
+  const stack = React.useMemo(() => layers ?? [measured], [layers, measured])
+  const placedLayers = React.useMemo(
+    () =>
+      layers
+        ? layers.map((layer) => place(layer, headerEnd(fifths, withTime), 1, leadIn(measured[0])))
+        : [placed],
+    [layers, placed, measured, fifths, withTime],
+  )
   // One distance between the staves for the whole of the line: it scrolls
   // under the player, and a staff that moved as it went would be the worst
   // thing on the page.
-  const spread = React.useMemo(() => spreadOf(measured), [measured])
-  const frame = React.useMemo(() => frameOf(measured, marks, spread), [measured, marks, spread])
+  const layout = React.useMemo(() => layoutOf(stack, rows, marks), [stack, rows, marks])
+  const frame = layout
   const height = frame.bottom - frame.top
-  // Where the beams run, and the stems they have decided. Once per layout:
-  // the stems are handed to memoised chords and must stay the same objects.
-  const beaming = React.useMemo(() => beamsIn(placed), [placed])
   // The chords listening to the keys, so each can tell whether a pitch it is
   // holding is being played here or somewhere else it is written.
   const watched = React.useMemo(
@@ -177,37 +214,12 @@ export function FlowView({
       to: GUTTER + ((page + 1) * stride + visible * 2) / scale,
     }
   }, [page, stride, visible, scale])
-  const shown = React.useMemo(
-    () => (span ? placed.filter((entry) => entry.x >= span.from && entry.x <= span.to) : placed),
-    [placed, span],
-  )
-  // The stretch in runs of a few chords, each drawn again only when the player
-  // is in it. Cut where the chord's number divides, not where the window
-  // starts, so a run is the same run as the window slides over it.
-  const runs = React.useMemo(() => {
-    const groups: Placed[][] = []
-    for (const entry of shown) {
-      const group = groups.at(-1)
-      if (group && Math.floor(group[0]!.index / RUN) === Math.floor(entry.index / RUN))
-        group.push(entry)
-      else groups.push([entry])
-    }
-    return groups
-  }, [shown])
   const barLines = React.useMemo(() => barLinesIn(placed, marks), [placed, marks])
   // Where the first bar's own marks go: just in front of its first ink.
   const opening = placed[0] ? placed[0].x - placed[0].extent.left - STEP * 3 : 0
   const voltas = React.useMemo(
     () => voltasIn(placed, barLines, marks, opening, endOf(placed)),
     [placed, barLines, marks, opening],
-  )
-  const barRests = React.useMemo(
-    () => barRestsIn(placed, barLines, opening, endOf(placed)),
-    [placed, barLines, opening],
-  )
-  const shownBarRests = React.useMemo(
-    () => (span ? barRests.filter((rest) => rest.x >= span.from && rest.x <= span.to) : barRests),
-    [barRests, span],
   )
   const shownVoltas = React.useMemo(
     () =>
@@ -218,15 +230,13 @@ export function FlowView({
     () => (span ? barLines.filter((line) => line.x >= span.from && line.x <= span.to) : barLines),
     [barLines, span],
   )
-  const shownBeams = React.useMemo(() => {
-    const first = shown[0]?.index ?? 0
-    const last = shown.at(-1)?.index ?? -1
-    return span
-      ? beaming.beams.filter((beam) =>
-          beam.indices.some((index) => index >= first && index <= last),
-        )
-      : beaming.beams
-  }, [beaming, shown, span])
+
+  // A new stretch of the piece is a new line: back to its beginning, and then
+  // on to wherever in it the player is.
+  React.useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollLeft = 0
+    setPage(0)
+  }, [base])
 
   // Keep the current chord on screen, the way the keyboard follows what you
   // play. Nothing to do until the panel has been laid out — a width of zero
@@ -234,7 +244,7 @@ export function FlowView({
   // note is played.
   React.useEffect(() => {
     const box = scrollRef.current
-    const current = placed[here]
+    const current = placed[at]
     // The panel's own measured width, not `box.clientWidth`. Reading layout
     // from inside the effect returns zero here — the element is in the document
     // and is the right one, and still measures nothing — so the guard below
@@ -250,21 +260,27 @@ export function FlowView({
       // abruptly beats not arriving.
       box.scrollLeft = Math.max(0, x - margin)
     }
-  }, [here, placed, scale, visible])
+  }, [at, placed, scale, visible])
 
-  // Where the paper goes, in pixels: the same bands PaperCards draws in units.
-  const band = (staff: 'treble' | 'bass') => ({
-    top: (STAFF_BANDS[staff].top + shiftOf(staff, spread) - frame.top) * scale,
-    height: (STAFF_BANDS[staff].bottom - STAFF_BANDS[staff].top) * scale,
+  // Where the paper goes, in pixels: the same bands PaperCards draws in units,
+  // one under every staff.
+  const band = (top: number) => ({
+    top: (top - frame.top) * scale,
+    height: STAFF_HEIGHT * scale,
     left: insetPx,
     right: insetPx,
   })
+  /** Each pair of staves that has a staff to draw, with where it stands. */
+  const pairs = placedLayers
+    .map((entries, index) => ({ entries, index, place: layout.layers[index]! }))
+    .filter(({ place }) => place.rows.treble || place.rows.bass)
 
   return (
-    <SpreadContext.Provider value={spread}>
+    <SystemContext.Provider value={layout.staves}>
       <div ref={frameRef} className="staff-fit staff-score">
-        <div className="staff-card" style={band('treble')} aria-hidden />
-        <div className="staff-card" style={band('bass')} aria-hidden />
+        {layout.staves.map((top) => (
+          <div key={top} className="staff-card" style={band(top)} aria-hidden />
+        ))}
 
         <svg
           className="staff-gutter"
@@ -274,9 +290,14 @@ export function FlowView({
           preserveAspectRatio="xMinYMid meet"
           aria-hidden
         >
+          <SystemBrace />
           {/* The clef where the player is: the clefs stay put while the music
               passes them, so they are the ones the music at hand is read in. */}
-          <StaffGutter clefs={placed[here]?.clefs ?? placed[0]?.clefs} />
+          {pairs.map(({ entries, index, place }) => (
+            <StaffLayer key={index} place={place}>
+              <GutterStaves clefs={entries[at]?.clefs ?? entries[0]?.clefs} />
+            </StaffLayer>
+          ))}
         </svg>
 
         <div
@@ -294,19 +315,23 @@ export function FlowView({
             role="img"
             aria-label={label}
           >
-            <StaffLines from={GUTTER} to={totalWidth} />
-            <Signatures
-              fifths={fifths}
-              beats={beats}
-              beatType={beatType}
-              withTime={withTime}
-              clefs={placed[0]?.clefs}
-            />
+            {pairs.map(({ entries, index, place }) => (
+              <StaffLayer key={index} place={place}>
+                <StaffLines from={GUTTER} to={totalWidth} />
+                <Signatures
+                  fifths={fifths}
+                  beats={beats}
+                  beatType={beatType}
+                  withTime={withTime}
+                  clefs={entries[0]?.clefs}
+                />
+              </StaffLayer>
+            ))}
             <BarLines lines={shownBars} numbered={numbered} />
             {placed.length > 0 && (
               <SystemEnd
                 x={endOf(placed)}
-                final
+                final={final}
                 repeat={marks?.get(placed.at(-1)!.bar)?.repeat?.times !== undefined}
               />
             )}
@@ -314,27 +339,121 @@ export function FlowView({
               <RepeatSign x={opening} opens />
             )}
             <Voltas voltas={shownVoltas} />
-            <BarRests rests={shownBarRests} />
-            {PLAYHEAD_SHOWN && placed[here] && <Playhead x={placed[here]!.x} />}
-            <Beams beams={shownBeams} roleFor={roleFor} />
-            {runs.map((run) => (
-              <Run
-                key={run[0]!.index}
-                entries={run}
-                // A scale watches every chord, so every run of one is live.
-                phase={watchAll ? 'live' : phaseOf(roleFor, run[0]!.index, run.at(-1)!.index + 1)}
-                roleFor={roleFor}
-                watchAll={watchAll}
-                fifths={fifths}
-                watched={watched}
-                position={position}
-                stems={beaming.stems}
-              />
+            {PLAYHEAD_SHOWN && placed[at] && <Playhead x={placed[at]!.x} />}
+            {pairs.map(({ entries, index, place }) => (
+              <StaffLayer key={index} place={place}>
+                <Music
+                  placed={entries}
+                  span={span}
+                  barLines={barLines}
+                  opening={opening}
+                  end={endOf(placed)}
+                  roleFor={roleFor}
+                  watchAll={watchAll}
+                  fifths={fifths}
+                  watched={watched}
+                  position={position}
+                />
+              </StaffLayer>
             ))}
           </svg>
         </div>
       </div>
-    </SpreadContext.Provider>
+    </SystemContext.Provider>
+  )
+}
+
+/**
+ * The notes of one pair of staves: its chords, their beams and its rests.
+ *
+ * A piano's usual score has one pair and this is all its music. A score on
+ * three staves or four has this once for each pair, the same chords in each
+ * with that pair's notes on them.
+ */
+function Music({
+  placed,
+  span,
+  barLines,
+  opening,
+  end,
+  roleFor,
+  watchAll,
+  fifths,
+  watched,
+  position,
+}: {
+  placed: readonly Placed[]
+  /** The stretch being drawn, or null where all of it is. */
+  span: { from: number; to: number } | null
+  barLines: readonly BarLine[]
+  /** Where the first bar begins and the last ends, for a rest in the middle of either. */
+  opening: number
+  end: number
+  roleFor: (index: number) => Role
+  watchAll: boolean
+  fifths: number
+  watched: readonly Watched[]
+  position: number
+}) {
+  // Where the beams run, and the stems they have decided. Once per layout:
+  // the stems are handed to memoised chords and must stay the same objects.
+  const beaming = React.useMemo(() => beamsIn(placed), [placed])
+  const shown = React.useMemo(
+    () => (span ? placed.filter((entry) => entry.x >= span.from && entry.x <= span.to) : placed),
+    [placed, span],
+  )
+  // The stretch in runs of a few chords, each drawn again only when the player
+  // is in it. Cut where the chord's number divides, not where the window
+  // starts, so a run is the same run as the window slides over it.
+  const runs = React.useMemo(() => {
+    const groups: Placed[][] = []
+    for (const entry of shown) {
+      // A chord with nothing on this pair of staves is not drawn on it.
+      if (entry.notes.length === 0 && !entry.restsAt && !entry.clefChange) continue
+      const group = groups.at(-1)
+      if (group && Math.floor(group[0]!.index / RUN) === Math.floor(entry.index / RUN))
+        group.push(entry)
+      else groups.push([entry])
+    }
+    return groups
+  }, [shown])
+  const barRests = React.useMemo(
+    () => barRestsIn(placed, barLines, opening, end),
+    [placed, barLines, opening, end],
+  )
+  const shownBarRests = React.useMemo(
+    () => (span ? barRests.filter((rest) => rest.x >= span.from && rest.x <= span.to) : barRests),
+    [barRests, span],
+  )
+  const shownBeams = React.useMemo(() => {
+    const first = shown[0]?.index ?? 0
+    const last = shown.at(-1)?.index ?? -1
+    return span
+      ? beaming.beams.filter((beam) =>
+          beam.indices.some((index) => index >= first && index <= last),
+        )
+      : beaming.beams
+  }, [beaming, shown, span])
+
+  return (
+    <>
+      <BarRests rests={shownBarRests} />
+      <Beams beams={shownBeams} roleFor={roleFor} />
+      {runs.map((run) => (
+        <Run
+          key={run[0]!.index}
+          entries={run}
+          // A scale watches every chord, so every run of one is live.
+          phase={watchAll ? 'live' : phaseOf(roleFor, run[0]!.index, run.at(-1)!.index + 1)}
+          roleFor={roleFor}
+          watchAll={watchAll}
+          fifths={fifths}
+          watched={watched}
+          position={position}
+          stems={beaming.stems}
+        />
+      ))}
+    </>
   )
 }
 

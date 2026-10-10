@@ -81,7 +81,7 @@ export const SongScore = React.memo(function SongScore() {
     return fingeringHints(song)
   }, [song, density])
 
-  const { steps, measured } = useMeasuredScore(song, part, hints, view === 'sheet')
+  const { steps, measured, layers, regions } = useMeasuredScore(song, part, hints, view === 'sheet')
 
   /**
    * Which step is "here".
@@ -124,6 +124,33 @@ export const SongScore = React.memo(function SongScore() {
   // The bars that carry a repeat sign or stand under an ending bracket.
   const marks = React.useMemo(() => barMarksOf(song?.measures), [song])
 
+  /*
+   * The stretch of the piece the moving staff shows.
+   *
+   * All of it, for a piano's usual two staves. But a piece on four staves is
+   * on two for most of its length, and one line with all four from end to end
+   * would show the two-staff pages half the size with empty staves above and
+   * below them. So the line is the stretch the player is in, drawn on the
+   * staves that stretch uses, and changes once when the staves do — the way a
+   * printed score starts a new system there.
+   */
+  const region = regions?.find((each) => here >= each.from && here < each.to) ?? regions?.[0]
+  const stretch = React.useMemo(
+    () =>
+      region && layers
+        ? {
+            measured: measured.slice(region.from, region.to),
+            layers: layers.map((layer) => layer.slice(region.from, region.to)),
+            rows: region.rows,
+            // The metre is stated where the piece begins, and not again; and
+            // the final bar line stands where it ends.
+            withTime: region.from === 0,
+            final: region.to === measured.length,
+          }
+        : null,
+    [region, layers, measured],
+  )
+
   const shared = {
     measured,
     marks,
@@ -137,5 +164,9 @@ export const SongScore = React.memo(function SongScore() {
       : 'Grand staff',
   }
 
-  return view === 'sheet' ? <SheetView {...shared} /> : <FlowView {...shared} />
+  return view === 'sheet' ? (
+    <SheetView {...shared} layers={layers} regions={regions} />
+  ) : (
+    <FlowView {...shared} {...stretch} />
+  )
 })

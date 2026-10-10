@@ -8,6 +8,7 @@ import {
   valueQuarters,
   written,
   writtenValue,
+  type Hand,
   type Song,
   type SongMeasure,
   type SongNote,
@@ -15,7 +16,18 @@ import {
   type Staff,
   type WrittenValue,
 } from '@sonara/shared'
-import { CLEF_CHANGE_WIDTH, HALF_HEIGHT, KEY_X, keyWidth, STEP, yOn } from './staff-frame'
+import {
+  CLEF_CHANGE_WIDTH,
+  HALF_HEIGHT,
+  KEY_X,
+  keyWidth,
+  STAFF_BANDS,
+  STAFF_HEIGHT,
+  STEP,
+  yOn,
+  type LayerPlace,
+  type RowsShown,
+} from './staff-frame'
 import {
   chordExtent,
   partsExtent,
@@ -214,22 +226,65 @@ export interface ScoreSource {
   readonly rests?: Song['rests']
   /** The clefs its staves are read in, where the score changes them. */
   readonly clefs?: Song['clefs']
+  /** How many staves the piano is written on, where that is more than two. */
+  readonly staves?: number
 }
+
+/**
+ * One pair of staves out of a score written on more than two: which of the
+ * score's staves, counted from the top, is drawn on each of the pair's.
+ *
+ * A piano on four staves is two pairs, a hand each. On three it is a pair and
+ * a staff over, and that last pair has only its lower staff.
+ */
+export interface ScoreLayer {
+  readonly treble?: number
+  readonly bass?: number
+}
+
+/** The pairs a score's staves are drawn in. None for a piano's usual two, which is one pair and needs no telling. */
+export function layersOf(staves: number | undefined): readonly ScoreLayer[] | undefined {
+  if (!staves || staves <= 2) return undefined
+  const layers: ScoreLayer[] = []
+  for (let top = 1; top <= staves; top += 2)
+    layers.push(top < staves ? { treble: top, bass: top + 1 } : { bass: top })
+  return layers
+}
+
+/** The staff of the score something is written on: the one it names, or else its hand's own, the top or the bottom. */
+const staffNumberOf = (on: { readonly staff?: number; readonly hand: Hand }, staves: number) =>
+  on.staff ?? (on.hand === 'left' ? staves : 1)
+
+/** The staff of a pair that one of the score's staves is drawn on, or null where it belongs to another pair. */
+const rowIn = (layer: ScoreLayer, staff: number | undefined): Staff | null =>
+  staff === undefined
+    ? null
+    : staff === layer.treble
+      ? 'treble'
+      : staff === layer.bass
+        ? 'bass'
+        : null
 
 /** The clef each staff is in. */
 export type StaffClefs = Readonly<Record<Staff, Staff>>
 
 const OWN_CLEFS: StaffClefs = { treble: 'treble', bass: 'bass' }
 
-/** The clef each staff is in at a moment of the score. */
-export function clefsAt(clefs: Song['clefs'], ms: number): StaffClefs {
+/**
+ * The clef each staff is in at a moment of the score.
+ *
+ * Of a piano's usual two, by hand. Of one pair out of more, by which of the
+ * score's staves each is.
+ */
+export function clefsAt(clefs: Song['clefs'], ms: number, layer?: ScoreLayer): StaffClefs {
   if (!clefs?.length) return OWN_CLEFS
   let treble: Staff = 'treble'
   let bass: Staff = 'bass'
   for (const change of clefs) {
     if (change.startMs > ms + 1e-6) continue
-    if (change.hand === 'right') treble = change.clef
-    else bass = change.clef
+    const row = layer ? rowIn(layer, change.staff) : change.hand === 'right' ? 'treble' : 'bass'
+    if (row === 'treble') treble = change.clef
+    else if (row === 'bass') bass = change.clef
   }
   return treble === 'treble' && bass === 'bass' ? OWN_CLEFS : { treble, bass }
 }
@@ -250,9 +305,27 @@ export const changedClefs = (clefs: StaffClefs | undefined): StaffClefs | undefi
  */
 export function measureScore(
   song: ScoreSource | null,
-  steps: readonly SongStep[],
+  every: readonly SongStep[],
   hints?: ReadonlySet<SongNote>,
+  /**
+   * The pair of staves to measure, of a score written on more than two.
+   *
+   * Every chord of the piece is still measured, so the pairs count the same
+   * chords and can be set under one another; a chord with nothing on this
+   * pair is an empty place in it.
+   */
+  layer?: ScoreLayer,
 ): Measured[] {
+  const staves = song?.staves ?? 2
+  /** The staff of this pair a note is written on. Its hand's, on a piano's usual two. */
+  const rowOf = (note: SongNote): Staff =>
+    layer ? (rowIn(layer, staffNumberOf(note, staves)) ?? 'treble') : staffFor(note.note, note.hand)
+  const steps = layer
+    ? every.map((step) => ({
+        ...step,
+        notes: step.notes.filter((note) => rowIn(layer, staffNumberOf(note, staves)) !== null),
+      }))
+    : every
   const beat = song ? 60000 / song.bpm : 500
   const fifths = song?.key?.fifths ?? 0
   /** The bars the file laid out. Absent only for a song stored before they were read. */
@@ -273,11 +346,11 @@ export function measureScore(
   let openBar = Number.NaN
   let previous = 0
   /** The clefs at the chord before, to know a change by. Those the piece opens in, to begin with. */
-  let clefWas = clefsAt(song?.clefs, steps[0]?.startMs ?? 0)
+  let clefWas = clefsAt(song?.clefs, steps[0]?.startMs ?? 0, layer)
   const marks = barMarksOf(measures)
 
   const onStaff = (candidate: SongStep, staff: Staff) =>
-    candidate.notes.some((note) => staffFor(note.note, note.hand) === staff)
+    candidate.notes.some((note) => rowOf(note) === staff)
 
   /*
    * Which bar a chord falls in.
@@ -308,7 +381,7 @@ export function measureScore(
     const bar = barOf(step)
     for (const note of step.notes) {
       if (note.voice === undefined) continue
-      const key = `${bar}:${staffFor(note.note, note.hand)}`
+      const key = `${bar}:${rowOf(note)}`
       const seen = voicesIn.get(key) ?? []
       if (!seen.includes(note.voice))
         voicesIn.set(
@@ -365,7 +438,7 @@ export function measureScore(
     const bar = barOf(steps[at]!)
     for (const { note } of helds) {
       if (note.voice === undefined) continue
-      const key = `${bar}:${staffFor(note.note, note.hand)}`
+      const key = `${bar}:${rowOf(note)}`
       const seen = voicesIn.get(key) ?? []
       if (!seen.includes(note.voice))
         voicesIn.set(
@@ -397,7 +470,7 @@ export function measureScore(
     const filled = new Set<string>()
     for (const step of steps)
       for (const note of step.notes) {
-        const staff = staffFor(note.note, note.hand)
+        const staff = rowOf(note)
         sounding[staff].push([note.startMs, note.startMs + note.durationMs])
         // Every bar the note sounds in, not only the one it starts in.
         const last = barIndexAt(measures, note.startMs + note.durationMs - 1)
@@ -406,7 +479,13 @@ export function measureScore(
       }
     const seen = new Set<string>()
     for (const rest of [...song.rests].sort((a, b) => b.durationQ - a.durationQ)) {
-      const staff: Staff = rest.hand === 'left' ? 'bass' : 'treble'
+      const staff: Staff | null = layer
+        ? rowIn(layer, staffNumberOf(rest, staves))
+        : rest.hand === 'left'
+          ? 'bass'
+          : 'treble'
+      // Another pair's rest.
+      if (!staff) continue
       const measure = measures[barIndexAt(measures, rest.startMs)]!
       const endMs = rest.startMs + rest.durationQ * measure.quarterMs
       const whole =
@@ -469,7 +548,7 @@ export function measureScore(
     // it writes it as a crotchet with a stem.
     const value = { treble: valueOn('treble'), bass: valueOn('bass') }
     function valueOn(staff: Staff): WrittenValue {
-      const here = writtenHere.filter((note) => staffFor(note.note, note.hand) === staff)
+      const here = writtenHere.filter((note) => rowOf(note) === staff)
       if (here.length === 0) return writtenValue(beat, beat)
 
       // One stem per staff, so one value for the chord under it: the longest,
@@ -502,15 +581,16 @@ export function measureScore(
     // The clef each staff is in at this moment, and whether either has just
     // changed. The clef the piece opens in is not a change: the head of the
     // line says it.
-    const clefs = clefsAt(song?.clefs, step.startMs)
+    const clefs = clefsAt(song?.clefs, step.startMs, layer)
     const changed = (['treble', 'bass'] as const).filter((staff) => clefs[staff] !== clefWas[staff])
     clefWas = clefs
     const sorted = [...writtenHere].sort((a, b) => a.note - b.note)
     const notes: DrawnNote[] = sorted.map((note) => {
       const held = heldNotes.has(note)
-      const on = staffFor(note.note, note.hand)
+      const on = rowOf(note)
       const drawn = {
         note: note.note,
+        ...(layer ? { row: on } : {}),
         ...(clefs[on] !== on ? { clef: clefs[on] } : {}),
         finger: !hints || hints.has(note) ? note.finger : undefined,
         rolled: note.rolled,
@@ -673,15 +753,16 @@ export function measureScore(
 
     /** The tuplet a staff's notes are written inside, if the score put them in one. */
     const tupletOn = (staff: Staff) =>
-      step.notes.find((note) => staffFor(note.note, note.hand) === staff && note.written?.tuplet)
-        ?.written?.tuplet
+      step.notes.find((note) => rowOf(note) === staff && note.written?.tuplet)?.written?.tuplet
     const tuplet = {
       ...(tupletOn('treble') ? { treble: tupletOn('treble')! } : {}),
       ...(tupletOn('bass') ? { bass: tupletOn('bass')! } : {}),
     }
 
     return {
-      step,
+      // The chord as the score has it, every pair's notes and all: the keys
+      // are watched for the whole of it.
+      step: every[index]!,
       index,
       notes,
       value: shown,
@@ -886,8 +967,164 @@ export function useMeasuredScore(
       },
     [song, page, part],
   )
-  const measured = React.useMemo(() => measureScore(source, steps, hints), [source, steps, hints])
-  return { steps, measured }
+  const score = React.useMemo((): {
+    /** Every chord, measured: the whole system's, where the score has more than one pair of staves. */
+    measured: readonly Measured[]
+    /** Each pair's chords, on a score written on more than two staves. */
+    layers?: readonly (readonly Measured[])[]
+    /** The stretches of such a score that are drawn on the same staves. */
+    regions?: readonly ScoreRegion[]
+  } => {
+    const pairs = layersOf(song?.staves)
+    if (!song || !pairs) return { measured: measureScore(source, steps, hints) }
+    const { layers, outline } = alignLayers(
+      pairs.map((pair) => measureScore(source, steps, hints, pair)),
+    )
+    return { measured: outline, layers, regions: regionsOf(song, steps, pairs) }
+  }, [song, source, steps, hints])
+  return { steps, ...score }
+}
+
+/**
+ * Set the pairs of a score's staves under one another.
+ *
+ * Each pair was measured by itself, and gave each chord the room its own ink
+ * asks for. On the page the pairs are one system: a chord is one column down
+ * all of them. So every chord takes the widest room any pair wanted for it —
+ * and `outline` is the system seen as a whole, for the things that are
+ * decided once for all its staves: where the lines break, and where the bar
+ * lines stand.
+ */
+export function alignLayers(layers: readonly (readonly Measured[])[]): {
+  layers: Measured[][]
+  outline: Measured[]
+} {
+  const outline = (layers[0] ?? []).map((entry, at): Measured => {
+    const all = layers.map((layer) => layer[at]!)
+    const rests = all.flatMap((each) => each.rests ?? [])
+    return {
+      ...entry,
+      notes: all.flatMap((each) => each.notes),
+      gap: Math.max(...all.map((each) => each.gap)),
+      // Sideways, the widest of them. Up and down mean nothing across pairs,
+      // each of which measures from its own middle: `layoutOf` asks the pairs.
+      extent: {
+        ...entry.extent,
+        left: Math.max(...all.map((each) => each.extent.left)),
+        right: Math.max(...all.map((each) => each.extent.right)),
+      },
+      ...(rests.length > 0 ? { rests } : {}),
+    }
+  })
+  return {
+    layers: layers.map((layer) =>
+      layer.map((entry, at) =>
+        entry.gap === outline[at]!.gap ? entry : { ...entry, gap: outline[at]!.gap },
+      ),
+    ),
+    outline,
+  }
+}
+
+/** How many bars a staff is empty for before the page leaves it out. */
+const HIDE_AFTER = 8
+
+/** A stretch of a score drawn on the same staves throughout. */
+export interface ScoreRegion {
+  /** The half-open run of chords it holds. */
+  readonly from: number
+  readonly to: number
+  /** Which staves of each pair are drawn through it. */
+  readonly rows: readonly RowsShown[]
+}
+
+/**
+ * Which staves each stretch of a score is drawn on.
+ *
+ * A piece on four staves is seldom on four throughout. The extra staves are
+ * there for the pages that need them, and a printed score leaves them off the
+ * pages that do not: two staves until the music thickens, four after. So a
+ * staff with nothing on it for a good many bars is left out for as long as it
+ * is empty — never fewer than two, because a piano is two hands whether or not
+ * one of them is resting.
+ *
+ * Read from the whole piece, not from the hand being practised: which staves
+ * a page has does not change with who is playing from it.
+ */
+export function regionsOf(
+  song: Pick<Song, 'notes' | 'measures' | 'staves'>,
+  steps: readonly SongStep[],
+  pairs: readonly ScoreLayer[],
+): ScoreRegion[] {
+  const measures = song.measures
+  const count = song.staves ?? 2
+  const everything = (): ScoreRegion[] => [
+    {
+      from: 0,
+      to: steps.length,
+      rows: pairs.map((pair) => ({
+        treble: pair.treble !== undefined,
+        bass: pair.bass !== undefined,
+      })),
+    },
+  ]
+  if (!measures?.length || steps.length === 0) return everything()
+
+  /** Whether each staff, counted from one, has a note sounding in each bar. */
+  const used = Array.from({ length: count + 1 }, () =>
+    new Array<boolean>(measures.length).fill(false),
+  )
+  for (const note of song.notes) {
+    if (note.role !== 'keyboard') continue
+    const row = used[Math.min(count, Math.max(1, staffNumberOf(note, count)))]!
+    const last = barIndexAt(measures, note.startMs + note.durationMs - 1)
+    for (let bar = barIndexAt(measures, note.startMs); bar <= last; bar++) row[bar] = true
+  }
+  // Left out only through a long silence: a staff that came and went with
+  // every bar's rest would have the page rearranging itself as it was read.
+  const drawn = used.map((row) => {
+    const kept = row.map(() => true)
+    for (let bar = 0; bar < row.length;) {
+      let end = bar
+      while (end < row.length && !row[end]) end++
+      if (end - bar >= HIDE_AFTER) kept.fill(false, bar, end)
+      bar = Math.max(end, bar + 1)
+    }
+    return kept
+  })
+  const sets = measures.map((_, bar) => {
+    const set = new Set<number>()
+    for (let staff = 1; staff <= count; staff++) if (drawn[staff]![bar]) set.add(staff)
+    return set
+  })
+  // Never fewer than two: a bar that would be left with one staff keeps the
+  // staves of the bars beside it.
+  for (let bar = 1; bar < sets.length; bar++)
+    if (sets[bar]!.size < 2) for (const staff of sets[bar - 1]!) sets[bar]!.add(staff)
+  for (let bar = sets.length - 2; bar >= 0; bar--)
+    if (sets[bar]!.size < 2) for (const staff of sets[bar + 1]!) sets[bar]!.add(staff)
+  if (sets.some((set) => set.size < 2)) return everything()
+
+  const regions: (ScoreRegion & { key: string })[] = []
+  for (const [index, step] of steps.entries()) {
+    const set = sets[barIndexAt(measures, step.startMs)]!
+    const key = [...set].sort((a, b) => a - b).join()
+    const open = regions.at(-1)
+    if (open && open.key === key) {
+      regions[regions.length - 1] = { ...open, to: index + 1 }
+      continue
+    }
+    regions.push({
+      key,
+      from: index,
+      to: index + 1,
+      rows: pairs.map((pair) => ({
+        treble: pair.treble !== undefined && set.has(pair.treble),
+        bass: pair.bass !== undefined && set.has(pair.bass),
+      })),
+    })
+  }
+  return regions.map(({ from, to, rows }) => ({ from, to, rows }))
 }
 
 /** Where the time signature's numerals are centred, after the key. */
@@ -985,6 +1222,119 @@ export function spreadOf(measured: readonly Measured[]): number {
   return Math.ceil(overlap / 2)
 }
 
+/** From one staff's top line to the next's, on a plain system. */
+const STAFF_APART = STAFF_BANDS.bass.top - STAFF_BANDS.treble.top
+/** What a frame keeps clear above its top staff and below its bottom one: the room the clefs reach into. */
+const HEAD_ROOM = HALF_HEIGHT + STAFF_BANDS.treble.top
+const BOTH_ROWS: RowsShown = { treble: true, bass: true }
+
+/** Where everything of a system stands, top to bottom. */
+export interface SystemLayout {
+  /** Each pair of staves: how far down the system it is, how far it has opened, and which of its two it has. */
+  readonly layers: readonly LayerPlace[]
+  /** The top line of every staff drawn, from the top of the system down. */
+  readonly staves: readonly number[]
+  /** The frame that holds all of it. */
+  readonly top: number
+  readonly bottom: number
+}
+
+/** How far one staff's ink reaches above and below its own top line, bar by bar. */
+function staffReach(measured: readonly Measured[], row: Staff) {
+  const line = STAFF_BANDS[row].top
+  const bars = new Map<number, { up: number; down: number }>()
+  for (const { bar, extent } of measured) {
+    const up = row === 'treble' ? extent.outer.treble : extent.inner.bass
+    const down = row === 'treble' ? extent.inner.treble : extent.outer.bass
+    if (up === undefined || down === undefined) continue
+    const reach = bars.get(bar) ?? { up: Infinity, down: -Infinity }
+    reach.up = Math.min(reach.up, up - line)
+    reach.down = Math.max(reach.down, down - line)
+    bars.set(bar, reach)
+  }
+  return bars
+}
+
+/**
+ * Lay a system out from the top: where each of its staves stands.
+ *
+ * One pair of staves is a piano's usual system, opened by its `spreadOf` and
+ * framed by `frameOf`, and comes out of here exactly as those two say. More
+ * than one — or a pair with a staff left out — is the same question asked of
+ * every two staves that are neighbours on the page, whichever pairs they
+ * belong to: the plain distance, or more where in some bar the upper one's ink
+ * comes down past the lower one's. So a staff of chords under a staff of
+ * ledger lines gets the room, and the staves either side of them do not.
+ *
+ * One answer for the whole run, as with a single pair: the staves of a system
+ * do not move while it is read.
+ */
+export function layoutOf(
+  layers: readonly (readonly Measured[])[],
+  /** Which staves of each pair are drawn. All of them, where it does not say. */
+  rows?: readonly RowsShown[],
+  marks?: BarMarks,
+): SystemLayout {
+  const shown = (at: number): RowsShown => rows?.[at] ?? BOTH_ROWS
+  if (layers.length === 1 && shown(0).treble && shown(0).bass) {
+    const spread = spreadOf(layers[0]!)
+    return {
+      layers: [{ offset: 0, spread, rows: BOTH_ROWS }],
+      staves: [STAFF_BANDS.treble.top - spread, STAFF_BANDS.bass.top + spread],
+      ...frameOf(layers[0]!, marks, spread),
+    }
+  }
+
+  const slots = layers.flatMap((layer, at) =>
+    (['treble', 'bass'] as const)
+      .filter((row) => shown(at)[row])
+      .map((row) => ({ at, row, reach: staffReach(layer, row) })),
+  )
+  const tops: number[] = []
+  for (const [index, slot] of slots.entries()) {
+    const above = slots[index - 1]
+    if (!above) {
+      tops.push(STAFF_BANDS.treble.top)
+      continue
+    }
+    let overlap = 0
+    for (const [bar, upper] of above.reach) {
+      const lower = slot.reach.get(bar)
+      if (lower) overlap = Math.max(overlap, upper.down - lower.up + STAFF_CLEAR - STAFF_APART)
+    }
+    // In whole steps either way, as a single pair opens.
+    tops.push(tops[index - 1]! + STAFF_APART + Math.ceil(overlap / 2) * 2)
+  }
+
+  const places = layers.map((_, at): LayerPlace => {
+    const upper = slots.findIndex((slot) => slot.at === at && slot.row === 'treble')
+    const lower = slots.findIndex((slot) => slot.at === at && slot.row === 'bass')
+    if (upper >= 0 && lower >= 0) {
+      const spread = (tops[lower]! - tops[upper]! - STAFF_APART) / 2
+      return { offset: tops[upper]! - STAFF_BANDS.treble.top + spread, spread, rows: shown(at) }
+    }
+    if (upper >= 0)
+      return { offset: tops[upper]! - STAFF_BANDS.treble.top, spread: 0, rows: shown(at) }
+    if (lower >= 0)
+      return { offset: tops[lower]! - STAFF_BANDS.bass.top, spread: 0, rows: shown(at) }
+    return { offset: 0, spread: 0, rows: shown(at) }
+  })
+
+  const first = tops[0] ?? STAFF_BANDS.treble.top
+  let top = first - HEAD_ROOM
+  // A bracket over an ending stands above the bar numbers, and its number
+  // above that: as far over the top staff as it is on a plain system.
+  if (marks?.size && layers[0]?.some((entry) => marks.get(entry.bar)?.ending))
+    top = Math.min(top, first - (STAFF_BANDS.treble.top - (VOLTA_Y - STEP * 1.5)))
+  let bottom = (tops.at(-1) ?? first) + STAFF_HEIGHT + HEAD_ROOM
+  for (const [index, slot] of slots.entries())
+    for (const reach of slot.reach.values()) {
+      top = Math.min(top, tops[index]! + reach.up)
+      bottom = Math.max(bottom, tops[index]! + reach.down)
+    }
+  return { layers: places, staves: tops, top: Math.floor(top), bottom: Math.ceil(bottom) }
+}
+
 export interface Placed extends Measured {
   readonly x: number
   /** The ties arriving here, each with where it comes from on this line. */
@@ -1004,7 +1354,7 @@ export interface Placed extends Measured {
  * the chord would have had, and the chord follows at the distance they were
  * measured apart.
  */
-function leadIn(first: Measured | undefined): number {
+export function leadIn(first: Measured | undefined): number {
   return Math.max(0, ...(first?.rests ?? []).map((rest) => rest.back))
 }
 
@@ -1015,8 +1365,18 @@ function leadIn(first: Measured | undefined): number {
  * lines that each stop wherever the music happened to run out reads as a
  * draft rather than as a score.
  */
-export function place(measured: readonly Measured[], startX: number, stretch = 1): Placed[] {
-  let x = startX + leadIn(measured[0])
+export function place(
+  measured: readonly Measured[],
+  startX: number,
+  stretch = 1,
+  /**
+   * How much later the line starts for the rests in front of its first chord.
+   * Its own, unless it is one pair of staves of several, which all start where
+   * the one with the most in front of it has to.
+   */
+  lead = leadIn(measured[0]),
+): Placed[] {
+  let x = startX + lead
   const placed = measured.map((entry, index): Placed => {
     if (index > 0) x += entry.gap * stretch
     // A rest in front of the chord keeps its share of the room as the line is
@@ -1242,6 +1602,11 @@ export function breakIntoSystems(
   measured: readonly Measured[],
   fifths: number,
   width: number,
+  /**
+   * The chords a new line has to begin on, whatever room is left: where the
+   * staves the music is drawn on change, which a line cannot do halfway along.
+   */
+  breaks?: ReadonlySet<number>,
 ): System[] {
   const systems: System[] = []
   let from = 0
@@ -1251,7 +1616,12 @@ export function breakIntoSystems(
     let x = start
     let to = from + 1
     let lastBar = -1
+    let forced = false
     for (let i = from + 1; i < measured.length; i++) {
+      if (breaks?.has(i)) {
+        forced = true
+        break
+      }
       const at = x + measured[i]!.gap
       if (at + measured[i]!.extent.right + RIGHT_MARGIN > width) break
       x = at
@@ -1260,7 +1630,7 @@ export function breakIntoSystems(
     }
     // Back up to the bar line, unless that would empty the system or we have
     // reached the end of the piece and there is nothing to back up for.
-    if (to < measured.length && lastBar > from) to = lastBar
+    if (!forced && to < measured.length && lastBar > from) to = lastBar
 
     systems.push({ from, to, stretch: stretchFor(measured, from, to, fifths, width) })
     from = to

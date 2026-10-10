@@ -1,5 +1,13 @@
 import * as React from 'react'
-import { ClefChange, KEY_X, OnStaff, STEP, useSpread, useSystemSpan, yOn } from './staff-frame'
+import {
+  ClefChange,
+  KEY_X,
+  OnStaff,
+  STAFF_BANDS,
+  STEP,
+  useStaffTops,
+  useSystemSpan,
+} from './staff-frame'
 import { Chord, KeySignature, Rest, TimeSignature } from './StaffNotes'
 import { useKeyboardStore } from '@/state/keyboard-store'
 import {
@@ -56,7 +64,7 @@ export function Signatures({
  * instrument on the page: a pianist reads a bar as a single column, top of the
  * treble to the bottom of the bass. They were once two short lines, one per
  * strip of paper, and a bar's two halves read as two bars that happened to
- * line up.
+ * line up. Through all of them, where a system has three staves or four.
  */
 export function BarLines({
   lines,
@@ -66,7 +74,6 @@ export function BarLines({
   numbered?: boolean
 }) {
   const span = useSystemSpan()
-  const spread = useSpread()
   return (
     <>
       {lines.map(({ x, bar, closes, opens }) => (
@@ -77,9 +84,9 @@ export function BarLines({
             <line x1={x} y1={span.top} x2={x} y2={span.bottom} className="staff__bar" />
           )}
           {/* Numbered, so a player can say where they are out loud. Over the
-              treble staff, and so wherever it has gone. */}
+              top staff, and so wherever it has gone. */}
           {numbered && (
-            <text x={x + STEP * 1.4} y={yOn(14, 'treble') - spread} className="staff__bar-number">
+            <text x={x + STEP * 1.4} y={span.top - STEP * 4} className="staff__bar-number">
               {bar}
             </text>
           )}
@@ -98,17 +105,14 @@ const DOT_GAP = STEP * 1.1
 
 /** The two dots of a repeat sign on each staff: in the spaces either side of the middle line. */
 function RepeatDots({ x }: { x: number }) {
-  const spread = useSpread()
+  const tops = useStaffTops()
   return (
     <>
-      {[
-        yOn(7, 'treble') - spread,
-        yOn(5, 'treble') - spread,
-        yOn(-5, 'bass') + spread,
-        yOn(-7, 'bass') + spread,
-      ].map((y) => (
-        <circle key={y} cx={x} cy={y} r={STEP * 0.42} className="staff__dot" />
-      ))}
+      {tops
+        .flatMap((top) => [top + STEP * 3, top + STEP * 5])
+        .map((y) => (
+          <circle key={y} cx={x} cy={y} r={STEP * 0.42} className="staff__dot" />
+        ))}
     </>
   )
 }
@@ -157,8 +161,11 @@ export function BarRests({ rests }: { rests: readonly BarRest[] }) {
 /** The ending brackets over a system, each with its number where it begins. */
 export function Voltas({ voltas }: { voltas: readonly Volta[] }) {
   const hook = STEP * 2
-  return (
-    <OnStaff staff="treble">
+  // Over the top staff, wherever that is: `VOLTA_Y` is where it goes on a
+  // plain system.
+  const lift = useSystemSpan().top - STAFF_BANDS.treble.top
+  const drawn = (
+    <>
       {voltas.map(({ from, to, label, closed }) => (
         <g key={from} className="staff__volta">
           <path
@@ -177,8 +184,9 @@ export function Voltas({ voltas }: { voltas: readonly Volta[] }) {
           )}
         </g>
       ))}
-    </OnStaff>
+    </>
   )
+  return lift ? <g transform={`translate(0 ${lift})`}>{drawn}</g> : drawn
 }
 
 /**
@@ -238,13 +246,13 @@ export function SystemEnd({
 export const PLAYHEAD_SHOWN = false
 
 export function Playhead({ x }: { x: number }) {
-  const spread = useSpread()
+  const span = useSystemSpan()
   return (
     <line
       x1={x}
-      y1={yOn(12, 'treble') - spread}
+      y1={span.top - STEP * 2}
       x2={x}
-      y2={yOn(-12, 'bass') + spread}
+      y2={span.bottom + STEP * 2}
       className="staff__playhead"
     />
   )

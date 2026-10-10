@@ -93,10 +93,73 @@ export function OnStaff({
   return <g transform={carried(staff, spread)}>{children}</g>
 }
 
-/** The top and bottom of a system: where a line through both its staves runs. */
-export function useSystemSpan(): { top: number; bottom: number } {
+/** A staff, top line to bottom line, in units. */
+export const STAFF_HEIGHT = STEP * 8
+
+/** Which of a pair of staves are drawn. Both, on a piano's usual page. */
+export type RowsShown = Readonly<Record<'treble' | 'bass', boolean>>
+const BOTH_ROWS: RowsShown = { treble: true, bass: true }
+
+/**
+ * The staves of a pair that are drawn here.
+ *
+ * A piano written on three staves has a pair and one over, and a page that
+ * hides the staves with nothing on them has pairs with one staff missing. What
+ * is drawn on every staff — its lines, its paper, its clef and signatures —
+ * asks this before drawing itself on a staff that is not there.
+ */
+export const RowsContext = React.createContext<RowsShown>(BOTH_ROWS)
+export const useRows = () => React.useContext(RowsContext)
+const ROWS = ['treble', 'bass'] as const
+
+/**
+ * Where one pair of staves stands in its system, and which of the two it has.
+ *
+ * `offset` is how far down the system the pair's own middle is; `spread` how
+ * far its two staves have opened from it.
+ */
+export interface LayerPlace {
+  readonly offset: number
+  readonly spread: number
+  readonly rows: RowsShown
+}
+
+/**
+ * One pair of staves of a system that has more than one.
+ *
+ * Everything that draws on a staff draws on the upper or the lower of a pair,
+ * measured from the pair's middle. A system of four staves is two such pairs,
+ * one under the other, and each is drawn by the code that draws a piano's
+ * usual two — moved down to where it stands. On a system of one pair this is
+ * no group at all, and the picture is the one it always was.
+ */
+export function StaffLayer({ place, children }: { place: LayerPlace; children: React.ReactNode }) {
+  const body = (
+    <SpreadContext.Provider value={place.spread}>
+      <RowsContext.Provider value={place.rows}>{children}</RowsContext.Provider>
+    </SpreadContext.Provider>
+  )
+  return place.offset ? <g transform={`translate(0 ${place.offset})`}>{body}</g> : body
+}
+
+/**
+ * The top line of every staff of the system, from the top down, in the
+ * system's own units. Set by whoever lays a system out; without it a system is
+ * a piano's usual two staves, opened by the spread.
+ */
+export const SystemContext = React.createContext<readonly number[] | null>(null)
+
+/** The top line of each staff a line through the whole system crosses. */
+export function useStaffTops(): readonly number[] {
+  const tops = React.useContext(SystemContext)
   const spread = useSpread()
-  return { top: yOn(10, 'treble') - spread, bottom: yOn(-10, 'bass') + spread }
+  return tops ?? [STAFF_BANDS.treble.top - spread, STAFF_BANDS.bass.top + spread]
+}
+
+/** The top and bottom of a system: where a line through all its staves runs. */
+export function useSystemSpan(): { top: number; bottom: number } {
+  const tops = useStaffTops()
+  return { top: tops[0]!, bottom: tops.at(-1)! + STAFF_HEIGHT }
 }
 
 /** Where the staff lines begin, in units from the drawing's left edge. */
@@ -121,9 +184,10 @@ export const STAFF_BANDS = {
 /** The two strips of paper, for a drawing that does not scroll. See `STAFF_BANDS`. */
 export function PaperCards({ width }: { width: number }) {
   const spread = useSpread()
+  const rows = useRows()
   return (
     <>
-      {(['treble', 'bass'] as const).map((staff) => (
+      {ROWS.filter((staff) => rows[staff]).map((staff) => (
         <rect
           key={staff}
           x={STAFF_START}
@@ -175,9 +239,10 @@ export function keyWidth(fifths: number): number {
 /** The ten lines, from `from` to `to`. */
 export function StaffLines({ from, to }: { from: number; to: number }) {
   const spread = useSpread()
+  const rows = useRows()
   return (
     <>
-      {(['treble', 'bass'] as const).map((staff) => (
+      {ROWS.filter((staff) => rows[staff]).map((staff) => (
         <g key={staff} transform={carried(staff, spread)}>
           {STAFF_LINES[staff].map((steps) => (
             <line
@@ -214,9 +279,23 @@ export function StaffGutter({
   /** The clef each staff is in here, where it is not the staff's own. */
   clefs?: Partial<Record<'treble' | 'bass', 'treble' | 'bass'>>
 }) {
-  const spread = useSpread()
-  // The brace and the opening line hold the two staves together, so they are
-  // as tall as the system is, however far it has opened.
+  return (
+    <>
+      <SystemBrace />
+      <GutterStaves clefs={clefs} />
+    </>
+  )
+}
+
+/**
+ * The brace and the line that open a system, down the whole of it.
+ *
+ * One of each however many staves there are: three staves or four under one
+ * brace are still one instrument.
+ */
+export function SystemBrace() {
+  // The brace and the opening line hold the staves together, so they are as
+  // tall as the system is, however far it has opened.
   const { top, bottom } = useSystemSpan()
   const middle = (top + bottom) / 2
   // A curl either side of the middle, its point towards the margin.
@@ -233,7 +312,21 @@ export function StaffGutter({
         className="staff__brace"
       />
       <line x1={STAFF_START} y1={top} x2={STAFF_START} y2={bottom} className="staff__system-line" />
-      {(['treble', 'bass'] as const).map((staff) => (
+    </>
+  )
+}
+
+/** The clefs of a pair of staves, each on the stretch of staff it sits on. */
+export function GutterStaves({
+  clefs,
+}: {
+  clefs?: Partial<Record<'treble' | 'bass', 'treble' | 'bass'>>
+}) {
+  const spread = useSpread()
+  const rows = useRows()
+  return (
+    <>
+      {ROWS.filter((staff) => rows[staff]).map((staff) => (
         <g key={staff} transform={carried(staff, spread)}>
           {STAFF_LINES[staff].map((steps) => (
             <line

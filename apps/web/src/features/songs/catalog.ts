@@ -205,7 +205,7 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
   },
   // A library engraving corrected, bar by bar, against Godowsky's edition (Art
   // Publication Society, 1923). Its last pages are on four staves, two to a
-  // hand; here each hand is one staff.
+  // hand, and so are they here.
   {
     id: 'rachmaninoff-prelude-op-3-no-2',
     title: 'Prelude in C-sharp Minor, Op. 3 No. 2',

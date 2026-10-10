@@ -115,6 +115,14 @@ const num = (xml: string, tag: string): number | undefined => {
   return Number.isFinite(value) ? value : undefined
 }
 
+/** The clef a staff of a part opens in: its sign, as the file writes it. */
+function openingClef(part: string, staffNumber: number): string | undefined {
+  for (const [, attrs = '', clef = ''] of part.matchAll(/<clef\b([^>]*)>([\s\S]*?)<\/clef>/g))
+    if (Number(/number="(\d+)"/.exec(attrs)?.[1] ?? '1') === staffNumber)
+      return inner(clef, 'sign')?.trim()
+  return undefined
+}
+
 const flag = (xml: string, tag: string): boolean =>
   new RegExp(`<${tag}(?:\\s[^>]*)?/>|<${tag}(?:\\s[^>]*)?>`).test(xml)
 
@@ -303,7 +311,9 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
   const pedalsQ: { fromQ: number; toQ: number }[] = []
   const chordsQ: { startQ: number; text: string }[] = []
   /** The clefs the piano's staves are put in, in the order the file says so. */
-  const clefsQ: { hand: Hand; startQ: number; clef: 'treble' | 'bass' }[] = []
+  const clefsQ: { hand: Hand; staff?: number; startQ: number; clef: 'treble' | 'bass' }[] = []
+  /** How many staves the piano is written on, where that is more than two. */
+  let pianoStaves: number | undefined
   let leadNamesStaves = false
   let tupletCounter = 0
 
@@ -322,6 +332,36 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
     const role: PartRole = piano?.parts.has(part.id) ? 'keyboard' : 'accompaniment'
     /** The hand this whole part is, when the piano is written as a part a hand. */
     const partHand = piano?.hands.get(part.id)
+    /*
+     * A piano on three staves or four.
+     *
+     * Music too thick for two staves is given more: a staff for what a hand
+     * holds and another for what it moves. Each note is then kept on the staff
+     * the score put it on, and the hand is read from which staff that is — the
+     * upper half the right hand's, the lower the left's. With an odd number
+     * the middle staff could be either, and goes by the clef it opens in.
+     */
+    const staffCount = role === 'keyboard' && !partHand ? (stavesOf.get(part.id) ?? 1) : 1
+    const manyStaves = staffCount > 2 ? staffCount : 0
+    if (manyStaves) pianoStaves = manyStaves
+    const rightStaves =
+      manyStaves % 2 === 0
+        ? manyStaves / 2
+        : openingClef(part.body, (manyStaves + 1) / 2) === 'F'
+          ? (manyStaves - 1) / 2
+          : (manyStaves + 1) / 2
+    /** The hand a staff of this part belongs to. */
+    const handOn = (staffNumber: number | undefined): Hand | undefined =>
+      partHand ??
+      (manyStaves && staffNumber !== undefined
+        ? staffNumber <= rightStaves
+          ? 'right'
+          : 'left'
+        : staffNumber === 2
+          ? 'left'
+          : staffNumber === 1
+            ? 'right'
+            : undefined)
     const loudnessOf = partHand ? 'piano' : part.id
     const loudness = dynamics.get(loudnessOf) ?? { events: [], notes: [] }
     dynamics.set(loudnessOf, loudness)
@@ -368,10 +408,19 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
               const kind = sign === 'G' ? 'treble' : sign === 'F' ? 'bass' : null
               if (!kind) continue
               const staffNumber = Number(/number="(\d+)"/.exec(attrs)?.[1] ?? '1')
-              const hand: Hand = partHand ?? (staffNumber === 2 ? 'left' : 'right')
+              const hand: Hand = handOn(staffNumber) ?? 'right'
+              const startQ = measureStartQ + cursor / divisions
+              if (manyStaves) {
+                // Each staff says its own clef, the one it opens in included:
+                // nothing about a third staff's clef can be assumed.
+                const last = clefsQ.findLast((entry) => entry.staff === staffNumber)
+                if (last?.clef !== kind)
+                  clefsQ.push({ hand, staff: staffNumber, startQ, clef: kind })
+                continue
+              }
               const last = clefsQ.findLast((entry) => entry.hand === hand)
               if ((last?.clef ?? (hand === 'right' ? 'treble' : 'bass')) !== kind)
-                clefsQ.push({ hand, startQ: measureStartQ + cursor / divisions, clef: kind })
+                clefsQ.push({ hand, startQ, clef: kind })
             }
           const newBeats = num(content, 'beats')
           const newBeatType = num(content, 'beat-type')
@@ -505,7 +554,8 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
               startQ: measureStartQ + start / divisions,
               startMs: 0,
               durationQ: duration / divisions,
-              hand: partHand ?? (onStaff === 2 ? 'left' : 'right'),
+              hand: handOn(onStaff) ?? 'right',
+              ...(manyStaves ? { staff: onStaff ?? 1 } : {}),
               voice: Number(voice) || 1,
               ...(restType
                 ? {
@@ -544,8 +594,7 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
 
         const staff = num(content, 'staff')
         if (role === 'keyboard' && (staff !== undefined || partHand)) leadNamesStaves = true
-        const hand: Hand =
-          partHand ?? (staff === 2 ? 'left' : staff === 1 ? 'right' : inferHand(midi))
+        const hand: Hand = handOn(staff) ?? inferHand(midi)
 
         const startQ = isGrace
           ? Math.max(0, measureStartQ + start / divisions - GRACE_Q)
@@ -632,6 +681,7 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
           startQ,
           durationQ,
           hand,
+          ...(manyStaves ? { staff: staff ?? 1 } : {}),
           role: unpitched ? 'percussion' : role,
           spelling,
           voice: Number(voice) || 1,
@@ -795,6 +845,7 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
     ...(clefsQ.length > 0
       ? { clefs: clefsQ.map((clef) => ({ ...clef, startMs: toMs(clef.startQ) })) }
       : {}),
+    ...(pianoStaves ? { staves: pianoStaves } : {}),
     sections: sectionsFor(
       measureList,
       playOrder(measureList),

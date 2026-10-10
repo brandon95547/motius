@@ -101,6 +101,12 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
   where both happen in one bar the system is opened until the two are clear of
   each other, as a printed page does. One distance for a line — the staff does
   not move under the player — and none added to music that keeps to its staves.
+- **Three staves, or four, where the score has them.** Piano music too thick
+  for two staves is printed on more — the end of Rachmaninoff's Prelude in
+  C-sharp Minor on four, two to a hand — and is drawn on the staves it was
+  written on, under one brace, each in its own clef. A staff that is empty for
+  a long stretch is left off the page while it is, the way a printed score
+  goes from two staves to four when the music thickens.
 - **Fingering is worked out for files that have none** — see below.
 - **Drums are played as drums.** A MIDI file's percussion channel is routed to a
   synthesized kit rather than onto the piano, and accompaniment parts sound
@@ -407,6 +413,20 @@ a staff to a hand, and are read as its right and left. And where several parts
 are called a piano, the one on two staves is the piano; a one-staff part beside
 it is a line of ornaments, heard and not asked for.
 
+A MusicXML piano part on three staves or four keeps them. Every note, rest and
+clef carries the number of the staff it is on (`staff`, with `Song.staves`
+saying how many there are), and the hand is read from the staff: the upper half
+are the right hand's and the lower the left's, and the middle one of an odd
+number goes by the clef it opens in. That last is a guess, and the only one: a
+file names staves, not hands. The page draws such a score a pair of staves at
+a time (`layersOf`), each pair by the code that draws a piano's usual two, set
+under one another with the room between any two neighbors that their notes
+ask for (`layoutOf`). A staff with nothing on it for eight bars or more is left
+off the page for as long as it is empty (`regionsOf`), never leaving fewer than
+two: the page view starts a new line where the staves change, and the moving
+staff shows one such stretch at a time. Two piano parts of two staves each are
+still read as a piano and its accompaniment.
+
 A song keeps what is written apart from how it is played. Its notes and bars
 are the score, once, in score time; `sections` is the order the bars are played
 in where a repeat or an ending makes that something other than once through
@@ -445,7 +465,7 @@ from old editions, bar by bar: Liszt's "Nuages gris" from its first edition
 (Breitkopf & Härtel, 1927), Chopin's Marche funèbre, Op. 72 No. 2, from the
 Breitkopf & Härtel collected edition (1880), and Rachmaninoff's Prelude in
 C-sharp Minor, a PDMX engraving corrected against Godowsky's edition (Art
-Publication Society, 1923) and put on two staves where that goes onto four.
+Publication Society, 1923), on four staves where that goes onto four.
 The first and third movements of Beethoven's Pathétique are likewise a PDMX
 engraving corrected against the Peters edition, its left-hand tremolo
 shorthand written out as the eighth notes it stands for.

@@ -1,14 +1,17 @@
 import * as React from 'react'
 import { useElementSize } from '@/lib/hooks'
 import {
+  GUTTER,
+  GutterStaves,
   HALF_HEIGHT,
   PAPER_MARGIN,
   PaperCards,
-  SpreadContext,
   STAFF_START,
-  StaffFrame,
+  StaffLayer,
+  StaffLines,
   STEP,
-  yOn,
+  SystemBrace,
+  SystemContext,
 } from './staff-frame'
 import {
   BarLines,
@@ -33,14 +36,16 @@ import {
   barLinesIn,
   barRestsIn,
   breakIntoSystems,
-  frameOf,
   headerEnd,
-  spreadOf,
+  layoutOf,
+  leadIn,
   place,
   voltasIn,
   type BarMarks,
   type Measured,
   type Placed,
+  type ScoreRegion,
+  type SystemLayout,
 } from './score'
 import { beamsIn, type StepStems } from './beams'
 
@@ -95,6 +100,8 @@ const PLAIN_SYSTEM = HALF_HEIGHT * 2
 
 export function SheetView({
   measured,
+  layers,
+  regions,
   marks,
   here,
   fifths,
@@ -104,6 +111,16 @@ export function SheetView({
   label,
 }: {
   measured: readonly Measured[]
+  /**
+   * The same chords a pair of staves at a time, where the score is written on
+   * more than two. Absent for a plain score, whose one pair is `measured`.
+   */
+  layers?: readonly (readonly Measured[])[]
+  /**
+   * The stretches of such a score that are drawn on the same staves. A line
+   * never runs from one into the next: it has the staves it starts with.
+   */
+  regions?: readonly ScoreRegion[]
   /** The bars with a repeat sign or an ending bracket, where the music has any. */
   marks?: BarMarks
   here: number
@@ -131,28 +148,43 @@ export function SheetView({
   const systems = React.useMemo(() => {
     if (pageWidth <= 0 || measured.length === 0) return []
     let y = spacing / 2
-    return breakIntoSystems(measured, fifths, pageWidth).map((system) => {
+    const breaks = regions && new Set(regions.slice(1).map((region) => region.from))
+    return breakIntoSystems(measured, fifths, pageWidth, breaks).map((system) => {
       const slice = measured.slice(system.from, system.to)
+      const stack = layers ? layers.map((layer) => layer.slice(system.from, system.to)) : [slice]
+      const rows = regions?.find(
+        (region) => system.from >= region.from && system.from < region.to,
+      )?.rows
       // Each line has the room between its staves that its own bars ask for,
       // as each line of a printed page does. It does not move once drawn.
-      const spread = spreadOf(slice)
-      const frame = frameOf(slice, marks, spread)
-      const placed = place(slice, headerEnd(fifths, system.from === 0), system.stretch)
-      const height = frame.bottom - frame.top
+      const layout = layoutOf(stack, rows, marks)
+      const start = headerEnd(fifths, system.from === 0)
+      const placed = place(slice, start, system.stretch)
+      const height = layout.bottom - layout.top
       const top = y
       y += height + spacing
       return {
         ...system,
         placed,
+        // Each pair of staves on the same line, with its own notes and beams.
         // A line at a time: a beam does not cross a system break.
-        beaming: beamsIn(placed),
-        spread,
+        pairs: (layers
+          ? stack.map((layer) => place(layer, start, system.stretch, leadIn(slice[0])))
+          : [placed]
+        )
+          .map((entries, index) => ({
+            entries,
+            beaming: beamsIn(entries),
+            place: layout.layers[index]!,
+          }))
+          .filter(({ place }) => place.rows.treble || place.rows.bass),
+        layout,
         top,
         height,
-        origin: top - frame.top,
+        origin: top - layout.top,
       }
     })
-  }, [measured, marks, fifths, pageWidth, spacing])
+  }, [measured, layers, regions, marks, fifths, pageWidth, spacing])
 
   // Across the whole page rather than a line at a time: the chords near the
   // playhead run over a line break, and a pitch written either side of one is
@@ -238,10 +270,16 @@ interface RowProps {
     readonly from: number
     readonly to: number
     readonly origin: number
-    /** How far this line's staves have been moved apart. */
-    readonly spread: number
+    /** Where this line's staves stand. */
+    readonly layout: SystemLayout
+    /** The line as a whole: every chord, for what is decided once for all its staves. */
     readonly placed: readonly Placed[]
-    readonly beaming: ReturnType<typeof beamsIn>
+    /** Each pair of staves it has: the same chords, with that pair's notes and beams. */
+    readonly pairs: readonly {
+      readonly entries: readonly Placed[]
+      readonly beaming: ReturnType<typeof beamsIn>
+      readonly place: SystemLayout['layers'][number]
+    }[]
   }
   phase: Phase
   marks?: BarMarks
@@ -282,11 +320,30 @@ const SystemRow = React.memo(
     // Where the first bar's own marks go: just in front of its first ink.
     const opening = first ? first.x - first.extent.left - STEP * 3 : 0
     return (
-      <SpreadContext.Provider value={system.spread}>
+      <SystemContext.Provider value={system.layout.staves}>
         <g transform={`translate(0 ${system.origin})`}>
-          <PaperCards width={pageWidth} />
-          {/* Each line opens in the clefs its first chord is read in. */}
-          <StaffFrame width={pageWidth} clefs={first?.clefs} />
+          {system.pairs.map(({ place }, index) => (
+            <StaffLayer key={index} place={place}>
+              <PaperCards width={pageWidth} />
+            </StaffLayer>
+          ))}
+          <SystemBrace />
+          {system.pairs.map(({ entries, place }, index) => (
+            <StaffLayer key={index} place={place}>
+              {/* Each line opens in the clefs its first chord is read in. */}
+              <GutterStaves clefs={entries[0]?.clefs} />
+              <StaffLines from={GUTTER} to={pageWidth - PAPER_MARGIN} />
+              {/* The key is restated on every line, the way printed music does
+                it; the metre is stated once and then assumed. */}
+              <Signatures
+                fifths={fifths}
+                beats={beats}
+                beatType={beatType}
+                withTime={system.from === 0}
+                clefs={entries[0]?.clefs}
+              />
+            </StaffLayer>
+          ))}
           {/* Every line of music closes on a bar line, and the last on the final
             one — or on a repeat sign, where the bar it ends on leads back.
             Each after the first says which bar it starts on. */}
@@ -300,41 +357,40 @@ const SystemRow = React.memo(
           {system.from > 0 && (
             <text
               x={STAFF_START}
-              y={yOn(14, 'treble') - system.spread}
+              y={system.layout.staves[0]! - STEP * 4}
               className="staff__bar-number"
             >
               {system.placed[0]?.bar}
             </text>
           )}
-          {/* The key is restated on every line, the way printed music does it;
-            the metre is stated once and then assumed. */}
-          <Signatures
-            fifths={fifths}
-            beats={beats}
-            beatType={beatType}
-            withTime={system.from === 0}
-            clefs={first?.clefs}
-          />
           <BarLines lines={lines} />
-          <BarRests rests={barRestsIn(system.placed, lines, opening, end)} />
           {PLAYHEAD_SHOWN && here >= system.from && here < system.to && (
             <Playhead x={system.placed[here - system.from]!.x} />
           )}
-          <Beams beams={system.beaming.beams} roleFor={roleFor} />
-          {system.placed.map((entry) => (
-            <StepAt
-              key={entry.index}
-              placed={entry}
-              role={roleFor(entry.index)}
-              fifths={fifths}
-              watched={watched}
-              position={here}
-              stems={system.beaming.stems.get(entry.index)}
-              opensLine={entry === first}
-            />
+          {system.pairs.map(({ entries, beaming, place }, index) => (
+            <StaffLayer key={index} place={place}>
+              <BarRests rests={barRestsIn(entries, lines, opening, end)} />
+              <Beams beams={beaming.beams} roleFor={roleFor} />
+              {entries.map(
+                (entry) =>
+                  // A chord with nothing on this pair of staves is not drawn on it.
+                  (entry.notes.length > 0 || entry.restsAt || entry.clefChange) && (
+                    <StepAt
+                      key={entry.index}
+                      placed={entry}
+                      role={roleFor(entry.index)}
+                      fifths={fifths}
+                      watched={watched}
+                      position={here}
+                      stems={beaming.stems.get(entry.index)}
+                      opensLine={entry === entries[0]}
+                    />
+                  ),
+              )}
+            </StaffLayer>
           ))}
         </g>
-      </SpreadContext.Provider>
+      </SystemContext.Provider>
     )
   },
   (before, after) =>

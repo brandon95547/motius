@@ -14,7 +14,7 @@ import {
   type StaffPlacement,
   type WrittenValue,
 } from '@sonara/shared'
-import { carried, OnStaff, shiftOf, STEP, useSpread, yOn } from './staff-frame'
+import { carried, OnStaff, shiftOf, STEP, useRows, useSpread, yOn } from './staff-frame'
 import type { StemOverride, StepStems } from './beams'
 
 /**
@@ -110,6 +110,12 @@ export interface DrawnNote {
    * on the staff the note is written and changes nothing else about it.
    */
   readonly clef?: Staff
+  /**
+   * The staff of its pair it is written on, where the score says: on a piano
+   * written on three staves or four, a note is on the staff the score put it
+   * on, whichever hand plays it.
+   */
+  readonly row?: Staff
   readonly finger?: number
   /** Whether this pitch is under a finger right now. */
   readonly sounding?: boolean
@@ -201,8 +207,8 @@ export interface VoicePart {
 /** How far the lower voice steps aside when its heads would land on the upper voice's. */
 export const VOICE_SHIFT = STEP * 1.35 * 2 + STEP * 0.5
 
-/** Which staff a note is written on: its hand's, where a hand is known. */
-export const staffOf = (note: DrawnNote): Staff => staffFor(note.note, note.hand)
+/** Which staff a note is written on: the one the score names, or else its hand's, where a hand is known. */
+export const staffOf = (note: DrawnNote): Staff => note.row ?? staffFor(note.note, note.hand)
 
 /**
  * How far up its staff a note moves for the clef it is read in, in steps.
@@ -536,15 +542,23 @@ export interface Extent {
    * and the system needs opening (`spreadOf`).
    */
   readonly inner: { readonly treble?: number; readonly bass?: number }
+  /**
+   * The other way: the treble staff's highest ink and the bass staff's lowest.
+   * What a staff stacked above or below this pair has to keep clear of.
+   */
+  readonly outer: { readonly treble?: number; readonly bass?: number }
 }
 
-function reachInwards(
-  inner: { treble?: number; bass?: number },
-  staff: Staff,
-  box: { top: number; bottom: number },
-) {
-  if (staff === 'treble') inner.treble = Math.max(inner.treble ?? -Infinity, box.bottom)
-  else inner.bass = Math.min(inner.bass ?? Infinity, box.top)
+type Reach = { treble?: number; bass?: number }
+
+function reachOf(inner: Reach, outer: Reach, staff: Staff, box: { top: number; bottom: number }) {
+  if (staff === 'treble') {
+    inner.treble = Math.max(inner.treble ?? -Infinity, box.bottom)
+    outer.treble = Math.min(outer.treble ?? Infinity, box.top)
+  } else {
+    inner.bass = Math.min(inner.bass ?? Infinity, box.top)
+    outer.bass = Math.max(outer.bass ?? -Infinity, box.bottom)
+  }
 }
 
 /**
@@ -563,7 +577,8 @@ export function chordExtent(
   let right = 0
   let top = 0
   let bottom = 0
-  const inner: { treble?: number; bass?: number } = {}
+  const inner: Reach = {}
+  const outer: Reach = {}
   for (const staff of ['treble', 'bass'] as const) {
     const on = notes.filter((note) => staffOf(note) === staff)
     const box = layout(0, on, per[staff], fifths)
@@ -572,9 +587,9 @@ export function chordExtent(
     right = Math.max(right, box.right)
     top = Math.min(top, box.top)
     bottom = Math.max(bottom, box.bottom)
-    reachInwards(inner, staff, box)
+    reachOf(inner, outer, staff, box)
   }
-  return { left: -left, right, top, bottom, inner }
+  return { left: -left, right, top, bottom, inner, outer }
 }
 
 /** How much room a step's voices need between them, each where it stands. */
@@ -583,7 +598,8 @@ export function partsExtent(parts: readonly VoicePart[], fifths = 0): Extent {
   let right = 0
   let top = 0
   let bottom = 0
-  const inner: { treble?: number; bass?: number } = {}
+  const inner: Reach = {}
+  const outer: Reach = {}
   for (const part of parts) {
     const box = layout(part.dx, part.notes, part.value, fifths, undefined, part.stem)
     if (!box) continue
@@ -591,9 +607,9 @@ export function partsExtent(parts: readonly VoicePart[], fifths = 0): Extent {
     right = Math.max(right, box.right + part.dx)
     top = Math.min(top, box.top)
     bottom = Math.max(bottom, box.bottom)
-    reachInwards(inner, box.staff, box)
+    reachOf(inner, outer, box.staff, box)
   }
-  return { left: -left, right, top, bottom, inner }
+  return { left: -left, right, top, bottom, inner, outer }
 }
 
 /** One staff's worth of a chord, drawn where `layout` says it goes. */
@@ -1000,28 +1016,31 @@ export function KeySignature({
   clefs?: Partial<Record<Staff, Staff>>
 }) {
   const spread = useSpread()
+  const rows = useRows()
   if (fifths === 0) return null
   const spacing = STEP * 2.4
 
   return (
     <g className="staff__key">
-      {(['treble', 'bass'] as const).flatMap((staff) =>
-        // The signs go where that clef puts them, on whichever staff it is on.
-        keySignature(fifths, clefs?.[staff] ?? staff).map((mark, index) => (
-          <text
-            key={`${staff}-${index}`}
-            x={x + index * spacing}
-            y={
-              yOn(mark.steps + clefShift(staff, clefs?.[staff]), staff) +
-              STEP * 0.9 +
-              shiftOf(staff, spread)
-            }
-            className="staff__accidental"
-          >
-            {mark.sign}
-          </text>
-        )),
-      )}
+      {(['treble', 'bass'] as const)
+        .filter((staff) => rows[staff])
+        .flatMap((staff) =>
+          // The signs go where that clef puts them, on whichever staff it is on.
+          keySignature(fifths, clefs?.[staff] ?? staff).map((mark, index) => (
+            <text
+              key={`${staff}-${index}`}
+              x={x + index * spacing}
+              y={
+                yOn(mark.steps + clefShift(staff, clefs?.[staff]), staff) +
+                STEP * 0.9 +
+                shiftOf(staff, spread)
+              }
+              className="staff__accidental"
+            >
+              {mark.sign}
+            </text>
+          )),
+        )}
     </g>
   )
 }
@@ -1046,26 +1065,29 @@ export function TimeSignature({
   beatType: number
 }) {
   const spread = useSpread()
+  const rows = useRows()
   if (!(beats > 0) || !(beatType > 0)) return null
 
   return (
     <g className="staff__time">
-      {(['treble', 'bass'] as const).map((staff) => {
-        const middle = staff === 'treble' ? 6 : -6
-        return (
-          <g key={staff} transform={carried(staff, spread)}>
-            {/* Two numerals, each filling half the staff: the upper one across
+      {(['treble', 'bass'] as const)
+        .filter((staff) => rows[staff])
+        .map((staff) => {
+          const middle = staff === 'treble' ? 6 : -6
+          return (
+            <g key={staff} transform={carried(staff, spread)}>
+              {/* Two numerals, each filling half the staff: the upper one across
                 the top two spaces and the lower across the bottom two. No line
                 between them — a slash reads as a fraction, not as a metre. */}
-            <text x={x} y={yOn(middle + 2, staff) + STEP * 1.5} className="staff__time-digit">
-              {beats}
-            </text>
-            <text x={x} y={yOn(middle - 2, staff) + STEP * 1.5} className="staff__time-digit">
-              {beatType}
-            </text>
-          </g>
-        )
-      })}
+              <text x={x} y={yOn(middle + 2, staff) + STEP * 1.5} className="staff__time-digit">
+                {beats}
+              </text>
+              <text x={x} y={yOn(middle - 2, staff) + STEP * 1.5} className="staff__time-digit">
+                {beatType}
+              </text>
+            </g>
+          )
+        })}
     </g>
   )
 }

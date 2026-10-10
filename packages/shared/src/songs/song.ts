@@ -62,6 +62,8 @@ export interface SongRest {
   readonly durationQ: number
   /** The staff it is written on, as the hand that staff belongs to. */
   readonly hand: Hand
+  /** Which of the piano's staves, counted from the top, where it has more than two. */
+  readonly staff?: number
   /** The voice it is written in, as the score numbers them. */
   readonly voice?: number
   /** Its written length, where the score said. */
@@ -85,6 +87,8 @@ export interface SongRest {
 export interface SongClef {
   /** The staff it is on, as the hand that staff belongs to. */
   readonly hand: Hand
+  /** Which of the piano's staves, counted from the top, where it has more than two. */
+  readonly staff?: number
   readonly startQ: number
   readonly startMs: number
   readonly clef: 'treble' | 'bass'
@@ -104,6 +108,12 @@ export interface SongNote {
    * middle C is wrong exactly where a piece crosses hands.
    */
   readonly hand: Hand
+  /**
+   * Which of the piano's staves it is written on, counted from the top, where
+   * the piano has more than two. The hand says who plays it; this says where
+   * on the page it goes.
+   */
+  readonly staff?: number
   /**
    * What kind of part this note belongs to.
    *
@@ -278,6 +288,16 @@ export interface Song {
   readonly rests?: readonly SongRest[]
   /** The clefs the score's staves are read in, where they are not the usual two throughout. */
   readonly clefs?: readonly SongClef[]
+  /**
+   * How many staves the piano is written on, where that is more than two.
+   *
+   * Two is a piano's usual page and is not said. Three or four is a page for
+   * music too thick for two: each hand, or one of them, has a staff for what
+   * it holds and another for what moves. The upper half of the staves are the
+   * right hand's and the lower the left's, and every note, rest and clef says
+   * which staff it is on.
+   */
+  readonly staves?: number
 }
 
 export function songDuration(notes: readonly SongNote[]): number {
@@ -344,6 +364,7 @@ export function buildSong(input: {
   sections?: readonly SongSection[]
   rests?: readonly SongRest[]
   clefs?: readonly SongClef[]
+  staves?: number
   /** Chord symbols the file printed. */
   chords?: readonly ChordSymbol[]
 }): Song {
