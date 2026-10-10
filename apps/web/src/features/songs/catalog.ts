@@ -501,8 +501,8 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
     // Not public domain: free to use under Creative Commons Attribution, which
     // asks for the credit the README gives it. That credit goes where this goes.
   },
-  // The six below are recent pieces their own composers published on MuseScore under CC0:
-  // given away, not out of copyright by age. Each has the page it was released on.
+  // From here on, recent pieces their own composers published on MuseScore under CC0: given
+  // away, not out of copyright by age. Each has the page it was released on.
   {
     // https://musescore.com/user/252611/scores/5985641
     id: 'hortal-xia',
@@ -553,6 +553,80 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
     composer: 'Joshua Pineda',
     genre: 'soul',
     moods: ['storytelling'],
+  },
+  {
+    // https://musescore.com/user/30593970/scores/5886791
+    id: 'pavel-apocalypse',
+    title: 'Apocalypse',
+    composer: 'Andrew Pavel',
+    genre: 'classical',
+    moods: ['ominous'],
+  },
+  {
+    // https://musescore.com/user/34075735/scores/5964428
+    id: 'lopez-arzate-sacro',
+    title: 'Sacro',
+    composer: 'Angélica López Arzate',
+    genre: 'new-age',
+    moods: ['mysterious'],
+  },
+  {
+    // https://musescore.com/user/24643566/scores/5624530
+    id: 'anshari-bittersweet-tears',
+    title: 'Bittersweet Tears',
+    composer: 'Anshari H',
+    genre: 'soul',
+    moods: ['romantic'],
+  },
+  {
+    // https://musescore.com/z3r0_music/scores/5979856
+    id: 'kvh-etude-no-1-in-d-minor',
+    title: 'Etude No. 1 in D Minor',
+    composer: 'K.V.H',
+    genre: 'classical',
+    moods: ['mysterious'],
+  },
+  {
+    // https://musescore.com/aspect-zero/scores/6270459
+    id: 'aspect-zero-projection',
+    title: 'Projection',
+    composer: 'Aspect Zero',
+    genre: 'soul',
+    moods: ['storytelling'],
+  },
+  {
+    // https://musescore.com/aspect-zero/scores/6287552
+    id: 'aspect-zero-spin',
+    title: 'Spin',
+    composer: 'Aspect Zero',
+    genre: 'soul',
+    moods: ['storytelling'],
+  },
+  {
+    // https://musescore.com/user/33584914/scores/5986496
+    // Its title page says "inspired by Ólafur Arnalds: »saman«". Inspired, by its composer's
+    // own account, and not an arrangement of it.
+    id: 'schmitt-break',
+    title: 'Break',
+    composer: 'Alexander Schmitt',
+    genre: 'soul',
+    moods: ['storytelling'],
+  },
+  {
+    // https://musescore.com/user/33584914/scores/5864396
+    id: 'schmitt-fragile',
+    title: 'Fragile',
+    composer: 'Alexander Schmitt',
+    genre: 'soul',
+    moods: ['dreamy'],
+  },
+  {
+    // https://musescore.com/user/31464933/scores/5957605
+    id: 'auri-squirrels-lullaby',
+    title: "Squirrel's Lullaby",
+    composer: 'Auri',
+    genre: 'soul',
+    moods: ['romantic'],
   },
 ]
 
