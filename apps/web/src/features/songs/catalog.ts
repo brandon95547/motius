@@ -167,6 +167,15 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
     genre: 'classical',
     moods: ['romantic'],
   },
+  // Typed in from the Breitkopf & Härtel collected edition (1880), not taken
+  // from either library.
+  {
+    id: 'chopin-marche-funebre-op-72-no-2',
+    title: 'Marche funèbre, Op. 72 No. 2',
+    composer: 'Frédéric Chopin',
+    genre: 'classical',
+    moods: ['mysterious', 'ominous'],
+  },
   // Typed in from the first edition (Breitkopf & Härtel, 1927), not taken from
   // either library. The left hand's tremolo is written out as the
   // thirty-second notes its three beams stand for.
