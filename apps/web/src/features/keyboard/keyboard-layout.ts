@@ -203,6 +203,27 @@ export function canShift(window: KeyboardWindow, octaves: number): boolean {
   return moved.low !== window.low
 }
 
+/** How many white keys an octave has at or below each pitch class: C is the first. */
+const WHITES_TO = [1, 1, 2, 2, 3, 4, 4, 5, 5, 6, 6, 7] as const
+
+/**
+ * Where a key's centre is across the keybed, as a percentage of its width.
+ *
+ * For any key, the ones off either end of the window included, which come out
+ * below zero or above a hundred. A hand reaching for a note that is not on
+ * screen is drawn going off the edge toward it, not folded back onto a key it
+ * is not playing.
+ */
+export function keyCenterPercent(layout: KeyboardLayout, note: number): number {
+  const whiteFraction = layout.whiteCount > 0 ? 100 / layout.whiteCount : 100
+  // The white key a note is, or the one a black key stands above, counted
+  // from the bottom of the piano.
+  const white = (key: number) => Math.floor(key / 12) * 7 + WHITES_TO[pitchClass(key)]! - 1
+  const index = white(note) - white(layout.window.low)
+  if (!isBlackKey(note)) return (index + 0.5) * whiteFraction
+  return (index + 1 + (BLACK_KEY_OFFSET[pitchClass(note)] ?? 0)) * whiteFraction
+}
+
 /** Turns a window into positioned keys. */
 export function buildLayout(window: KeyboardWindow): KeyboardLayout {
   const { low, high } = snapRangeToWhiteKeys(window.low, window.high)

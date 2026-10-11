@@ -63,6 +63,13 @@ interface SongState {
    * notes means guessing at the person, so it is asked rather than inferred.
    */
   fingering: FingeringDensity
+  /**
+   * Whether the hands are drawn over the keys, playing the fingering.
+   *
+   * Kept with the other two: whether you want to watch hands is a fact about
+   * how you learn, not about the passage in front of you.
+   */
+  hands: boolean
   /** Which step of the song the player is on, in Learn. */
   stepIndex: number
   /** True once Start has been pressed, until the song is finished or reset. */
@@ -107,6 +114,7 @@ interface SongState {
   setMode: (mode: SongMode) => void
   setStaffView: (view: StaffView) => void
   setFingering: (density: FingeringDensity) => void
+  setHands: (on: boolean) => void
   startLearning: () => void
   resetLearning: () => void
   advance: (steps: number) => void
@@ -238,6 +246,16 @@ function loadFingering(): FingeringDensity {
   }
 }
 
+const HANDS_KEY = 'sonara.songs.hands'
+
+function loadHands(): boolean {
+  try {
+    return window.localStorage.getItem(HANDS_KEY) === 'on'
+  } catch {
+    return false
+  }
+}
+
 function loadView(): StaffView {
   try {
     return window.localStorage.getItem(VIEW_KEY) === 'sheet' ? 'sheet' : 'flow'
@@ -258,6 +276,7 @@ export const useSongStore = create<SongState>((set) => ({
   mode: 'explore',
   staffView: typeof window === 'undefined' ? 'flow' : loadView(),
   fingering: typeof window === 'undefined' ? 'hints' : loadFingering(),
+  hands: typeof window === 'undefined' ? false : loadHands(),
   stepIndex: 0,
   learning: false,
   stepCount: 0,
@@ -326,6 +345,16 @@ export const useSongStore = create<SongState>((set) => ({
         // Private browsing. The choice holds for this session.
       }
       return { fingering }
+    }),
+
+  setHands: (hands) =>
+    set(() => {
+      try {
+        window.localStorage.setItem(HANDS_KEY, hands ? 'on' : 'off')
+      } catch {
+        // Private browsing. The choice holds for this session.
+      }
+      return { hands }
     }),
 
   setStaffView: (staffView) =>

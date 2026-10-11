@@ -3,6 +3,7 @@ import { clampVelocity, WRONG_NOTE_FLASH_MS } from '@sonara/shared'
 import { useAudio } from '@/audio/AudioProvider'
 import { keyboardActions, useKeyboardStore } from '@/state/keyboard-store'
 import { learningActions, useLearningStore, type KeyRole } from '@/state/learning-store'
+import { HandsOverlay } from '@/features/hands/HandsOverlay'
 import { PianoKey } from './PianoKey'
 import { buildLayout, type KeyboardLayout, type KeyboardWindow } from './keyboard-layout'
 
@@ -295,6 +296,7 @@ export function PianoKeyboard({ window: keyWindow, className }: PianoKeyboardPro
           />
         ))}
         <RangeEdges window={keyWindow} />
+        <HandsOverlay layout={layout} />
         {keyLabels === 'fingers' && <FingerBadges layout={layout} />}
       </div>
     </div>

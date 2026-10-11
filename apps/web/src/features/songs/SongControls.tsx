@@ -2,7 +2,7 @@ import { ListMusic, Pause, Play, SkipBack, SkipForward } from 'lucide-react'
 import { skipBars } from '@sonara/shared'
 import { cn } from '@/lib/cn'
 import { Button } from '@/ui/Button'
-import { Field, SegmentedControl } from '@/ui/Controls'
+import { Field, SegmentedControl, Switch } from '@/ui/Controls'
 import { Divider } from '@/ui/Display'
 import { BarTabs } from '@/ui/BarTabs'
 import { TempoField } from '@/ui/TempoField'
@@ -51,6 +51,8 @@ export function SongOptions() {
   const setPart = useSongStore((state) => state.setPart)
   const tempoScale = useSongStore((state) => state.tempoScale)
   const setTempoScale = useSongStore((state) => state.setTempoScale)
+  const hands = useSongStore((state) => state.hands)
+  const setHands = useSongStore((state) => state.setHands)
 
   return (
     <>
@@ -98,6 +100,24 @@ export function SongOptions() {
                 options={SPEEDS.map((scale) => ({ value: String(scale), label: percent(scale) }))}
               />
             </Field>
+            {/* Only where there is a fingering for hands to play: without one
+                there is nothing to say which finger goes where. */}
+            {song.hasFingering ? (
+              <Switch
+                label="Show hands on the keys"
+                description={
+                  song.fingeringSource === 'score'
+                    ? 'See-through hands over the keyboard, playing the fingering the score gives.'
+                    : 'See-through hands over the keyboard, playing the fingering Sonara suggests.'
+                }
+                checked={hands}
+                onChange={setHands}
+              />
+            ) : (
+              <p className="text-caption text-[var(--ds-fg-muted)]">
+                Hands can be shown over the keys for a song that has fingering. This one has none.
+              </p>
+            )}
           </OptionGroup>
         </>
       )}

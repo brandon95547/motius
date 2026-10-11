@@ -131,6 +131,13 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
   when the music thickens, and the bars before the change are shared between
   the last two lines rather than leaving one alone.
 - **Fingering is worked out for files that have none** — see below.
+- **Hands over the keys, playing the fingering.** Switched on from the song's
+  options, two see-through hands are drawn on the keyboard where the fingering
+  puts them: each finger on its key, the others where the hand would have
+  them, the thumb reaching in from the side. Playing, a finger sets off just
+  before its note and is on the key as it sounds, and its tip fills when the
+  key goes down; in Learn the hands show the step you are on and wait. Only
+  for a song that has fingering, since that is all they are drawn from.
 - **Drums are played as drums.** A MIDI file's percussion channel is routed to a
   synthesized kit rather than onto the piano, and accompaniment parts sound
   without lighting keys you are not being asked to play.
@@ -499,7 +506,18 @@ finger can be on it, which is not always the same. Where a hand has to go
 before its note is over — a bass note written for the bar under a chord the
 same hand plays a beat later — the note sounds on and the key comes up as the
 hand leaves (`songs/key-holds.ts`: the two fingers have to be two that span
-the distance, by the same table the fingering is worked out from).
+the distance, by the same table the fingering is worked out from). It comes
+up in the strike of the note that takes the hand away, not on a timer of its
+own, so the two happen together however busy the page is.
+
+The hands over the keys are drawn from the same reading (`features/hands`).
+`hand-poses.ts` is the part with no drawing in it: which key each finger is
+on from moment to moment, and where that puts the fingertips and the knuckles
+over a keyboard, in the keys' own percentages. `HandsOverlay.tsx` draws it, on
+the keybed and under the finger numbers, and moves it by hand rather than by
+rendering: it listens to the playhead and to the keys, and a hand is ten lines
+whose ends it sets, eased over the tenth of a second a finger is given to get
+to its key.
 
 The page is engraved from the same song, by one engraver for both views. A
 staff that carries two voices in a bar is written as two: each voice a chord
