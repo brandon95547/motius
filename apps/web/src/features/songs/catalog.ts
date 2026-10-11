@@ -59,6 +59,8 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
     genre: 'classical',
     moods: ['dreamy'],
   },
+  // The library's engraving, taken at seventy-five rather than the hundred it
+  // was given.
   {
     id: 'pachelbel-canon-in-d',
     title: 'Canon in D',
