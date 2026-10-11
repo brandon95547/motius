@@ -1700,6 +1700,62 @@
     font-size: 1rem;
   }
 }
+
+/* ---- Song search ----------------------------------------------------------
+   A field on the bar, of the bar's own stuff: the fill the tempo has, and its
+   ring when it is being typed in. The list it opens is not the bar's but a
+   surface over the page, and is dressed where it is written.
+
+   Narrow until it is wanted: at rest it is its two words, and the song's name
+   beside the mark keeps the room. Typed in, it takes what a title needs, and
+   takes it from the name, which nobody is reading just then. */
+.bar-search {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  width: 9.5rem;
+  height: 40px;
+  margin-left: 6px;
+  padding-inline: 12px;
+  border-radius: var(--radius-lg);
+  background-color: var(--c-bar-control);
+  color: var(--c-bar-fg);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    width var(--duration-fast) var(--ease-standard);
+}
+.bar-search:hover {
+  background-color: var(--c-bar-control-hover);
+}
+.bar-search:focus-within {
+  width: 14rem;
+  box-shadow: inset 0 0 0 2px var(--c-bar-fg);
+}
+.bar-search__icon,
+.bar-search__busy {
+  flex: none;
+  color: var(--c-bar-fg-muted);
+}
+.bar-search__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: var(--text-ui);
+  outline: none;
+}
+.bar-search__input::placeholder {
+  color: var(--c-bar-fg-muted);
+}
+@media (pointer: coarse) {
+  .bar-search__input {
+    font-size: 1rem;
+  }
+}
 .tempo-field__steps {
   display: grid;
   align-self: stretch;
@@ -1861,6 +1917,7 @@
 
 /* The bar folds rather than wrapping or scrolling. Measured, the full Scales
    row is about 935px, 980 with a take waiting, so:
+     under 80rem  the song search goes — the chooser has one, a click away;
      under 64rem  the name and the MIDI readout go — the mark and Settings say both;
      under 60rem  the mode tabs are icons (above);
      under 56rem  a song's skip buttons go;
@@ -1869,6 +1926,11 @@
      under 26rem  the tempo and the metronome go to the top of the options panel.
    `menu-only-*` and `options-only-xs` are each tier's other half: what stands
    in for a control exactly where the bar has folded it. */
+@media (max-width: 79.999rem) {
+  .bar-roomy {
+    display: none !important;
+  }
+}
 @media (max-width: 63.999rem) {
   .bar-full {
     display: none !important;

@@ -43,6 +43,7 @@ import {
   SongTempoControl,
   SongTransport,
 } from '@/features/songs/SongControls'
+import { SongSearch } from '@/features/songs/SongSearch'
 import { showMySongs } from '@/features/songs/SongPicker'
 
 /**
@@ -104,6 +105,7 @@ export function TopBar() {
             <SongMetronomeToggle className="bar-mid" />
             <span className="top-bar__divider bar-sm" aria-hidden />
             <SongTransport />
+            <SongSearch className="bar-roomy" />
           </>
         )}
 

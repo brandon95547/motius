@@ -20,6 +20,7 @@ import { useSongStore } from '@/state/song-store'
 import { SONG_CATALOG, catalogSongId, loadCatalogSong, type CatalogSong } from './catalog'
 import { readSong, type ImportFailure, type ImportResult } from './read-song'
 import { shortKey, songKey, sortKeys } from './song-keys'
+import { fold } from './song-search'
 
 /**
  * Choosing a song: the ones that come with Sonara, by genre and by mood, and
@@ -97,9 +98,6 @@ const SOURCE_LABELS: Record<string, string> = {
   musicxml: 'MusicXML',
   musescore: 'MuseScore',
 }
-
-/** Lower case and without accents, so "fur elise" finds "Für Elise". */
-const fold = (text: string) => text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
 /** A piece and which score of it, for naming the controls of one row. */
 const nameOf = (entry: CatalogSong) => `${entry.title}${entry.edition ? `, ${entry.edition}` : ''}`

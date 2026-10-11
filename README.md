@@ -84,6 +84,10 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
   in, A through G with its flat or sharp and an "m" for a minor key, for
   keeping to the keys your hands know; a key stays chosen from genre to genre.
   Your own songs are in the same chooser.
+- **Or find it by name, from the bar.** On a window wide enough, a search field
+  sits beside the play controls: a few letters list the songs that have them,
+  best match first, your own among them, and the one chosen — with the arrows
+  and Enter, or a click — is opened without the chooser coming up.
 - **Import MusicXML (`.musicxml`, `.xml`), Compressed MusicXML (`.mxl`),
   MuseScore (`.mscz`) and MIDI (`.mid`, `.midi`)** — normalized into one score
   model on the way in, so playback, the keyboard, the staff and Learn never know
