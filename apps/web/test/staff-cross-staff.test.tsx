@@ -182,6 +182,24 @@ describe('a hand marked in the score', () => {
     ])
   })
 
+  it('is given to no line where more than one begins at it, whichever staff it is written against', () => {
+    // "L.H." against the upper staff, over a note of the right hand's, while
+    // the left hand strikes below. It may mean the upper note. It is not
+    // assigned to it: that note is left as it was and said to be open.
+    const over = score([mark('L.H.', 1) + note('E', 5, 1, 1) + back() + note('C', 2, 2, 5)])
+    expect(hands(over)).toEqual([
+      [36, 'left', undefined, false],
+      [76, 'right', undefined, true],
+    ])
+    // And "m.d." against the upper staff, which the upper note agrees with:
+    // it may be for the notes below, and they are the ones marked as open.
+    const under = score([mark('m.d.', 1) + note('E', 5, 1, 1) + back() + note('C', 2, 2, 5)])
+    expect(hands(under)).toEqual([
+      [36, 'left', undefined, true],
+      [76, 'right', undefined, false],
+    ])
+  })
+
   it('settles a note the staves had left open', () => {
     // The right hand's run on the lower staff, and the score saying so. The
     // left hand comes in a beat later, so the mark stands on the run alone.

@@ -452,9 +452,9 @@ running on unbroken on the same staff until a rest or another mark — and for
 the notes on an inner staff of a piano on three staves or four. A note is
 never moved to the other hand because that hand is free to take it: a run
 written across the staves in one voice may well be shared between the hands,
-and the score has not said so. Where several lines begin under a hand mark and
-it is not clear which it is for, nothing is moved and the notes it disagrees
-with are marked as open.
+and the score has not said so. Where more than one line begins at a hand mark
+it is given to none of them, whichever staff it is written against: nothing is
+moved, and the notes it disagrees with are marked as open.
 
 A MusicXML piano part on three staves or four keeps them. Every note, rest and
 clef carries the number of the staff it is on (`staff`, with `Song.staves`

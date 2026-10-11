@@ -501,8 +501,8 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
     /** Where this part's notes begin, and the staff each of them is written on. */
     const firstNote = notes.length
     const writtenOn = new Map<number, number>()
-    /** The hands the score marks over the music: where, on which staff, and which hand. */
-    const handMarks: { atQ: number; staff?: number; hand: Hand }[] = []
+    /** The hands the score marks over the music: where, and which hand. */
+    const handMarks: { atQ: number; hand: Hand }[] = []
     /**
      * A note given to a hand. It is still drawn where the score wrote it,
      * which is said where that is not the hand's own staff; and whether the
@@ -633,9 +633,7 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
             for (const [, text = ''] of content.matchAll(/<words\b[^>]*>([^<]*)<\/words>/g)) {
               const said = text.trim()
               const hand = RIGHT_MARK.test(said) ? 'right' : LEFT_MARK.test(said) ? 'left' : null
-              if (!hand) continue
-              const staff = num(content, 'staff')
-              handMarks.push({ atQ, hand, ...(staff === undefined ? {} : { staff }) })
+              if (hand) handMarks.push({ atQ, hand })
             }
 
           // <dynamics><mf/> — the marking is the element name, not its text,
@@ -923,9 +921,15 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
      * How far the mark carries is not written down. It governs the phrase it
      * opens, which is read here as that line running on unbroken on the same
      * staff until it rests or another mark takes over; those notes follow the
-     * mark and are said to be a reading. And where several lines begin at a
-     * mark, and it is not clear which it is for, nothing is moved: the notes
-     * it disagrees with are said to be open.
+     * mark and are said to be a reading.
+     *
+     * And where more than one line begins at a mark it is given to none of
+     * them. Not even to the one on the staff the mark is written against: a
+     * mark is put where there is room for it, as often over the staff that is
+     * resting as over the notes it means, and in the scores this was measured
+     * on it agreed with its own staff and spoke of the other more often than
+     * not. So nothing is moved, and the notes it disagrees with are said to
+     * be open.
      */
     if (handMarks.length > 0) {
       handMarks.sort((a, b) => a.atQ - b.atQ)
@@ -934,10 +938,8 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
         if (notes[at]!.role === 'keyboard' && !notes[at]!.grace) mine.push(at)
       for (const mark of handMarks) {
         const until = handMarks.find((next) => next.atQ > mark.atQ + 1e-6)?.atQ ?? Infinity
-        const here = mine.filter((at) => Math.abs(notes[at]!.startQ - mark.atQ) < 1e-6)
-        if (here.length === 0) continue
-        const onItsStaff = here.filter((at) => writtenOn.get(at) === mark.staff)
-        const marked = onItsStaff.length > 0 ? onItsStaff : here
+        const marked = mine.filter((at) => Math.abs(notes[at]!.startQ - mark.atQ) < 1e-6)
+        if (marked.length === 0) continue
         if (new Set(marked.map((at) => notes[at]!.voice)).size !== 1) {
           for (const at of marked)
             if (notes[at]!.hand !== mark.hand)
