@@ -1,5 +1,6 @@
 import * as React from 'react'
 import {
+  keyReleases,
   playDuration,
   playbackVelocity,
   scoreWindows,
@@ -67,10 +68,15 @@ export function useSongPlayback(song: Song | null) {
   const audioRef = React.useRef(audio)
   audioRef.current = audio
 
+  // The notes whose hand leaves the key before they end, and when. Worked out
+  // once a song: it is a reading of the whole score, and the tick asks it of
+  // every note it strikes.
+  const leaves = React.useMemo(() => (song ? keyReleases(song) : null), [song])
+
   // Everything the tick reads goes through a ref: it runs forty times a second
   // and must not be rebuilt every time a control moves.
-  const live = React.useRef({ song, part, tempoScale, metronome })
-  live.current = { song, part, tempoScale, metronome }
+  const live = React.useRef({ song, part, tempoScale, metronome, leaves })
+  live.current = { song, part, tempoScale, metronome, leaves }
 
   /**
    * The keys that are down, each with the number of the strike holding it.
@@ -146,8 +152,12 @@ export function useSongPlayback(song: Song | null) {
     /**
      * A note's moment: its key goes down, and comes up when its time is over.
      * Its sound too, where the audio clock was not given it.
+     *
+     * Or the key alone comes up sooner, at `leavesMs` in the score's time:
+     * where the hand has to go before the note is over, the note sounds on and
+     * the key does not stay lit under a hand that is somewhere else.
      */
-    const strike = (note: SongNote, scale: number, promisedSound: boolean) => {
+    const strike = (note: SongNote, scale: number, promisedSound: boolean, leavesMs?: number) => {
       const velocity = velocityOf(note)
 
       // A drum is not a note. On the percussion channel the number names an
@@ -171,6 +181,11 @@ export function useSongPlayback(song: Song | null) {
       // piece makes sense, but they are not notes to put fingers on, and
       // lighting them would say they were.
       if (note.role === 'keyboard') keyboardActions.noteOn(note.note, velocity, 'pointer')
+      if (leavesMs !== undefined)
+        after((leavesMs - note.startMs) / scale, () => {
+          // Struck again since: that strike holds the key now.
+          if (sounding.current.get(note.note) === strikeId) keyboardActions.noteOff(note.note)
+        })
 
       // The release is stretched by the same scale the gaps are, so a slow
       // pass is slower playing rather than the same playing with long gaps.
@@ -185,7 +200,13 @@ export function useSongPlayback(song: Song | null) {
     }
 
     const look = () => {
-      const { song: current, part: hands, tempoScale: scale, metronome: click } = live.current
+      const {
+        song: current,
+        part: hands,
+        tempoScale: scale,
+        metronome: click,
+        leaves: lets,
+      } = live.current
       if (!current) return
 
       // A change of tempo starts the count again from where the song has got
@@ -213,7 +234,7 @@ export function useSongPlayback(song: Song | null) {
         for (const note of notesBetween(current, window.fromMs, window.toMs, hands)) {
           const delayMs = Math.max(0, (note.startMs + window.offsetMs - at) / scale)
           const promisedSound = promise(note, delayMs, scale)
-          after(delayMs, () => strike(note, scale, promisedSound))
+          after(delayMs, () => strike(note, scale, promisedSound, lets?.get(note)))
         }
 
       if (click) {

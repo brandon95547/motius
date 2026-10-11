@@ -201,3 +201,70 @@ describe('a song playing itself', () => {
     expect(released).toEqual([200, 600])
   })
 })
+
+/**
+ * A key its hand has left.
+ *
+ * The first Gymnopédie's left hand: a bass note written to last the bar, and
+ * a beat in, a chord far above it for the same hand. The note sounds on, in
+ * the pedal. The key stayed lit for the bar all the same, under a hand that
+ * was an octave and a half away.
+ */
+describe('a note that outlasts the hand on its key', () => {
+  const down = () =>
+    Object.keys(useKeyboardStore.getState().active)
+      .map(Number)
+      .sort((a, b) => a - b)
+  const leftHand = (pitch: number, startMs: number, durationMs: number, finger: number) => ({
+    ...note(pitch, startMs, durationMs),
+    hand: 'left' as const,
+    finger,
+  })
+
+  it('lets the key go when the hand strikes a chord out of reach, and the note sound on', async () => {
+    await play([
+      leftHand(43, 100, 900, 2),
+      leftHand(59, 400, 600, 5),
+      leftHand(62, 400, 600, 3),
+      leftHand(66, 400, 600, 1),
+    ])
+
+    act(() => vi.advanceTimersByTime(300))
+    expect(down()).toEqual([43])
+    // The chord, and the bass key up with it: five hundred milliseconds
+    // before its note is over.
+    act(() => vi.advanceTimersByTime(200))
+    expect(down()).toEqual([59, 62, 66])
+    // The note was handed to the audio clock whole, and nothing has cut it short.
+    expect(audio.play.mock.calls[0]).toEqual([43, 85, 100, 900])
+    expect(audio.noteOff).not.toHaveBeenCalled()
+
+    act(() => vi.advanceTimersByTime(600))
+    expect(down()).toEqual([])
+  })
+
+  it('keeps the key down under a line the same hand can reach', async () => {
+    // Held by the little finger while the index plays a sixth above it.
+    await play([leftHand(48, 100, 900, 5), leftHand(57, 400, 300, 2)])
+
+    act(() => vi.advanceTimersByTime(500))
+    expect(down()).toEqual([48, 57])
+    act(() => vi.advanceTimersByTime(300))
+    expect(down()).toEqual([48])
+  })
+
+  it('does not take a key from the note that has struck it again', async () => {
+    // The bass, left for a chord at 400 — and struck again at 400 by the
+    // other hand, whose note it now is until that one ends.
+    await play([
+      leftHand(43, 100, 900, 2),
+      leftHand(59, 400, 300, 5),
+      { ...note(43, 400, 300), finger: 1 },
+    ])
+
+    act(() => vi.advanceTimersByTime(500))
+    expect(down()).toEqual([43, 59])
+    act(() => vi.advanceTimersByTime(300))
+    expect(down()).toEqual([])
+  })
+})

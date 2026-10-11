@@ -492,6 +492,13 @@ brackets instead of growing a bar for every bar repeated. MusicXML's repeats
 and endings are read; D.C., D.S. and codas are not yet, and neither are a
 MuseScore file's repeats.
 
+A note sounds for as long as it is written, and its key is lit for as long as a
+finger can be on it, which is not always the same. Where a hand has to go
+before its note is over — a bass note written for the bar under a chord the
+same hand plays a beat later — the note sounds on and the key comes up as the
+hand leaves (`songs/key-holds.ts`: the two fingers have to be two that span
+the distance, by the same table the fingering is worked out from).
+
 The page is engraved from the same song, by one engraver for both views. A
 staff that carries two voices in a bar is written as two: each voice a chord
 of its own, with its own length and its stem pointing away from the other
