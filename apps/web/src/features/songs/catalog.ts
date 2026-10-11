@@ -120,6 +120,8 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
     moods: ['romantic'],
     edition: 'Easy',
   },
+  // The library's engraving, with its Largo taken at forty-four rather than
+  // the fifty it was given.
   {
     id: 'chopin-prelude-op-28-no-4',
     title: 'Prelude in E Minor, Op. 28 No. 4',
