@@ -89,3 +89,39 @@ export function keysLeftFor(song: Song): Map<SongNote, SongNote[]> {
   for (const { left: key, by } of leavings(song)) left.set(by, [...(left.get(by) ?? []), key])
   return left
 }
+
+/** A key struck again this soon after its note is over has not, to the eye, come up between. */
+const SOON_MS = 250
+
+/**
+ * The notes whose key is struck again before they are over, or hard on their
+ * heels: each with the note that strikes it.
+ *
+ * A repeated note is two notes and, lit for as long as each is written, one
+ * unbroken light: the first ends at the moment the second begins, and nothing
+ * shows that the key was struck twice. The left hand of Bach's Prelude in C
+ * strikes its middle C at every half bar, and the key was lit from the first
+ * bar to the fourth without a flicker. On a piano the key comes up to be
+ * struck again, so whoever is lighting the keys needs to know which ones are
+ * about to be.
+ *
+ * Any hand's: a key is one key whoever is on it, and a note one hand holds
+ * while the other strikes it again is struck again all the same. Notes begun
+ * together are one strike, as they are everywhere here.
+ */
+export function keyRestrikes(song: Song): Map<SongNote, SongNote> {
+  const again = new Map<SongNote, SongNote>()
+  /** The note last begun on each key. */
+  const last = new Map<number, SongNote>()
+  const notes = song.notes
+    .filter((note) => note.role === 'keyboard')
+    .sort((a, b) => a.startMs - b.startMs)
+  for (const note of notes) {
+    const before = last.get(note.note)
+    if (before && note.startMs - before.startMs <= TOGETHER_MS) continue
+    if (before && note.startMs - (before.startMs + before.durationMs) <= SOON_MS)
+      again.set(before, note)
+    last.set(note.note, note)
+  }
+  return again
+}

@@ -509,6 +509,10 @@ hand leaves (`songs/key-holds.ts`: the two fingers have to be two that span
 the distance, by the same table the fingering is worked out from). It comes
 up in the strike of the note that takes the hand away, not on a timer of its
 own, so the two happen together however busy the page is.
+And a key that is about to be struck again comes up for a moment first, as it
+has to on a piano: lit for as long as each is written, a repeated note is one
+unbroken light, the first ending as the second begins (`keyRestrikes`, and
+`LIFT_MS` in the playback).
 
 The hands over the keys are drawn from the same reading (`features/hands`).
 `hand-poses.ts` is the part with no drawing in it: which key each finger is

@@ -253,6 +253,50 @@ describe('a note that outlasts the hand on its key', () => {
     expect(down()).toEqual([48])
   })
 
+  it('lifts a key that is about to be struck again, long enough to be seen', async () => {
+    // The same key twice, the second the moment the first ends: lit for as
+    // long as each is written, that is one light from 100 to 500.
+    await play([note(60, 100, 200), note(60, 300, 200)])
+
+    act(() => vi.advanceTimersByTime(200))
+    expect(down()).toEqual([60])
+    // Up for the eighty milliseconds before it is struck again…
+    act(() => vi.advanceTimersByTime(50))
+    expect(down()).toEqual([])
+    // …and down again as it is. Each note was handed over whole all the same.
+    act(() => vi.advanceTimersByTime(75))
+    expect(down()).toEqual([60])
+    expect(audio.play.mock.calls.map(([, , , lasts]) => lasts)).toEqual([200, 200])
+
+    act(() => vi.advanceTimersByTime(200))
+    expect(down()).toEqual([])
+  })
+
+  it('lifts it for no more than two fifths of a quick repeat', async () => {
+    // A hundred milliseconds apart: lit for sixty of them, up for forty.
+    await play([note(60, 100, 100), note(60, 200, 100)])
+
+    act(() => vi.advanceTimersByTime(150))
+    expect(down()).toEqual([60])
+    act(() => vi.advanceTimersByTime(25))
+    expect(down()).toEqual([])
+    act(() => vi.advanceTimersByTime(50))
+    expect(down()).toEqual([60])
+  })
+
+  it('leaves a key lit to its end where the note that repeats it is not being played', async () => {
+    // The left hand holds a key the right strikes again, and only the left is on.
+    const { useSongStore: store } = await import('@/state/song-store')
+    store.setState({ part: 'left' })
+    await play([leftHand(60, 100, 400, 1), { ...note(60, 300, 100), finger: 1 }])
+
+    act(() => vi.advanceTimersByTime(350))
+    expect(down()).toEqual([60])
+    act(() => vi.advanceTimersByTime(200))
+    expect(down()).toEqual([])
+    store.setState({ part: 'both' })
+  })
+
   it('does not take a key from the note that has struck it again', async () => {
     // The bass, left for a chord at 400 — and struck again at 400 by the
     // other hand, whose note it now is until that one ends.

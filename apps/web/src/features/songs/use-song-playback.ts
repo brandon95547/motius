@@ -1,5 +1,6 @@
 import * as React from 'react'
 import {
+  keyRestrikes,
   keysLeftFor,
   playDuration,
   playbackVelocity,
@@ -56,6 +57,18 @@ const TICK_MS = 25
  */
 const LOOKAHEAD_MS = 300
 
+/**
+ * How long a key that is about to be struck again is up first, in real
+ * milliseconds, and the most of the time between the two strikes that may be.
+ *
+ * Long enough to be seen: four or five frames. A repeated note is otherwise
+ * one unbroken light, since the first ends as the second begins — and on a
+ * piano the key does come up, or it could not be struck. Only the key. The
+ * note sounds for as long as it is written.
+ */
+const LIFT_MS = 80
+const LIFT_SHARE = 0.4
+
 export function useSongPlayback(song: Song | null) {
   const audio = useAudio()
   const playing = useSongStore((state) => state.playing)
@@ -72,11 +85,14 @@ export function useSongPlayback(song: Song | null) {
   // notes are not over. Worked out once a song: it is a reading of the whole
   // score, and every strike asks it.
   const leaves = React.useMemo(() => (song ? keysLeftFor(song) : null), [song])
+  // And the notes whose key is struck again as they end, each with the note
+  // that strikes it.
+  const repeats = React.useMemo(() => (song ? keyRestrikes(song) : null), [song])
 
   // Everything the tick reads goes through a ref: it runs forty times a second
   // and must not be rebuilt every time a control moves.
-  const live = React.useRef({ song, part, tempoScale, metronome, leaves })
-  live.current = { song, part, tempoScale, metronome, leaves }
+  const live = React.useRef({ song, part, tempoScale, metronome, leaves, repeats })
+  live.current = { song, part, tempoScale, metronome, leaves, repeats }
 
   /**
    * The keys that are down, each with the number of the strike holding it.
@@ -160,12 +176,16 @@ export function useSongPlayback(song: Song | null) {
      * strike, rather than on a timer of their own. A timer waits its turn,
      * and the turn comes after the page has drawn the chord — a fifth of a
      * second in which the old key is lit under a hand that has plainly gone.
+     *
+     * Where `again` is the note that strikes this one's key next, the key
+     * comes up a moment before it does: see `LIFT_MS`.
      */
     const strike = (
       note: SongNote,
       scale: number,
       promisedSound: boolean,
       left: readonly SongNote[] = [],
+      again?: SongNote,
     ) => {
       const velocity = velocityOf(note)
 
@@ -198,6 +218,13 @@ export function useSongPlayback(song: Song | null) {
       // piece makes sense, but they are not notes to put fingers on, and
       // lighting them would say they were.
       if (note.role === 'keyboard') keyboardActions.noteOn(note.note, velocity, 'pointer')
+      if (again) {
+        const untilMs = (again.startMs - note.startMs) / scale
+        after(untilMs - Math.min(LIFT_MS, untilMs * LIFT_SHARE), () => {
+          // Its own strike's key only, and the key only: the note sounds on.
+          if (sounding.current.get(note.note) === strikeId) keyboardActions.noteOff(note.note)
+        })
+      }
 
       // The release is stretched by the same scale the gaps are, so a slow
       // pass is slower playing rather than the same playing with long gaps.
@@ -218,6 +245,7 @@ export function useSongPlayback(song: Song | null) {
         tempoScale: scale,
         metronome: click,
         leaves: lets,
+        repeats: struckAgain,
       } = live.current
       if (!current) return
 
@@ -246,7 +274,10 @@ export function useSongPlayback(song: Song | null) {
         for (const note of notesBetween(current, window.fromMs, window.toMs, hands)) {
           const delayMs = Math.max(0, (note.startMs + window.offsetMs - at) / scale)
           const promisedSound = promise(note, delayMs, scale)
-          after(delayMs, () => strike(note, scale, promisedSound, lets?.get(note)))
+          // Struck again only if the part that does it is being played.
+          const next = struckAgain?.get(note)
+          const again = next && (hands === 'both' || next.hand === hands) ? next : undefined
+          after(delayMs, () => strike(note, scale, promisedSound, lets?.get(note), again))
         }
 
       if (click) {

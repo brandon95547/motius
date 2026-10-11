@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { keyReleases, keysLeftFor } from './key-holds.js'
+import { keyReleases, keyRestrikes, keysLeftFor } from './key-holds.js'
 import { buildSong, type SongNote } from './song.js'
 
 const note = (
@@ -123,5 +123,53 @@ describe('a key its hand has left', () => {
         note(72, 1000, 1000, { role: 'accompaniment' }),
       ]),
     ).toEqual({})
+  })
+})
+
+/**
+ * A key that is struck again.
+ *
+ * Lit for as long as each note is written, a repeated note is one unbroken
+ * light: nothing shows the key was struck twice. So the notes whose key is
+ * about to be struck again are found, for whoever lights the keys to lift
+ * them first.
+ */
+describe('a key that is struck again', () => {
+  /** Each such note's start, and the start of the note that strikes its key again. */
+  const again = (notes: SongNote[]) =>
+    [...keyRestrikes(song(notes))].map(([first, next]) => [first.startMs, next.startMs])
+
+  it('is the note repeated the moment it ends, and each one after it', () => {
+    expect(again([note(60, 0, 500), note(60, 500, 500), note(60, 1000, 500)])).toEqual([
+      [0, 500],
+      [500, 1000],
+    ])
+  })
+
+  it('is the note still held when its key is struck again, by either hand', () => {
+    // The left hand holds middle C for the bar; the right strikes it a beat in.
+    expect(
+      again([note(60, 0, 3000), note(60, 1000, 500, { hand: 'right' }), note(64, 1000, 500)]),
+    ).toEqual([[0, 1000]])
+  })
+
+  it('is not a note whose key has had time to be seen up', () => {
+    expect(again([note(60, 0, 500), note(60, 1500, 500)])).toEqual([])
+    // A sixteenth's rest at an ordinary speed is time enough.
+    expect(again([note(60, 0, 500), note(60, 760, 500)])).toEqual([])
+    expect(again([note(60, 0, 500), note(60, 700, 500)])).toEqual([[0, 700]])
+  })
+
+  it('takes notes begun together for one strike, and other keys for other keys', () => {
+    expect(again([note(60, 0, 500), note(60, 20, 500), note(62, 500, 500)])).toEqual([])
+  })
+
+  it('leaves alone what lights no key', () => {
+    expect(
+      again([
+        note(60, 0, 500, { role: 'accompaniment' }),
+        note(60, 500, 500, { role: 'accompaniment' }),
+      ]),
+    ).toEqual([])
   })
 })
