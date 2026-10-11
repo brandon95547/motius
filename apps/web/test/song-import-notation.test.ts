@@ -679,6 +679,9 @@ describe('a piano written as more than one part', () => {
     ])
     // Each staff's line is a voice of its own, the two parts' numbers apart.
     expect(new Set(song.notes.map((note) => note.voice)).size).toBe(4)
+    // The parts are named for the hands: nothing about them is a reading.
+    expect(song.notes.some((note) => note.handSuggested)).toBe(false)
+    expect(song.handsSuggested).toBeUndefined()
   })
 
   it('leaves two parts that are each a piano as two pianos: the second is someone else’s', () => {

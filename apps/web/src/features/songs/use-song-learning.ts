@@ -57,7 +57,16 @@ export function useSongLearning(song: Song | null) {
     const notes = [...(played[stepIndex]?.notes ?? [])].sort((a, b) => a.note - b.note)
     setCurrent(
       notes.flatMap((note) =>
-        note.finger === undefined ? [] : [{ finger: note.finger, hand: note.hand }],
+        note.finger === undefined
+          ? []
+          : [
+              {
+                finger: note.finger,
+                hand: note.hand,
+                // Carried to the card, which says so: see `SongNote.handSuggested`.
+                ...(note.handSuggested ? { handSuggested: true } : {}),
+              },
+            ],
       ),
     )
   }, [played, stepIndex, setCurrent])

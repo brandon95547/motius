@@ -101,11 +101,19 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
   where both happen in one bar the system is opened until the two are clear of
   each other, as a printed page does. One distance for a line — the staff does
   not move under the player — and none added to music that keeps to its staves.
-- **A hand written on the other staff is still that hand.** A right hand
-  that runs down into the bass is often written on the lower staff, to spare
-  the ledger lines, and beamed to its notes on the upper one. It is drawn
-  there, with one beam between the staves and the stems of each coming to it,
-  and it is asked of the right hand.
+- **A hand written on the other staff is drawn there, and stays with its
+  line.** A right hand that runs down into the bass is often written on the
+  lower staff, to spare the ledger lines, and beamed to its notes on the upper
+  one. It is drawn there, with one beam between the staves and the stems of
+  each coming to it, and it is not handed to the left hand for being on the
+  left hand's staff.
+- **It says where a hand is the score's and where it is a reading.** A staff
+  is not proof of a hand and neither is a voice. A hand the score marks — a
+  part named for it, an "m.d." or "L.H." over the note — is taken at its word.
+  Where the page leaves it open (a line on the other hand's staff, a middle
+  staff of three) the note keeps the hand of the line it belongs to, is never
+  switched on a guess, and the Hand position panel says "suggested" when you
+  reach it.
 - **A tied note is written wherever the score writes it**, including where
   nothing is struck beside it: a chord held through the last bar has its
   noteheads, its ties and its bar.
@@ -423,22 +431,38 @@ a staff to a hand, and are read as its right and left. And where several parts
 are called a piano, the one on two staves is the piano; a one-staff part beside
 it is a line of ornaments, heard and not asked for.
 
-A note's hand is its voice's, not its staff's. A voice has a staff of its own,
-the one it is written on when it is not visiting the other: MuseScore numbers
-them (1 to 4 on the upper staff, 5 to 8 on the lower) and otherwise it is the
-staff most of the voice is on. A note written on the other staff keeps its
-voice's hand, and carries `staff` to say where it is drawn — unless the other
-hand has nothing of its own sounding just then, which is a run shared between
-the hands, each taking what is on its own staff. A file whose voice numbers
-name nothing (the same number for a line on each staff) is read by staff, as
-all files were.
+Which hand plays a note is read in this order, and nothing lower down the
+list overrules what is higher:
+
+1. **What the score states.** A part named for a hand. A hand marked over the
+   music ("m.d.", "m.g.", "m.s.", "R.H.", "L.H.", or the words): where one
+   line of music begins at the mark, that note is the marked hand's.
+2. **The line it belongs to.** A voice has a staff of its own — MuseScore
+   numbers them (1 to 4 on the upper staff, 5 to 8 on the lower), and
+   otherwise it is the staff most of the voice is on — and a note has its
+   voice's hand, on whichever staff it is written.
+3. **The staff**, where a file's voice numbers name nothing (the same number
+   for a line on each staff).
+
+Neither a staff nor a voice is proof of a hand, so wherever the two disagree
+the note carries `handSuggested` (and `staff`, to say where it is drawn), and
+`Song.handsSuggested` counts them. The same goes for the notes a hand mark
+governs after the one it stands on — the phrase it opens, read as that line
+running on unbroken on the same staff until a rest or another mark — and for
+the notes on an inner staff of a piano on three staves or four. A note is
+never moved to the other hand because that hand is free to take it: a run
+written across the staves in one voice may well be shared between the hands,
+and the score has not said so. Where several lines begin under a hand mark and
+it is not clear which it is for, nothing is moved and the notes it disagrees
+with are marked as open.
 
 A MusicXML piano part on three staves or four keeps them. Every note, rest and
 clef carries the number of the staff it is on (`staff`, with `Song.staves`
 saying how many there are), and the hand is read from the staff: the upper half
 are the right hand's and the lower the left's, and the middle one of an odd
-number goes by the clef it opens in. That last is a guess, and the only one: a
-file names staves, not hands. The page draws such a score a pair of staves at
+number goes by the clef it opens in. The top staff and the bottom one are a
+piano page's usual two. Whose the staves between them are is custom and not
+something a file states, so every note on one is marked `handSuggested`. The page draws such a score a pair of staves at
 a time (`layersOf`), each pair by the code that draws a piano's usual two, set
 under one another with the room between any two neighbors that their notes
 ask for (`layoutOf`). A staff with nothing on it for eight bars or more is left
@@ -493,7 +517,9 @@ from old editions, bar by bar: Liszt's "Nuages gris" from its first edition
 (Breitkopf & Härtel, 1927), Chopin's Marche funèbre, Op. 72 No. 2, from the
 Breitkopf & Härtel collected edition (1880), and Rachmaninoff's Prelude in
 C-sharp Minor, a PDMX engraving corrected against Godowsky's edition (Art
-Publication Society, 1923), on four staves where that goes onto four.
+Publication Society, 1923), on four staves where that goes onto four — each
+hand's pair a part named for it, as the page labels them, so its hands are the
+page's and not a reading.
 The first and third movements of Beethoven's Pathétique are likewise a PDMX
 engraving corrected against the Peters edition, its left-hand tremolo
 shorthand written out as the eighth notes it stands for.

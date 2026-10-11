@@ -225,6 +225,16 @@ function readPartList(text: string): PartInfo[] {
 
 const KEYBOARD_NAME = /piano|keyboard|klavier|clavier|harpsichord|organ|celest|rhodes|synth/i
 
+/**
+ * A hand named over the music: "m.d." and "m.g." (or "m.s."), "R.H." and
+ * "L.H.", or the words spelled out. Only where it is all the text says, so a
+ * tempo that happens to hold the letters is not one.
+ */
+const RIGHT_MARK =
+  /^\(?\s*(?:m\.?\s?d\.?|r\.?\s?h\.?|right hand|main droite|mano destra|rechte hand)\s*\)?$/i
+const LEFT_MARK =
+  /^\(?\s*(?:m\.?\s?[gs]\.?|l\.?\s?h\.?|left hand|main gauche|mano sinistra|linke hand)\s*\)?$/i
+
 /** A part named for the hand that plays it, in the languages scores are published in. */
 const RIGHT_HAND =
   /\bright\s*hand\b|\br\.?h\b|\bmain\s+droite\b|\bmano\s+(?:derecha|destra)\b|\brechte\s+hand\b/i
@@ -488,9 +498,35 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
       // A hand's part has voices of its own, whatever the other hand's are called.
       base * 4 +
       (staffCount >= 2 && !homes && staff ? (staff - 1) * 100 : 0)
-    /** Where this part's notes begin, and those written on the other hand's staff. */
+    /** Where this part's notes begin, and the staff each of them is written on. */
     const firstNote = notes.length
-    const visiting: number[] = []
+    const writtenOn = new Map<number, number>()
+    /** The hands the score marks over the music: where, on which staff, and which hand. */
+    const handMarks: { atQ: number; staff?: number; hand: Hand }[] = []
+    /**
+     * A note given to a hand. It is still drawn where the score wrote it,
+     * which is said where that is not the hand's own staff; and whether the
+     * hand is the score's or a reading of it is said too.
+     */
+    const given = (
+      note: Parsed,
+      hand: Hand,
+      written: number | undefined,
+      suggested: boolean,
+    ): Parsed => {
+      const { staff: placed, handSuggested: _was, ...plain } = note
+      const own = hand === 'right' ? 1 : 2
+      return {
+        ...plain,
+        hand,
+        ...(manyStaves
+          ? { staff: placed }
+          : written !== undefined && written !== own
+            ? { staff: written }
+            : {}),
+        ...(suggested ? { handSuggested: true } : {}),
+      }
+    }
     const loudnessOf = partHand ? 'piano' : part.id
     const loudness = dynamics.get(loudnessOf) ?? { events: [], notes: [] }
     dynamics.set(loudnessOf, loudness)
@@ -591,6 +627,16 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
           const atQ = measureStartQ + (cursor + (num(content, 'offset') ?? 0)) / divisions
           const line: DynamicLine | undefined = partHand ? part.id : num(content, 'staff')
           const on = line === undefined ? {} : { line }
+
+          // A hand named over the music. Not in a part that is a hand already.
+          if (role === 'keyboard' && !partHand)
+            for (const [, text = ''] of content.matchAll(/<words\b[^>]*>([^<]*)<\/words>/g)) {
+              const said = text.trim()
+              const hand = RIGHT_MARK.test(said) ? 'right' : LEFT_MARK.test(said) ? 'left' : null
+              if (!hand) continue
+              const staff = num(content, 'staff')
+              handMarks.push({ atQ, hand, ...(staff === undefined ? {} : { staff }) })
+            }
 
           // <dynamics><mf/> — the marking is the element name, not its text,
           // except for one an edition made up, which is spelled out.
@@ -723,11 +769,22 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
 
         const staff = num(content, 'staff')
         if (role === 'keyboard' && (staff !== undefined || partHand)) leadNamesStaves = true
-        // Whose note it is: its voice's hand, which is its staff's unless the
-        // voice is written on the other staff here.
+        /*
+         * Whose note it is.
+         *
+         * Its voice's hand: a line of music stays one hand's, and a line that
+         * goes onto the other staff is not handed over for being there. But
+         * that is a reading. A staff is not proof of a hand and neither is a
+         * voice, and where the two disagree the score has not said — so the
+         * note keeps its line's hand and is marked as suggested, never moved
+         * to the other hand on a guess. So is a note on an inner staff of a
+         * piano written on three or four, where no convention says whose it is.
+         */
         const home = staff === undefined ? undefined : (homes?.get(voice) ?? staff)
         const hand: Hand = handOn(home) ?? inferHand(midi)
         const away = home !== staff && handOn(staff) !== hand
+        const between =
+          manyStaves > 0 && !partHand && staff !== undefined && staff > 1 && staff < manyStaves
 
         const startQ = isGrace
           ? Math.max(0, measureStartQ + start / divisions - GRACE_Q)
@@ -820,6 +877,7 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
             : away && staff !== undefined
               ? { staff }
               : {}),
+          ...(away || between ? { handSuggested: true } : {}),
           role: unpitched ? 'percussion' : role,
           spelling,
           voice: voiceOn(voice, staff),
@@ -828,7 +886,7 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
           ...(finger ? { finger } : {}),
         }
         notes.push(note)
-        if (away) visiting.push(notes.length - 1)
+        if (staff !== undefined) writtenOn.set(notes.length - 1, staff)
         const line: DynamicLine | undefined = partHand ? part.id : staff
         loudness.notes.push({ index: notes.length - 1, ...(line === undefined ? {} : { line }) })
         if (/<tie[^>]*type="start"/.test(content)) tied.set(tieKey, note)
@@ -854,33 +912,53 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
     }
 
     /*
-     * A line written across both staves is one of two things. A hand that has
-     * gone onto the other staff and kept playing: the other hand is busy with
-     * music of its own, and these notes are still the first hand's. Or a run
-     * shared out between the hands, each taking what is on its own staff: then
-     * the other hand has nothing else to do just there, and the notes on its
-     * staff are for it. The file writes both the same way, so the other hand
-     * is asked: a note on its staff while it is playing something of its own
-     * stays with its voice, and one that finds it free goes to it.
+     * The hands a score marks outright.
+     *
+     * "m.d." over a run, "L.H." under a note: the one place a page says which
+     * hand, and it is said exactly where the staves would mislead. So it is
+     * taken at its word — for the notes it stands on. Which those are is plain
+     * where one line of music begins at the mark, and then that note is the
+     * marked hand's, stated, with nothing suggested about it.
+     *
+     * How far the mark carries is not written down. It governs the phrase it
+     * opens, which is read here as that line running on unbroken on the same
+     * staff until it rests or another mark takes over; those notes follow the
+     * mark and are said to be a reading. And where several lines begin at a
+     * mark, and it is not clear which it is for, nothing is moved: the notes
+     * it disagrees with are said to be open.
      */
-    if (visiting.length > 0) {
-      const playing: Record<Hand, [number, number][]> = { left: [], right: [] }
-      for (let at = firstNote; at < notes.length; at++) {
-        const each = notes[at]!
-        if (each.role === 'keyboard')
-          playing[each.hand].push([each.startQ, each.startQ + each.durationQ])
-      }
-      for (const at of visiting) {
-        const visitor = notes[at]!
-        const host: Hand = visitor.hand === 'left' ? 'right' : 'left'
-        const busy = playing[host].some(
-          ([from, to]) => from <= visitor.startQ + 1e-6 && to > visitor.startQ + 1e-6,
-        )
-        if (busy) continue
-        // On its own staff after all: in a score on two staves there is
-        // nothing left to say about where it is written.
-        const { staff: _written, ...plain } = visitor
-        notes[at] = manyStaves ? { ...visitor, hand: host } : { ...plain, hand: host }
+    if (handMarks.length > 0) {
+      handMarks.sort((a, b) => a.atQ - b.atQ)
+      const mine: number[] = []
+      for (let at = firstNote; at < notes.length; at++)
+        if (notes[at]!.role === 'keyboard' && !notes[at]!.grace) mine.push(at)
+      for (const mark of handMarks) {
+        const until = handMarks.find((next) => next.atQ > mark.atQ + 1e-6)?.atQ ?? Infinity
+        const here = mine.filter((at) => Math.abs(notes[at]!.startQ - mark.atQ) < 1e-6)
+        if (here.length === 0) continue
+        const onItsStaff = here.filter((at) => writtenOn.get(at) === mark.staff)
+        const marked = onItsStaff.length > 0 ? onItsStaff : here
+        if (new Set(marked.map((at) => notes[at]!.voice)).size !== 1) {
+          for (const at of marked)
+            if (notes[at]!.hand !== mark.hand)
+              notes[at] = given(notes[at]!, notes[at]!.hand, writtenOn.get(at), true)
+          continue
+        }
+        for (const at of marked) notes[at] = given(notes[at]!, mark.hand, writtenOn.get(at), false)
+
+        const voice = notes[marked[0]!]!.voice
+        const staff = writtenOn.get(marked[0]!)
+        let end = Math.max(...marked.map((at) => notes[at]!.startQ + notes[at]!.durationQ))
+        const later = mine
+          .filter((at) => notes[at]!.voice === voice && notes[at]!.startQ > mark.atQ + 1e-6)
+          .sort((a, b) => notes[a]!.startQ - notes[b]!.startQ)
+        for (const at of later) {
+          const note = notes[at]!
+          if (note.startQ >= until - 1e-6 || note.startQ > end + 1e-3) break
+          if (writtenOn.get(at) !== staff) break
+          end = Math.max(end, note.startQ + note.durationQ)
+          if (note.hand !== mark.hand) notes[at] = given(note, mark.hand, staff, true)
+        }
       }
     }
   }
@@ -1013,7 +1091,13 @@ export function importMusicXml(text: string, fallbackTitle: string): Song | null
     // something other than once through. The notes above stay as written.
     rests: rests.map((rest) => ({ ...rest, startMs: toMs(rest.startQ) })),
     ...(clefsQ.length > 0
-      ? { clefs: clefsQ.map((clef) => ({ ...clef, startMs: toMs(clef.startQ) })) }
+      ? {
+          // In the order they come in the music: a piano written as a part a
+          // hand states each part's clefs in turn.
+          clefs: clefsQ
+            .map((clef) => ({ ...clef, startMs: toMs(clef.startQ) }))
+            .sort((a, b) => a.startQ - b.startQ),
+        }
       : {}),
     ...(pianoStaves ? { staves: pianoStaves } : {}),
     sections: sectionsFor(

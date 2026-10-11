@@ -117,6 +117,19 @@ export interface SongNote {
    */
   readonly staff?: number
   /**
+   * The score does not settle which hand plays this note, and `hand` is a
+   * reading of it rather than something the page states.
+   *
+   * A staff is not proof of a hand and neither is a voice. Where the two
+   * agree — a note on its own line's own staff — that is how a piano score is
+   * read and nothing more is said. Where they do not, or the staff is one a
+   * convention does not cover, the note keeps the hand of the line it belongs
+   * to and carries this, so that what is taught as the score's can be told
+   * from what is only likely. A hand the score marks outright (a part named
+   * for a hand, an "m.d." or "L.H." over the note) is never suggested.
+   */
+  readonly handSuggested?: boolean
+  /**
    * What kind of part this note belongs to.
    *
    * `percussion` is not a pitch at all — on the drum channel a note number
@@ -300,6 +313,8 @@ export interface Song {
    * which staff it is on.
    */
   readonly staves?: number
+  /** How many of its notes have a hand the score does not settle (`handSuggested`), where any do. */
+  readonly handsSuggested?: number
 }
 
 export function songDuration(notes: readonly SongNote[]): number {
@@ -413,6 +428,9 @@ export function buildSong(input: {
     // key — overwrites the fallback with the very thing it was there to
     // replace, and the song comes out with no key at all.
     key: input.key ?? estimateKey(notes),
+    ...(notes.some((note) => note.handSuggested)
+      ? { handsSuggested: notes.filter((note) => note.handSuggested).length }
+      : {}),
     hasFingering: notes.some((note) => note.finger !== undefined),
     ...(notes.some((note) => note.finger !== undefined)
       ? { fingeringSource: 'score' as const }

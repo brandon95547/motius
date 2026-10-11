@@ -18,6 +18,12 @@ const FINGER_NAMES = ['', 'Thumb', 'Index', 'Middle', 'Ring', 'Little'] as const
  * finger and one an editor wrote have to be tellable apart, or the suggestion
  * borrows an authority it does not have. So the card always names which it is
  * showing, and the two are never drawn the same way.
+ *
+ * The same goes for the hand. A score does not always say which hand takes a
+ * note — one written on the other hand's staff, or on a middle staff of three
+ * — and what Sonara makes of it is a reading. Taught as though the page said
+ * it, a wrong reading is a wrong hand learned, so the card says "suggested"
+ * of the hand too, in the word it already uses for a finger it worked out.
  */
 export function SongHandCard() {
   const song = useCurrentSong()
@@ -26,9 +32,19 @@ export function SongHandCard() {
 
   // Grouped by hand, left first — the order they sit in on the keyboard.
   const hands = (['left', 'right'] as const).flatMap((hand) => {
-    const fingers = current.filter((entry) => entry.hand === hand).map((entry) => entry.finger)
-    return fingers.length > 0 ? [{ hand, fingers }] : []
+    const entries = current.filter((entry) => entry.hand === hand)
+    return entries.length > 0
+      ? [
+          {
+            hand,
+            fingers: entries.map((entry) => entry.finger),
+            // The score does not settle whose some of this is.
+            suggested: entries.some((entry) => entry.handSuggested),
+          },
+        ]
+      : []
   })
+  const open = hands.filter((side) => side.suggested)
 
   // "Finger 3 · Middle" for one note, because there is room to name it. For a
   // chord, the digits alone — and where both hands are in it, say which is
@@ -72,11 +88,13 @@ export function SongHandCard() {
       <div className="flex items-center gap-3">
         {/* One diagram per hand the step actually uses, left first, so a chord
             split across both reads the way the keyboard does. */}
-        {(hands.length > 0 ? hands : [{ hand: 'right' as const, fingers: [] }]).map((side) => (
-          <div key={side.hand} className="h-24 w-20 shrink-0">
-            <HandDiagram hand={side.hand} fingers={side.fingers} />
-          </div>
-        ))}
+        {(hands.length > 0 ? hands : [{ hand: 'right' as const, fingers: [] as number[] }]).map(
+          (side) => (
+            <div key={side.hand} className="h-24 w-20 shrink-0">
+              <HandDiagram hand={side.hand} fingers={side.fingers} />
+            </div>
+          ),
+        )}
         <div className="flex min-w-0 flex-col gap-1">
           {song.hasFingering ? (
             current.length > 0 ? (
@@ -89,6 +107,17 @@ export function SongHandCard() {
                       ? 'Right hand.'
                       : 'Left hand.'}
                 </span>
+                {/* Said in words, and in the warning ink the card keeps for
+                    what it worked out rather than read. */}
+                {open.length > 0 && (
+                  <span className="text-body-sm text-[var(--ds-warning-text)]">
+                    {open.length > 1
+                      ? 'Both hands suggested here.'
+                      : hands.length > 1
+                        ? `${open[0]!.hand === 'right' ? 'Right' : 'Left'} hand suggested here.`
+                        : 'Hand suggested here.'}
+                  </span>
+                )}
               </>
             ) : (
               <span className="text-body-sm text-[var(--ds-fg-secondary)]">
@@ -116,6 +145,17 @@ export function SongHandCard() {
           <Info size={13} className="mt-0.5 shrink-0" aria-hidden />
           Worked out, not read — from the shapes the method books print and a published model of
           what a hand can reach. A fingered score always overrides it.
+        </p>
+      )}
+
+      {(song.handsSuggested ?? 0) > 0 && (
+        <p className="flex items-start gap-2 text-caption text-[var(--ds-fg-muted)]">
+          <Info size={13} className="mt-0.5 shrink-0" aria-hidden />
+          The score does not say which hand takes {song.handsSuggested}{' '}
+          {song.handsSuggested === 1 ? 'note' : 'notes'} of this piece: they are written on the
+          other hand&rsquo;s staff, or on a staff between the two. Each is kept with the line of
+          music it belongs to and marked &ldquo;suggested&rdquo; when you reach it. Follow your
+          edition or your teacher where they differ.
         </p>
       )}
 

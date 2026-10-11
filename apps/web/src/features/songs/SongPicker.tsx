@@ -713,6 +713,9 @@ function ImportedRow({
           {SOURCE_LABELS[song.source] ?? 'Score'} · {song.measureCount}{' '}
           {song.measureCount === 1 ? 'bar' : 'bars'} · {Math.round(song.bpm)} BPM
           {song.handsInferred ? ' · hands guessed from pitch' : ''}
+          {song.handsSuggested
+            ? ` · hand suggested for ${song.handsSuggested} ${song.handsSuggested === 1 ? 'note' : 'notes'}`
+            : ''}
           {(song.parts?.length ?? 0) > 1 && <>{` · ${song.parts.join(', ')}`}</>}
         </span>
         <Provided song={song} />

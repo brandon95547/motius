@@ -81,8 +81,11 @@ interface SongState {
    * A list, not one finger: a chord is played with several, and a step can
    * reach across both hands. Showing the first of them answers the wrong
    * question for every chord in a song.
+   *
+   * Each finger with its hand, and whether that hand is the score's or a
+   * reading of it (`SongNote.handSuggested`).
    */
-  currentFingers: readonly { finger: number; hand: Hand }[]
+  currentFingers: readonly { finger: number; hand: Hand; handSuggested?: boolean }[]
   /**
    * Notes pressed that the step did not ask for, so the keyboard can say so.
    *
@@ -108,7 +111,7 @@ interface SongState {
   resetLearning: () => void
   advance: (steps: number) => void
   setStepCount: (count: number) => void
-  setCurrent: (fingers: readonly { finger: number; hand: Hand }[]) => void
+  setCurrent: (fingers: SongState['currentFingers']) => void
   setWrongNotes: (notes: readonly number[]) => void
 }
 

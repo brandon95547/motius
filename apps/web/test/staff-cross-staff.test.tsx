@@ -41,25 +41,33 @@ const run =
   note('C', 5, 1, 1, 0.5)
 
 describe('whose notes they are', () => {
-  it('keeps a note with its voice’s hand while the other hand is playing', () => {
+  const hands = (song: ReturnType<typeof score>) =>
+    song.notes.map((each) => [each.note, each.hand, each.staff, each.handSuggested ?? false])
+
+  it('keeps a note with its line’s hand on the other staff, and says the score has not settled it', () => {
     // The left hand holds a note of its own under the right hand's run.
     const song = score([run + rest(1, 1, 2) + back() + note('C', 2, 2, 5)])
-    const by = (midi: number) => song.notes.find((each) => each.note === midi)!
-    expect([by(48).hand, by(48).staff]).toEqual(['right', 2])
-    expect([by(55).hand, by(55).staff]).toEqual(['right', 2])
-    // On its own staff there is nothing to add.
-    expect([by(64).hand, by(64).staff]).toEqual(['right', undefined])
-    expect([by(36).hand, by(36).staff]).toEqual(['left', undefined])
+    expect(hands(song)).toEqual([
+      [36, 'left', undefined, false],
+      // On the lower staff, in the upper staff's voice: the right hand's, as a reading.
+      [48, 'right', 2, true],
+      [55, 'right', 2, true],
+      // On its own staff there is nothing to add, and nothing in doubt.
+      [64, 'right', undefined, false],
+      [72, 'right', undefined, false],
+    ])
+    expect(song.handsSuggested).toBe(2)
   })
 
-  it('gives a run shared between the hands to each hand’s own staff', () => {
-    // Nothing else for the left hand to do: the notes on its staff are its.
+  it('never hands a note to the other hand for being free to take it', () => {
+    // The left hand has nothing else to do here. That is not the score saying
+    // these notes are its: the line stays one hand's, and is marked as open.
     const song = score([run + rest(1, 1, 2) + back() + rest(2, 5)])
-    expect(song.notes.map((each) => [each.note, each.hand, each.staff])).toEqual([
-      [48, 'left', undefined],
-      [55, 'left', undefined],
-      [64, 'right', undefined],
-      [72, 'right', undefined],
+    expect(hands(song)).toEqual([
+      [48, 'right', 2, true],
+      [55, 'right', 2, true],
+      [64, 'right', undefined, false],
+      [72, 'right', undefined, false],
     ])
     // One voice all the same, for the page to beam as one line.
     expect(new Set(song.notes.map((each) => each.voice)).size).toBe(1)
@@ -72,7 +80,7 @@ describe('whose notes they are', () => {
       note('E', 5, 1, 1) + back() + note('C', 2, 2, 2),
     ])
     const visitor = song.notes.find((each) => each.note === 55)!
-    expect([visitor.hand, visitor.staff]).toEqual(['right', 2])
+    expect([visitor.hand, visitor.staff, visitor.handSuggested]).toEqual(['right', 2, true])
     expect(song.notes.filter((each) => each.note === 36).map((each) => each.hand)).toEqual([
       'left',
       'left',
@@ -84,16 +92,119 @@ describe('whose notes they are', () => {
       note('E', 5, 1, 1) + back() + note('C', 3, 2, 1),
       note('D', 5, 1, 1) + back() + note('B', 2, 2, 1),
     ])
-    expect(song.notes.map((each) => [each.note, each.hand, each.staff])).toEqual([
-      [48, 'left', undefined],
-      [76, 'right', undefined],
-      [47, 'left', undefined],
-      [74, 'right', undefined],
+    expect(hands(song)).toEqual([
+      [48, 'left', undefined, false],
+      [76, 'right', undefined, false],
+      [47, 'left', undefined, false],
+      [74, 'right', undefined, false],
     ])
+    expect(song.handsSuggested).toBeUndefined()
     // And the two lines are told apart, so the page does not take them for one.
     const voices = (hand: string) =>
       new Set(song.notes.filter((each) => each.hand === hand).map((each) => each.voice))
     expect([...voices('right')].some((voice) => voices('left').has(voice))).toBe(false)
+  })
+})
+
+/**
+ * The hands a score marks outright.
+ *
+ * "m.d." over a run on the lower staff, "L.H." under a note of the melody: the
+ * one place a page names a hand, written exactly where the staves would
+ * mislead. Read from the staves alone, the right hand's bar in the Flight of
+ * the Bumblebee was taught to the left.
+ */
+describe('a hand marked in the score', () => {
+  const mark = (text: string, staff: number) =>
+    `<direction placement="below"><direction-type><words>${text}</words></direction-type><staff>${staff}</staff></direction>`
+  const hands = (song: ReturnType<typeof score>) =>
+    song.notes.map((each) => [each.note, each.hand, each.staff, each.handSuggested ?? false])
+  /** Four quarter notes of the lower staff's own voice, on the lower staff. */
+  const low = (...steps: string[]) => steps.map((step) => note(step, 3, 2, 5, 1)).join('')
+
+  it('takes the note it stands on for that hand, as the score’s own word', () => {
+    // The upper staff rests; "m.d." says the right hand plays what is below.
+    const song = score([mark('m.d.', 1) + rest(1, 1) + back() + low('C', 'D', 'E', 'F')])
+    expect(hands(song)[0]).toEqual([48, 'right', 2, false])
+  })
+
+  it('carries through the phrase it opens, as a reading, until another mark takes over', () => {
+    const song = score([
+      mark('m.d.', 1) + rest(1, 1) + back() + low('C', 'D', 'E', 'F'),
+      rest(1, 1) + back() + mark('m.g.', 2) + low('G', 'A', 'B', 'C'),
+    ])
+    expect(hands(song)).toEqual([
+      // Stated for the first, and followed, as a reading, by the rest of the run.
+      [48, 'right', 2, false],
+      [50, 'right', 2, true],
+      [52, 'right', 2, true],
+      [53, 'right', 2, true],
+      // The left hand takes over where the score says so: its own notes, on its own staff.
+      [55, 'left', undefined, false],
+      [57, 'left', undefined, false],
+      [59, 'left', undefined, false],
+      [48, 'left', undefined, false],
+    ])
+    expect(song.handsSuggested).toBe(3)
+  })
+
+  it('stops at a rest: the phrase the mark was on is over', () => {
+    const song = score([
+      mark('R.H.', 2) +
+        note('C', 3, 2, 5, 1) +
+        note('D', 3, 2, 5, 1) +
+        rest(2, 5, 1) +
+        note('E', 3, 2, 5, 1) +
+        back() +
+        rest(1, 1),
+    ])
+    expect(hands(song)).toEqual([
+      [48, 'right', 2, false],
+      [50, 'right', 2, true],
+      [52, 'left', undefined, false],
+    ])
+  })
+
+  it('moves nothing where it is not clear which line it is for, and says those notes are open', () => {
+    // Two lines begin under the mark on the lower staff.
+    const song = score([
+      mark('m.d.', 2) +
+        note('G', 3, 2, 5) +
+        back() +
+        note('C', 2, 2, 6) +
+        back() +
+        note('E', 5, 1, 1),
+    ])
+    expect(hands(song)).toEqual([
+      [36, 'left', undefined, true],
+      [55, 'left', undefined, true],
+      [76, 'right', undefined, false],
+    ])
+  })
+
+  it('settles a note the staves had left open', () => {
+    // The right hand's run on the lower staff, and the score saying so. The
+    // left hand comes in a beat later, so the mark stands on the run alone.
+    const song = score([
+      mark('m.d.', 2) +
+        run +
+        rest(1, 1, 2) +
+        back() +
+        rest(2, 5, 1) +
+        note('C', 2, 2, 5, 1) +
+        note('C', 2, 2, 5, 2),
+    ])
+    const by = (midi: number) => song.notes.find((each) => each.note === midi)!
+    expect([by(48).hand, by(48).staff, by(48).handSuggested ?? false]).toEqual(['right', 2, false])
+    // The next note of the run, which the mark was not on, is still a reading.
+    expect([by(55).hand, by(55).staff, by(55).handSuggested ?? false]).toEqual(['right', 2, true])
+  })
+
+  it('is told from the words around it: only a mark that is nothing else', () => {
+    const song = score([
+      mark('Andante m.d. espressivo', 1) + rest(1, 1) + back() + low('C', 'D', 'E', 'F'),
+    ])
+    expect(song.notes.every((each) => each.hand === 'left' && !each.handSuggested)).toBe(true)
   })
 })
 

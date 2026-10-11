@@ -88,6 +88,25 @@ describe('reading a piano written on more than two staves', () => {
     ])
   })
 
+  it('says the hand is only a reading on the staves between the top and the bottom', () => {
+    // The top staff is the right hand's and the bottom the left's, as on any
+    // piano page. Whose the staves between are is a custom, not a statement.
+    const four = score([opening(FOUR) + bar([1, 'E', 5], [2, 'C', 4], [3, 'G', 3], [4, 'C', 2])])
+    expect(four.notes.map((each) => [each.staff, each.handSuggested ?? false])).toEqual([
+      [4, false],
+      [3, true],
+      [2, true],
+      [1, false],
+    ])
+    expect(four.handsSuggested).toBe(2)
+    const three = score([opening(['G', 'G', 'F']) + bar([1, 'E', 5], [2, 'C', 4], [3, 'C', 2])])
+    expect(three.notes.map((each) => [each.staff, each.handSuggested ?? false])).toEqual([
+      [3, false],
+      [2, true],
+      [1, false],
+    ])
+  })
+
   it('says what clef every staff opens in, and each change with its staff', () => {
     const song = score([
       opening(FOUR) + bar([1, 'E', 5], [2, 'C', 4], [3, 'G', 3], [4, 'C', 2]),
