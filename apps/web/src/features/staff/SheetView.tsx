@@ -190,8 +190,8 @@ export function SheetView({
   // playhead run over a line break, and a pitch written either side of one is
   // still written twice.
   const watched = React.useMemo(
-    () => watchedIn(measured, (index) => isLive(roleFor(index))),
-    [measured, roleFor],
+    () => watchedIn(measured, (index) => isLive(roleFor(index)), here),
+    [measured, roleFor, here],
   )
 
   const last = systems.at(-1)

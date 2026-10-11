@@ -213,3 +213,104 @@ describe.each(['flow', 'sheet'] as const)('a key press against the %s view', (st
     expect(container.querySelectorAll('.staff__note[data-sounding="true"]')).toHaveLength(0)
   })
 })
+
+/**
+ * A chord held for a bar over a bass that walks under it, and in the next bar
+ * a chord with two of the same notes: how the Air on the G String begins.
+ */
+function heldSong() {
+  const beat = 500
+  const notes: SongNote[] = []
+  const bars = [
+    { held: [62, 67, 71], bass: [43, 55, 54, 42] },
+    { held: [64, 67, 71], bass: [40, 52, 50, 38] },
+  ]
+  for (const [bar, { held, bass }] of bars.entries()) {
+    const at = bar * beat * 4
+    for (const note of held)
+      notes.push({
+        note,
+        velocity: 80,
+        startMs: at,
+        durationMs: beat * 4,
+        hand: 'right',
+        role: 'keyboard',
+      })
+    for (const [b, note] of bass.entries())
+      notes.push({
+        note,
+        velocity: 80,
+        startMs: at + b * beat,
+        durationMs: beat,
+        hand: 'left',
+        role: 'keyboard',
+      })
+  }
+  return {
+    beat,
+    song: buildSong({
+      id: 'held',
+      title: 'Held',
+      bpm: 120,
+      beatsPerMeasure: 4,
+      notes,
+      source: 'midi',
+      handsInferred: false,
+    }),
+  }
+}
+
+describe.each(['flow', 'sheet'] as const)('a chord still held, in the %s view', (staffView) => {
+  const { song, beat } = heldSong()
+  const lit = (container: HTMLElement, role: string) =>
+    container.querySelectorAll(
+      `.staff__step[data-role="${role}"] .staff__note[data-sounding="true"]`,
+    ).length
+
+  beforeEach(async () => {
+    const { useSongStore } = await import('@/state/song-store')
+    useKeyboardStore.getState().panic()
+    useSongStore.setState({
+      library: [song],
+      currentId: song.id,
+      mode: 'explore',
+      part: 'both',
+      positionMs: 0,
+      staffView,
+    })
+  })
+
+  it('does not light the same notes in the bar to come', async () => {
+    const { SongScore } = await import('@/features/staff/SongScore')
+    const { useSongStore } = await import('@/state/song-store')
+    const { container } = render(<Stage Score={SongScore} />)
+
+    // The second beat: the chord of the first is still down, and the bass has
+    // moved on to its second note. Two of the held notes are in the next bar's
+    // chord too, three steps ahead, and those are not being played.
+    act(() => {
+      for (const note of [62, 67, 71, 43]) useKeyboardStore.getState().noteOn(note, 80, 'pointer')
+    })
+    act(() => {
+      useKeyboardStore.getState().noteOff(43)
+      useSongStore.setState({ positionMs: beat })
+      useKeyboardStore.getState().noteOn(55, 80, 'pointer')
+    })
+
+    expect(lit(container, 'target')).toBe(1)
+    expect(lit(container, 'upcoming')).toBe(0)
+  })
+
+  it('lights them there once that bar is reached and they are struck again', async () => {
+    const { SongScore } = await import('@/features/staff/SongScore')
+    const { useSongStore } = await import('@/state/song-store')
+    const { container } = render(<Stage Score={SongScore} />)
+
+    act(() => {
+      useSongStore.setState({ positionMs: beat * 4 })
+      for (const note of [64, 67, 71, 40]) useKeyboardStore.getState().noteOn(note, 80, 'pointer')
+    })
+
+    expect(lit(container, 'target')).toBe(4)
+  })
+})

@@ -174,9 +174,12 @@ export function FlowView({
   const height = frame.bottom - frame.top
   // The chords listening to the keys, so each can tell whether a pitch it is
   // holding is being played here or somewhere else it is written.
+  // With every chord listening, the one that struck a held note is among them
+  // and speaks for itself.
   const watched = React.useMemo(
-    () => watchedIn(measured, (index) => watchAll || isLive(roleFor(index))),
-    [measured, watchAll, roleFor],
+    () =>
+      watchedIn(measured, (index) => watchAll || isLive(roleFor(index)), watchAll ? -1 : position),
+    [measured, watchAll, roleFor, position],
   )
 
   // The drawing scales with the panel's height, so the width in pixels follows

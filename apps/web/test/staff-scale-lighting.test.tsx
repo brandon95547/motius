@@ -159,4 +159,24 @@ describe('which writing of a held pitch lights', () => {
     expect(litNotes(up, watched, -1, down(64))).toEqual([64])
     expect(litNotes(back, watched, -1, down(64))).toEqual([64])
   })
+
+  it('is not a chord still to come, while the chord that struck it holds it', () => {
+    // A whole note over a walking bass, and the same pitches in the next bar.
+    // The chord behind is no nearer than the one ahead, and is holding them.
+    const holding: Watched = { index: 0, notes: [67, 71], holding: true }
+    const target: Watched = { index: 3, notes: [42] }
+    const next: Watched = { index: 4, notes: [64, 67, 71] }
+    const watched = [target, next, holding]
+
+    expect(litNotes(target, watched, 3, down(42, 67, 71))).toEqual([42])
+    expect(litNotes(next, watched, 3, down(42, 67, 71))).toEqual([])
+  })
+
+  it('is the chord the player is on, though another is holding the same pitch', () => {
+    // One voice holds a note and another strikes it again: that is struck here.
+    const holding: Watched = { index: 0, notes: [67], holding: true }
+    const target: Watched = { index: 2, notes: [55, 67] }
+
+    expect(litNotes(target, [target, holding], 2, down(55, 67))).toEqual([55, 67])
+  })
 })

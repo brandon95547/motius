@@ -393,19 +393,45 @@ export function Beams({
 export interface Watched {
   readonly index: number
   readonly notes: readonly number[]
+  /**
+   * A chord behind the player, listed for the notes of it the score is still
+   * holding: a whole note over a bass that has moved on. It lights nothing
+   * itself. It is here so that a chord still to come does not take those
+   * notes for its own — see `litNotes`.
+   */
+  readonly holding?: true
 }
 
-/** The chords of a score that watch the keys, as the lighting compares them. */
+/** How far a note runs past the start of a chord before it is held under it, in milliseconds. */
+const HELD_UNDER = 1
+
+/**
+ * The chords of a score that watch the keys, as the lighting compares them.
+ *
+ * And, where the player is known to be on the chord `here`, the chords before
+ * it that the score has not let go of.
+ */
 export function watchedIn(
   measured: readonly Measured[],
   live: (index: number) => boolean,
+  here = -1,
 ): Watched[] {
-  return (
-    measured
-      // A place where nothing is struck has no keys to watch.
-      .filter((entry) => entry.step.notes.length > 0 && live(entry.index))
-      .map((entry) => ({ index: entry.index, notes: entry.step.notes.map((note) => note.note) }))
-  )
+  // A place where nothing is struck has no keys to watch.
+  const chords = measured.filter((entry) => entry.step.notes.length > 0)
+  const watched: Watched[] = chords
+    .filter((entry) => live(entry.index))
+    .map((entry) => ({ index: entry.index, notes: entry.step.notes.map((note) => note.note) }))
+
+  const now = chords.find((entry) => entry.index === here)?.step.startMs
+  if (now === undefined) return watched
+  for (const entry of chords) {
+    if (entry.index >= here) break
+    const notes = entry.step.notes
+      .filter((note) => note.startMs + note.durationMs > now + HELD_UNDER)
+      .map((note) => note.note)
+    if (notes.length > 0) watched.push({ index: entry.index, notes, holding: true })
+  }
+  return watched
 }
 
 /**
@@ -427,6 +453,14 @@ export function watchedIn(
  *
  * What is still level after that lights everywhere it is level, because a key
  * does not say which hand pressed it and choosing one would be a guess.
+ *
+ * Before any of that, a note the score is still holding is the chord's that
+ * struck it. The Air on the G String holds a chord for a bar over four notes
+ * of bass, and two of its notes are in the next bar's chord: with the first
+ * chord behind the player and no longer listening, the next one found its
+ * pitches down and nobody nearer to claim them, and lit a bar early. A chord
+ * the player has reached is another matter — a note struck again under a
+ * voice that is holding it is struck there.
  */
 export function litNotes(
   step: Watched,
@@ -445,6 +479,7 @@ export function litNotes(
       isDown(note) &&
       !watched.some((other) => {
         if (other.index === step.index || !other.notes.includes(note)) return false
+        if (other.holding) return position >= 0 && step.index > position
         const rival = claim(other)
         return rival.away !== own.away ? rival.away < own.away : rival.held > own.held
       }),
