@@ -320,6 +320,20 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
     moods: ['joyful'],
     edition: 'Version 2',
   },
+  // The thirteenth fugue of the Well-Tempered Clavier's first book, in the
+  // ASAP dataset's engraving (github.com/fosfrancesco/asap-dataset, CC BY-NC-SA
+  // 4.0), not taken from either library. The score gives no tempo; it is taken
+  // at sixty-three, between the two performances the dataset pairs it with.
+  // The notes the engraving plays its mordents from and keeps off the page are
+  // left out: what is asked of the player is what is printed.
+  {
+    id: 'bach-fugue-in-f-sharp-major-bwv-858',
+    title: 'Fugue in F-sharp Major, BWV 858',
+    composer: 'Johann Sebastian Bach',
+    key: 'F♯ major',
+    genre: 'classical',
+    moods: ['joyful'],
+  },
   {
     id: 'mozart-sonata-no-16-k-545-1',
     title: 'Sonata No. 16 in C Major, K. 545, 1st Movement',
