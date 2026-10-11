@@ -75,9 +75,9 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
     genre: 'classical',
     moods: ['dreamy', 'romantic'],
   },
-  // The first and third movements are a PDMX engraving of the whole sonata, cut
-  // into its movements and corrected against the Peters edition. Its tremolo
-  // shorthand is written out, and its speeds are one a section.
+  // The first movement is a PDMX engraving of the whole sonata, cut down to it
+  // and corrected against the Peters edition. Its tremolo shorthand is written
+  // out, and its speeds are one a section.
   {
     id: 'beethoven-pathetique-sonata-1',
     title: 'Pathétique Sonata, 1st Movement',
@@ -91,13 +91,6 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
     composer: 'Ludwig van Beethoven',
     genre: 'classical',
     moods: ['romantic'],
-  },
-  {
-    id: 'beethoven-pathetique-sonata-3',
-    title: 'Pathétique Sonata, 3rd Movement',
-    composer: 'Ludwig van Beethoven',
-    genre: 'classical',
-    moods: ['mysterious', 'ominous'],
   },
   {
     id: 'beethoven-fur-elise',

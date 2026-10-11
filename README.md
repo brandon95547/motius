@@ -69,7 +69,7 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
 
 ### Songs
 
-- **Eighty-five pieces come with it**, from Bach to Fats Waller, in a chooser that
+- **Eighty-four pieces come with it**, from Bach to Fats Waller, in a chooser that
   Songs opens on: shelved by genre — Classical, Gospel, Jazz, Blues, Pop, Rock,
   Country, Soul & R&B, Folk & Traditional, New Age — and under every genre by
   the same eight moods: Dramatic & Powerful, Dreamy & Atmospheric, Joyful &
@@ -520,9 +520,9 @@ C-sharp Minor, a PDMX engraving corrected against Godowsky's edition (Art
 Publication Society, 1923), on four staves where that goes onto four — each
 hand's pair a part named for it, as the page labels them, so its hands are the
 page's and not a reading.
-The first and third movements of Beethoven's Pathétique are likewise a PDMX
-engraving corrected against the Peters edition, its left-hand tremolo
-shorthand written out as the eighth notes it stands for.
+The first movement of Beethoven's Pathétique is likewise a PDMX engraving
+corrected against the Peters edition, its left-hand tremolo shorthand written
+out as the eighth notes it stands for.
 Liszt's Consolation No. 3 was read, bar by bar, from the
 [Mutopia Project](https://www.mutopiaproject.org)'s edition (after Breitkopf &
 Härtel, 1850), typeset by Ryan Prince and licensed under

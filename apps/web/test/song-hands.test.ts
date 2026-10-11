@@ -44,7 +44,6 @@ const PIECES = [
   'rachmaninoff-prelude-op-3-no-2',
   'beethoven-pathetique-sonata-1',
   'beethoven-pathetique-sonata-2',
-  'beethoven-pathetique-sonata-3',
 ] as const
 
 describe.each(PIECES)('%s', (id) => {
@@ -201,14 +200,11 @@ describe('the Pathétique', () => {
     expect(song.handsSuggested).toBe(3)
   })
 
-  it.each([
-    ['beethoven-pathetique-sonata-2', 1640, 1052, 588],
-    ['beethoven-pathetique-sonata-3', 2385, 1283, 1102],
-  ] as const)('%s keeps each hand to its own staff', (id, notes, right, left) => {
-    const song = read(id)
-    expect(played(song)).toHaveLength(notes)
-    expect(count(song, (note) => note.hand === 'right')).toBe(right)
-    expect(count(song, (note) => note.hand === 'left')).toBe(left)
+  it('keeps each hand to its own staff in the second movement', () => {
+    const song = read('beethoven-pathetique-sonata-2')
+    expect(played(song)).toHaveLength(1640)
+    expect(count(song, (note) => note.hand === 'right')).toBe(1052)
+    expect(count(song, (note) => note.hand === 'left')).toBe(588)
     expect(song.handsSuggested).toBeUndefined()
     expect(played(song).every((note) => note.staff === undefined)).toBe(true)
   })
