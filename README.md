@@ -69,7 +69,7 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
 
 ### Songs
 
-- **Eighty-five pieces come with it**, from Bach to Fats Waller, in a chooser that
+- **Eighty-three pieces come with it**, from Bach to Fats Waller, in a chooser that
   Songs opens on: shelved by genre — Classical, Gospel, Jazz, Blues, Pop, Rock,
   Country, Soul & R&B, Folk & Traditional, New Age — and under every genre by
   the same eight moods: Dramatic & Powerful, Dreamy & Atmospheric, Joyful &
@@ -547,7 +547,7 @@ Rigaux, Jacquemard and Sakai, 2020), which is licensed under
 [Creative Commons Attribution-NonCommercial-ShareAlike 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/):
 shared with credit, and not for commercial use.
 
-Fifteen are recent pieces their own composers published under CC0, giving up their
+Fourteen are recent pieces their own composers published under CC0, giving up their
 rights in them; `catalog.ts` has the page each was released on. One more is not in
 the public domain and is here under its license: "Amazing
 Plan" by Kevin MacLeod ([incompetech.com](https://incompetech.com)), licensed

@@ -602,14 +602,6 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
     moods: ['playful'],
   },
   {
-    id: 'liszt-la-campanella',
-    title: 'La Campanella',
-    composer: 'Franz Liszt',
-    key: 'G♯ minor',
-    genre: 'classical',
-    moods: ['playful'],
-  },
-  {
     id: 'brahms-hungarian-dance-no-5',
     title: 'Hungarian Dance No. 5 in G Minor',
     composer: 'Johannes Brahms',
@@ -661,15 +653,6 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
   },
   // From here on, recent pieces their own composers published on MuseScore under CC0: given
   // away, not out of copyright by age. Each has the page it was released on.
-  {
-    // https://musescore.com/user/252611/scores/5985641
-    id: 'hortal-xia',
-    title: 'Xia',
-    composer: 'Jordi Hortal',
-    key: 'E♭ major',
-    genre: 'classical',
-    moods: ['dreamy'],
-  },
   {
     // https://musescore.com/user/32246825/scores/5832126
     id: 'composing-hub-waltz-in-c-sharp-minor',
