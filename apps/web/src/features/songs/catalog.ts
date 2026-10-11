@@ -324,13 +324,6 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
     moods: ['dramatic'],
   },
   {
-    id: 'chopin-ballade-no-1',
-    title: 'Ballade No. 1 in G Minor, Op. 23',
-    composer: 'Frédéric Chopin',
-    genre: 'classical',
-    moods: ['dramatic', 'storytelling'],
-  },
-  {
     id: 'bach-prelude-in-c-minor-bwv-847',
     title: 'Prelude in C Minor, BWV 847',
     composer: 'Johann Sebastian Bach',
@@ -392,6 +385,13 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
     id: 'beethoven-moonlight-sonata-1',
     title: 'Moonlight Sonata, 1st Movement',
     composer: 'Ludwig van Beethoven',
+    genre: 'classical',
+    moods: ['mysterious'],
+  },
+  {
+    id: 'chopin-ballade-no-1',
+    title: 'Ballade No. 1 in G Minor, Op. 23',
+    composer: 'Frédéric Chopin',
     genre: 'classical',
     moods: ['mysterious'],
   },

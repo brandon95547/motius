@@ -154,11 +154,11 @@ describe('the song chooser', () => {
         (each) => each.label,
       ),
     )
-    // More rows than songs: the Ballade is dramatic and tells a story.
+    // More rows than songs: Swan Lake is dramatic and tells a story.
     const listings = classical.reduce((sum, entry) => sum + entry.moods.length, 0)
     expect(listings).toBeGreaterThan(classical.length)
     expect(rows()).toHaveLength(listings)
-    expect(rows().filter((row) => row.textContent?.startsWith('Ballade No. 1'))).toHaveLength(2)
+    expect(rows().filter((row) => row.textContent?.startsWith('Swan Lake'))).toHaveLength(2)
   })
 
   it('narrows a genre to one mood at a time, and All widens it again', () => {

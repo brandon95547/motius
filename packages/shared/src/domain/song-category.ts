@@ -5,7 +5,7 @@ import { z } from 'zod'
  *
  * The genre is the shelf a song is on, and it is on one. The moods are how
  * someone choosing a piece to play thinks of it, and a piece can be more than
- * one of them: a ballade is dramatic and tells a story. There is one list of
+ * one of them: Swan Lake is dramatic and tells a story. There is one list of
  * moods, and every genre is divided by the same one, so "Romantic" means the
  * same thing under Jazz as under Classical and is written down once.
  *
