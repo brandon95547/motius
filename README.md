@@ -69,7 +69,7 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
 
 ### Songs
 
-- **Eighty-three pieces come with it**, from Bach to Fats Waller, in a chooser
+- **Eighty-four pieces come with it**, from Bach to Fats Waller, in a chooser
   that Songs opens on: shelved by genre — Basic, Classical, Gospel, Jazz, Blues,
   Pop, Rock, Country, Soul & R&B, Folk & Traditional, New Age, where Basic is
   the shelf for someone starting: the children's songs and the easy editions —
@@ -543,7 +543,8 @@ Liszt's Consolation No. 3 was read, bar by bar, from the
 [Mutopia Project](https://www.mutopiaproject.org)'s edition (after Breitkopf &
 Härtel, 1850), typeset by Ryan Prince and licensed under
 [Creative Commons Attribution 3.0](https://creativecommons.org/licenses/by/3.0/).
-Bach's Fugue in F-sharp Major, BWV 858, is the engraving in the
+Bach's Fugue in F-sharp Major, BWV 858, and the second movement of his Italian
+Concerto, BWV 971, are the engravings in the
 [ASAP dataset](https://github.com/fosfrancesco/asap-dataset) (Foscarin, McLeod,
 Rigaux, Jacquemard and Sakai, 2020), which is licensed under
 [Creative Commons Attribution-NonCommercial-ShareAlike 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/):

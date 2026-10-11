@@ -68,6 +68,19 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
     genre: 'classical',
     moods: ['dreamy'],
   },
+  // The concerto's slow movement, the Andante in D minor, in the ASAP
+  // dataset's engraving (github.com/fosfrancesco/asap-dataset, CC BY-NC-SA
+  // 4.0), not taken from either library. The dataset names it for the concerto
+  // alone, and its engraving heads it Adagio; it is here under the movement it
+  // is, at the forty-eight the engraving gives it.
+  {
+    id: 'bach-italian-concerto-bwv-971-2',
+    title: 'Italian Concerto, BWV 971, 2nd Movement',
+    composer: 'Johann Sebastian Bach',
+    key: 'D minor',
+    genre: 'classical',
+    moods: ['dreamy'],
+  },
   // The library's engraving, taken at seventy-five rather than the hundred it
   // was given.
   {
