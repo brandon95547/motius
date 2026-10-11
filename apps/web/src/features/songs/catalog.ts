@@ -379,6 +379,9 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
     moods: ['dramatic', 'ominous'],
     edition: 'Piano solo',
   },
+  // The library's engraving, taken at a hundred and forty rather than the
+  // hundred and sixty-four it was given. Its slowings and its returns to speed
+  // are each brought down in the same proportion.
   {
     id: 'beethoven-moonlight-sonata-3',
     title: 'Moonlight Sonata, 3rd Movement',
