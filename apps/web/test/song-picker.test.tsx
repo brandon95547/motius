@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SONG_GENRES, SONG_MOODS, type SongGenre, type SongMood } from '@sonara/shared'
@@ -387,20 +387,21 @@ describe('the song chooser', () => {
     expect(scoresAsked(fetched)).toHaveLength(1)
   })
 
-  it('opens a quick song at ninety, and a slow one at its own tempo', async () => {
+  it('opens every song at its own tempo, however quick, and carries nothing over', async () => {
     vi.stubGlobal('fetch', serveScores())
     const onClose = vi.fn()
     show(onClose)
 
-    // Maple Leaf Rag is written at a hundred.
+    // Maple Leaf Rag is written at a hundred, and opens at a hundred.
     fireEvent.click(song('Maple Leaf Rag'))
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
     const rag = useSongStore.getState()
     expect(rag.builtIn[0]!.bpm).toBe(100)
-    expect(rag.builtIn[0]!.bpm * rag.tempoScale).toBeCloseTo(90, 5)
+    expect(rag.tempoScale).toBe(1)
 
-    // Ave Maria at forty: nothing to slow down, and nothing carried over from
-    // the rag, whose nine tenths would have made it thirty-six.
+    // Turned down to half, which is the rag's and not the next song's: Ave
+    // Maria at forty would have opened at twenty.
+    act(() => useSongStore.getState().setTempoScale(0.5))
     fireEvent.click(song('Ave Maria'))
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(2))
     expect(useSongStore.getState().tempoScale).toBe(1)

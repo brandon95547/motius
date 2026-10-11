@@ -130,27 +130,17 @@ const VIEW_KEY = 'sonara.staff-view.v1'
 /** Nothing in progress. */
 const IDLE = { stepIndex: 0, learning: false } as const
 
-/** The fastest a song opens at, in beats a minute. */
-export const OPENING_BPM = 90
 /** The slowest the tempo goes, as a share of the song's own. */
 const MIN_TEMPO_SCALE = 0.25
 
 /**
- * The speed a song opens at, as a share of the tempo it is written at.
+ * The speed a song opens at, as a share of the tempo it is written at: all of
+ * it.
  *
- * Its own tempo, unless that is faster than ninety, and then ninety. A piece
- * marked at a hundred and eighty is that fast for someone who can already play
- * it; opened at full speed it is past a learner before they have found the
- * first note, and the first thing they did with every quick piece was turn it
- * down. Faster is still there to be chosen: this is where it starts.
- *
- * Worked out afresh for each song rather than carried from the last one. A
- * share that was right for a presto is far too slow for an adagio.
+ * Set afresh for each song rather than carried from the last one. A share that
+ * was right for a presto is far too slow for an adagio.
  */
-function openingScale(song: Song | undefined): number {
-  if (!song || !(song.bpm > OPENING_BPM)) return 1
-  return Math.max(MIN_TEMPO_SCALE, OPENING_BPM / song.bpm)
-}
+const OPENING_SCALE = 1
 
 /**
  * Brings a stored song up to the current shape.
@@ -284,19 +274,13 @@ export const useSongStore = create<SongState>((set) => ({
         currentId: song.id,
         positionMs: 0,
         playing: false,
-        tempoScale: openingScale(song),
+        tempoScale: OPENING_SCALE,
         ...IDLE,
       }
     }),
 
   open: (currentId) =>
-    set((state) => ({
-      currentId,
-      positionMs: 0,
-      playing: false,
-      tempoScale: openingScale(state.library.find((song) => song.id === currentId)),
-      ...IDLE,
-    })),
+    set({ currentId, positionMs: 0, playing: false, tempoScale: OPENING_SCALE, ...IDLE }),
 
   openBuiltIn: (song) =>
     set((state) => ({
@@ -306,7 +290,7 @@ export const useSongStore = create<SongState>((set) => ({
       currentId: song.id,
       positionMs: 0,
       playing: false,
-      tempoScale: openingScale(song),
+      tempoScale: OPENING_SCALE,
       ...IDLE,
     })),
 
