@@ -94,8 +94,8 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
   },
   // The Mutopia Project's edition (after Berners, 1908; typeset by Chris Sawer,
   // public domain), converted from its LilyPond source. It takes the place of
-  // the PDMX engraving, and opens at the speed its source plays it: 108 minims
-  // a minute.
+  // the PDMX engraving, and is taken at 183 crotchets a minute rather than the
+  // 216 its source plays it at.
   {
     id: 'beethoven-pathetique-sonata-3',
     title: 'Pathétique Sonata, 3rd Movement',
