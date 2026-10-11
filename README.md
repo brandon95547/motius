@@ -75,10 +75,13 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
   the same eight moods: Dramatic & Powerful, Dreamy & Atmospheric, Joyful &
   Uplifting, Mysterious & Dark, Ominous & Apocalyptic, Playful & Energetic,
   Romantic, Storytelling. A piece is in one genre and can have several moods;
-  the moods are a row over the list — all of them, or one at a time — and the
-  list is searchable by title or composer. Either can be changed for any piece
-  from the chooser ("Edit categories"), and the change is kept by the server
-  for everyone. Your own songs are in the same chooser.
+  the moods are a dropdown over the list — all of them, or one at a time — and
+  the list is searchable by title or composer. Either can be changed for any
+  piece from the chooser ("Edit categories"), and the change is kept by the
+  server for everyone. Above the moods is a button for every key a piece is
+  in, A through G with its flat or sharp and an "m" for a minor key, for
+  keeping to the keys your hands know; a key stays chosen from genre to genre.
+  Your own songs are in the same chooser.
 - **Import MusicXML (`.musicxml`, `.xml`), Compressed MusicXML (`.mxl`),
   MuseScore (`.mscz`) and MIDI (`.mid`, `.midi`)** — normalized into one score
   model on the way in, so playback, the keyboard, the staff and Learn never know
@@ -502,7 +505,8 @@ drawn is attached to a chord or a bar, so both views lay it out the same way
 and only the stretch near the window is ever in the page.
 
 The songs that come with the app are scores in `apps/web/public/songs`, listed
-in `features/songs/catalog.ts` with a title, a composer, a genre and one or
+in `features/songs/catalog.ts` with a title, a composer, the key its score
+opens in (which the catalog test holds to the score), a genre and one or
 more moods each (`SONG_GENRES` and `SONG_MOODS` in the shared contract: one
 list of moods, shared by every genre; a song whose genre or moods were changed
 is a row in the API's `song_categories` table, and only what was changed is

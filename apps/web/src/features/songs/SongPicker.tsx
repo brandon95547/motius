@@ -19,6 +19,7 @@ import { Dialog } from '@/ui/Dialog'
 import { useSongStore } from '@/state/song-store'
 import { SONG_CATALOG, catalogSongId, loadCatalogSong, type CatalogSong } from './catalog'
 import { readSong, type ImportFailure, type ImportResult } from './read-song'
+import { shortKey, songKey, sortKeys } from './song-keys'
 
 /**
  * Choosing a song: the ones that come with Sonara, by genre and by mood, and
@@ -31,11 +32,17 @@ import { readSong, type ImportFailure, type ImportResult } from './read-song'
  * fact about where the files are kept.
  *
  * The genres are the shelves, down the side, and a song is on one. The moods
- * divide every genre the same way, so they are one row over the list rather
+ * divide every genre the same way, so they are one choice over the list rather
  * than a list of their own under each genre: all of them, or one at a time.
  * With a genre chosen and all its moods showing, the list is laid out mood by
  * mood, and a song is under each mood it has, so one that is two of them is
  * listed twice.
+ *
+ * Over the moods are the keys, a button for each one a song is in, for the
+ * player who would rather stay in the keys their hands know. The moods are a
+ * dropdown under them and the keys are the row, because there are more keys
+ * than moods and a key is two letters where a mood is three words: eighteen
+ * keys fit where eight moods did.
  *
  * Which genre a piece is in and which moods it has are opinions. The catalog
  * has them for every piece; "Edit categories" turns each row into those two
@@ -71,10 +78,14 @@ type Moves = { items: SongCategoryChoice[] }
 
 // Outside the component, so the menu's Import can turn to the player's own
 // songs before the chooser is on screen.
-const useShelfStore = create<{ shelf: Shelf; mood: SongMood | null }>(() => ({
+const useShelfStore = create<{ shelf: Shelf; mood: SongMood | null; key: string | null }>(() => ({
   shelf: 'all',
   // The one mood the shelf is narrowed to, or none: all of them.
   mood: null,
+  // The one key the songs are narrowed to, as `keyName` says it, or none.
+  // Kept from shelf to shelf, where a mood is not: a mood was a way of
+  // looking at one shelf, and a key is what the player can play.
+  key: null,
 }))
 
 /** Turns the chooser to the player's own songs, where importing happens. */
@@ -110,6 +121,7 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
   const { add, open: openSong, openBuiltIn, remove } = useSongStore.getState()
   const shelf = useShelfStore((state) => state.shelf)
   const chosenMood = useShelfStore((state) => state.mood)
+  const chosenKey = useShelfStore((state) => state.key)
   const [query, setQuery] = React.useState('')
   /** The built-in song being fetched, by its catalog id. */
   const [loading, setLoading] = React.useState<string | null>(null)
@@ -238,10 +250,13 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
   // which genre it is in, or which mood it has.
   const genre = searching || shelf === 'all' || shelf === 'mine' ? null : shelf
   const mood = searching ? null : chosenMood
+  const key = searching ? null : chosenKey
   const browsing = !searching && shelf !== 'mine'
-  /** The songs of the shelf, before a mood narrows them: what the moods count. */
+  /** The songs of the shelf, before a mood or a key narrows them. */
   const shelved = placed.filter((song) => genre === null || song.genre === genre)
-  const found = shelved.filter(
+  /** The shelf in the key chosen: what the moods count. */
+  const keyed = shelved.filter((song) => key === null || song.entry.key === key)
+  const found = keyed.filter(
     ({ entry }) =>
       !searching ||
       fold(`${entry.title} ${entry.composer} ${entry.edition ?? ''}`).includes(sought),
@@ -265,17 +280,46 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
           songs: found.filter((song) => song.genre === entry.id && wanted(song)),
         }))
   ).filter((section) => section.songs.length > 0)
+  // The player's own have a key and no mood: under All songs they are listed
+  // until a mood is chosen, the ones in the key that is. Their own shelf has
+  // all of them, whatever was chosen elsewhere.
+  const ownListed = shelf === 'all' && mood === null ? library : []
   const mine = searching
     ? library.filter((song) => fold(song.title).includes(sought))
-    : shelf === 'mine' || (shelf === 'all' && mood === null)
+    : shelf === 'mine'
       ? library
-      : []
+      : ownListed.filter((song) => key === null || songKey(song) === key)
   const showMine = searching ? mine.length > 0 : shelf === 'mine' || mine.length > 0
   const nothing = searching && sections.length === 0 && mine.length === 0
-  const empty = browsing && sections.length === 0
+  // The player's own in a key are something there, though no built-in song is in it.
+  const empty = browsing && sections.length === 0 && mine.length === 0
   const listed =
     new Set(sections.flatMap((section) => section.songs.map((song) => song.entry.id))).size +
     (showMine ? mine.length : 0)
+
+  // Every key a song is in, the player's own included, and what each would
+  // show: the shelf in the mood chosen.
+  const keys = React.useMemo(
+    () =>
+      sortKeys([
+        ...SONG_CATALOG.map((entry) => entry.key),
+        ...library.flatMap((song) => songKey(song) ?? []),
+      ]),
+    [library],
+  )
+  const inMood = shelved.filter((song) => mood === null || song.moods.includes(mood))
+  // On a phone the keys are one line that scrolls, and the one chosen can be
+  // off the end of it when the chooser opens on a key chosen earlier.
+  const keyRow = React.useRef<HTMLDivElement>(null)
+  React.useEffect(() => {
+    if (!open || !browsing) return
+    keyRow.current
+      ?.querySelector<HTMLElement>('[aria-pressed="true"]')
+      ?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+  }, [open, browsing, key])
+  const inKey = (name: string) =>
+    inMood.filter((song) => song.entry.key === name).length +
+    ownListed.filter((song) => songKey(song) === name).length
 
   const shelves: readonly { id: Shelf; label: string; count: number }[] = [
     { id: 'all', label: 'All songs', count: SONG_CATALOG.length + library.length },
@@ -398,39 +442,70 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
         </div>
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          {/* The moods, the same under every genre: all of them, or one at a
-              time. Not there for a search, which looks past them, or for the
-              player's own songs, which have none. */}
+          {/* The keys and the moods, the same under every genre: all of them,
+              or one at a time, and each counts what it would show with the
+              other as it is. Not there for a search, which looks past them,
+              or on the player's own shelf, which is all of theirs. */}
           {browsing && (
-            <div
-              role="group"
-              aria-label="Moods"
-              className="scrollbar-none flex shrink-0 items-center gap-2 overflow-x-auto border-b border-[var(--ds-border-subtle)] px-6 py-3 md:flex-wrap md:overflow-x-visible md:pt-5 md:pb-4 coarse:md:gap-y-4"
-            >
-              <FilterChip
-                selected={mood === null}
-                count={shelved.length}
-                onClick={() => useShelfStore.setState({ mood: null })}
+            <div className="flex shrink-0 flex-col gap-3 border-b border-[var(--ds-border-subtle)] py-3 md:pt-5 md:pb-4">
+              <div
+                ref={keyRow}
+                role="group"
+                aria-label="Key"
+                className="scrollbar-none flex items-center gap-2 overflow-x-auto px-6 md:flex-wrap md:overflow-x-visible coarse:md:gap-y-4"
               >
-                All
-              </FilterChip>
-              {SONG_MOODS.map((each) => {
-                const on = mood === each.id
-                const count = shelved.filter((song) => song.moods.includes(each.id)).length
-                return (
-                  <FilterChip
-                    key={each.id}
-                    selected={on}
-                    count={count}
-                    // Nothing to show is nothing to choose. The one that is
-                    // chosen stays, though its last song has just left it.
-                    disabled={count === 0 && !on}
-                    onClick={() => useShelfStore.setState({ mood: each.id })}
-                  >
-                    {each.label}
-                  </FilterChip>
-                )
-              })}
+                <FilterChip
+                  selected={key === null}
+                  count={inMood.length + ownListed.length}
+                  onClick={() => useShelfStore.setState({ key: null })}
+                >
+                  All keys
+                </FilterChip>
+                {keys.map((name) => {
+                  const on = key === name
+                  const count = inKey(name)
+                  return (
+                    <FilterChip
+                      key={name}
+                      selected={on}
+                      count={count}
+                      // Said in full: "Cm" is not a word a screen reader has.
+                      aria-label={`${name}, ${count} ${count === 1 ? 'song' : 'songs'}`}
+                      title={name}
+                      // Nothing to show is nothing to choose. The one that is
+                      // chosen stays, though its last song has just left it.
+                      disabled={count === 0 && !on}
+                      onClick={() => useShelfStore.setState({ key: name })}
+                    >
+                      {shortKey(name)}
+                    </FilterChip>
+                  )
+                })}
+              </div>
+              <div className="px-6">
+                <div className="w-full sm:w-64">
+                  <Select
+                    aria-label="Mood"
+                    value={mood ?? ''}
+                    onChange={(event) =>
+                      useShelfStore.setState({
+                        mood: (event.target.value || null) as SongMood | null,
+                      })
+                    }
+                    options={[
+                      { value: '', label: `All moods (${keyed.length})` },
+                      ...SONG_MOODS.map((each) => {
+                        const count = keyed.filter((song) => song.moods.includes(each.id)).length
+                        return {
+                          value: each.id,
+                          label: `${each.label} (${count})`,
+                          disabled: count === 0 && mood !== each.id,
+                        }
+                      }),
+                    ]}
+                  />
+                </div>
+              </div>
             </div>
           )}
 
@@ -469,7 +544,11 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
               <p className="text-body-sm text-[var(--ds-fg-muted)]">
                 {shelved.length === 0
                   ? `Nothing in ${SONG_GENRES.find((entry) => entry.id === genre)?.label} yet. To put a song here, choose Edit categories and give it this genre.`
-                  : 'No song here has that mood.'}
+                  : key === null
+                    ? 'No song here has that mood.'
+                    : mood === null
+                      ? `No song here is in ${key}.`
+                      : `No song here is in ${key} and has that mood.`}
               </p>
             )}
 

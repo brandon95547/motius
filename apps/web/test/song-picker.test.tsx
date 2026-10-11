@@ -3,18 +3,26 @@ import path from 'node:path'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { SONG_GENRES, SONG_MOODS, type SongGenre, type SongMood } from '@sonara/shared'
+import {
+  SONG_GENRES,
+  SONG_MOODS,
+  buildSong,
+  type SongGenre,
+  type SongMood,
+  type SongNote,
+} from '@sonara/shared'
 import { SONG_CATALOG } from '@/features/songs/catalog'
 import { SongPicker, showMySongs } from '@/features/songs/SongPicker'
+import { shortKey, songKey, sortKeys } from '@/features/songs/song-keys'
 import { useSongStore } from '@/state/song-store'
 
 /**
  * The song chooser: the dialog Songs opens on.
  *
  * It is the only way to a song, so what is pinned is the way through it: the
- * genres are shelves, one mood at a time narrows a shelf, a search looks past
- * both, and pressing a built-in song fetches its score, opens it and gets out
- * of the way.
+ * genres are shelves, one mood and one key at a time narrow a shelf, a search
+ * looks past all three, and pressing a built-in song fetches its score, opens
+ * it and gets out of the way.
  */
 
 // jsdom has no layout and so no media queries; the dialog asks one to know
@@ -85,7 +93,21 @@ const starting = (selector: string, text: string) =>
     element.textContent?.startsWith(text),
   )!
 const shelf = (name: string) => starting('[aria-label="Show"] button', name) as HTMLButtonElement
-const mood = (name: string) => starting('[aria-label="Moods"] button', name) as HTMLButtonElement
+/** The moods, which are a dropdown: all of them, or the one chosen. */
+const moods = () => dialog().querySelector<HTMLSelectElement>('select[aria-label="Mood"]')!
+/** A mood as the dropdown lists it: its name, and how many it would show. */
+const mood = (name: string) =>
+  [...moods().options].find((option) => option.textContent?.startsWith(name))!
+const chooseMood = (name: string) =>
+  fireEvent.change(moods(), { target: { value: mood(name).value } })
+/** A key's button, by what it reads: "Cm" and how many, so "C" alone is asked for with its count. */
+const key = (name: string) => starting('[aria-label="Key"] button', name) as HTMLButtonElement
+const keys = () => [...dialog().querySelectorAll<HTMLButtonElement>('[aria-label="Key"] button')]
+const inKey = (name: string, songs: readonly (typeof SONG_CATALOG)[number][] = SONG_CATALOG) =>
+  songs.filter((entry) => entry.key === name)
+/** The songs as All songs lists them: genre by genre, and in the catalog's order under each. */
+const byGenre = (songs: readonly (typeof SONG_CATALOG)[number][]) =>
+  SONG_GENRES.flatMap((genre) => songs.filter((entry) => entry.genre === genre.id))
 const song = (title: string) => starting('li button', title)
 const rows = () => [...dialog().querySelectorAll('li')]
 const headings = () => [...dialog().querySelectorAll('h3')].map((heading) => heading.textContent)
@@ -112,9 +134,11 @@ const shelvesToMoveBetween = () => {
 beforeEach(() => {
   vi.stubGlobal('fetch', serveScores())
   useSongStore.setState({ library: [], builtIn: [], currentId: null })
-  // The chooser keeps the shelf it was left on; each case starts on the first.
+  // The chooser keeps the shelf and the key it was left on; each case starts
+  // on the first shelf, in any key.
   show()
   fireEvent.click(shelf('All songs'))
+  fireEvent.click(key('All keys'))
   cleanup()
 })
 
@@ -168,38 +192,32 @@ describe('the song chooser', () => {
     const dreamy = withMood('dreamy', classical)
     expect(dreamy.length).toBeGreaterThan(1)
     // Every mood to begin with, and each says how many of this genre it would show.
-    expect(mood('All').getAttribute('aria-pressed')).toBe('true')
-    expect(mood('All').textContent).toBe(`All${classical.length}`)
-    expect(mood('Dreamy').textContent).toBe(`${label('dreamy')}${dreamy.length}`)
+    expect(moods().value).toBe('')
+    expect(mood('All moods').textContent).toBe(`All moods (${classical.length})`)
+    expect(mood('Dreamy').textContent).toBe(`${label('dreamy')} (${dreamy.length})`)
 
-    fireEvent.click(mood('Dreamy'))
-    expect(mood('Dreamy').getAttribute('aria-pressed')).toBe('true')
-    expect(mood('All').getAttribute('aria-pressed')).toBe('false')
+    chooseMood('Dreamy')
+    expect(moods().value).toBe('dreamy')
     expect(headings()).toEqual([label('dreamy')])
     // The catalog's own Dreamy songs, in its order, and no other mood's.
     expect(rows().map((row) => row.textContent)).toEqual(dreamy.map(written))
 
     // Another mood takes its place rather than joining it.
-    fireEvent.click(mood('Romantic'))
-    expect(mood('Romantic').getAttribute('aria-pressed')).toBe('true')
-    expect(mood('Dreamy').getAttribute('aria-pressed')).toBe('false')
+    chooseMood('Romantic')
+    expect(moods().value).toBe('romantic')
     expect(headings()).toEqual([label('romantic')])
     expect(rows().map((row) => row.textContent)).toEqual(
       withMood('romantic', classical).map(written),
     )
-    // Pressed again it stays: All is the way back.
-    fireEvent.click(mood('Romantic'))
-    expect(mood('Romantic').getAttribute('aria-pressed')).toBe('true')
 
-    fireEvent.click(mood('All'))
-    expect(mood('All').getAttribute('aria-pressed')).toBe('true')
-    expect(mood('Romantic').getAttribute('aria-pressed')).toBe('false')
+    chooseMood('All moods')
+    expect(moods().value).toBe('')
     expect(headings().length).toBeGreaterThan(2)
   })
 
   it('shows a mood across every genre from All songs, each song once', () => {
     show()
-    fireEvent.click(mood('Storytelling'))
+    chooseMood('Storytelling')
     const stories = withMood('storytelling')
     expect(new Set(stories.map((entry) => entry.genre)).size).toBeGreaterThan(1)
     expect(headings()).toEqual(
@@ -213,8 +231,8 @@ describe('the song chooser', () => {
   it('starts another shelf with every mood, and holds back a mood nothing there has', () => {
     show()
     fireEvent.click(shelf('Classical'))
-    fireEvent.click(mood('Ominous'))
-    expect(mood('Ominous').getAttribute('aria-pressed')).toBe('true')
+    chooseMood('Ominous')
+    expect(moods().value).toBe('ominous')
 
     // A shelf that has songs, and a mood none of them has.
     const lacking = SONG_GENRES.flatMap((genre) =>
@@ -224,8 +242,7 @@ describe('the song chooser', () => {
     )[0]!
     const had = SONG_MOODS.find((each) => withMood(each.id, inGenre(lacking.genre.id)).length > 0)!
     fireEvent.click(shelf(lacking.genre.label))
-    expect(mood('All').getAttribute('aria-pressed')).toBe('true')
-    expect(mood('Ominous').getAttribute('aria-pressed')).toBe('false')
+    expect(moods().value).toBe('')
     expect(mood(lacking.missing.label).disabled).toBe(true)
     expect(mood(had.label).disabled).toBe(false)
   })
@@ -235,7 +252,7 @@ describe('the song chooser', () => {
     vi.stubGlobal('fetch', serveScores([], changes))
     show()
     fireEvent.click(shelf('Classical'))
-    fireEvent.click(mood('Dreamy'))
+    chooseMood('Dreamy')
     fireEvent.click(starting('footer button', 'Edit categories'))
     // Each row is now two choices rather than a song to open, and each song is
     // there once however many moods it has.
@@ -267,7 +284,7 @@ describe('the song chooser', () => {
 
     fireEvent.click(starting('footer button', 'Done'))
     expect(listed()).toBe(false)
-    fireEvent.click(mood('Romantic'))
+    chooseMood('Romantic')
     expect(listed()).toBe(true)
   })
 
@@ -321,21 +338,24 @@ describe('the song chooser', () => {
       expect(shelf(to.genre.label).textContent).toBe(`${to.genre.label}${to.songs.length + 1}`),
     )
     fireEvent.click(shelf(to.genre.label))
-    fireEvent.click(mood('Dreamy'))
+    chooseMood('Dreamy')
     expect(headings()).toEqual([label('dreamy')])
     expect(rows().map((row) => row.textContent)).toContain(written(moved))
 
     fireEvent.click(shelf('Classical'))
-    fireEvent.click(mood('Playful'))
+    chooseMood('Playful')
     expect(rows().some((row) => row.textContent?.startsWith('Arabesque No. 1'))).toBe(true)
-    fireEvent.click(mood('Dreamy'))
+    chooseMood('Dreamy')
     expect(rows().some((row) => row.textContent?.startsWith('Arabesque No. 1'))).toBe(false)
   })
 
-  it('searches every genre and mood at once, without minding accents', () => {
+  it('searches every genre, mood and key at once, without minding accents', () => {
     show()
     fireEvent.click(shelf('Jazz'))
-    fireEvent.click(mood('Playful'))
+    chooseMood('Playful')
+    fireEvent.click(
+      keys().find((each) => each.getAttribute('aria-pressed') === 'false' && !each.disabled)!,
+    )
     const search = within(dialog()).getByLabelText('Search songs')
     fireEvent.change(search, { target: { value: 'fur elise' } })
     // Every edition of it, however many the catalog holds, and nothing else.
@@ -343,8 +363,9 @@ describe('the song chooser', () => {
     expect(editions).toBeGreaterThan(1)
     expect(rows()).toHaveLength(editions)
     for (const row of rows()) expect(row.textContent).toContain('Für Elise')
-    // The moods are put away: a search looks past them.
-    expect(dialog().querySelector('[aria-label="Moods"]')).toBeNull()
+    // The moods and the keys are put away: a search looks past them.
+    expect(dialog().querySelector('[aria-label="Mood"]')).toBeNull()
+    expect(dialog().querySelector('[aria-label="Key"]')).toBeNull()
 
     fireEvent.change(search, { target: { value: 'no such piece' } })
     expect(rows()).toHaveLength(0)
@@ -432,7 +453,170 @@ describe('the song chooser', () => {
     expect(shelf('My songs').getAttribute('aria-pressed')).toBe('true')
     expect(dialog().textContent).toContain('Nothing imported yet.')
     expect(starting('footer button', 'Import a song')).toBeTruthy()
-    // Their songs have no moods to narrow by.
-    expect(dialog().querySelector('[aria-label="Moods"]')).toBeNull()
+    // Their songs have no moods to narrow by, and their shelf is all of them.
+    expect(dialog().querySelector('[aria-label="Mood"]')).toBeNull()
+    expect(dialog().querySelector('[aria-label="Key"]')).toBeNull()
+  })
+})
+
+describe('the keys of the song chooser', () => {
+  const catalogKeys = sortKeys(SONG_CATALOG.map((entry) => entry.key))
+
+  it('sorts keys A through G, and says a minor key with an m', () => {
+    expect(
+      sortKeys([
+        'G minor',
+        'C major',
+        'A♭ major',
+        'C♯ minor',
+        'A minor',
+        'C minor',
+        'D♭ major',
+        'D major',
+        'C major',
+      ]),
+    ).toEqual([
+      'A minor',
+      'A♭ major',
+      'C major',
+      'C minor',
+      'C♯ minor',
+      'D major',
+      'D♭ major',
+      'G minor',
+    ])
+    expect(['E♭ major', 'C minor', 'F♯ minor', 'G major'].map(shortKey)).toEqual([
+      'E♭',
+      'Cm',
+      'F♯m',
+      'G',
+    ])
+  })
+
+  it('has a button for every key a song is in, with how many it would show', () => {
+    show()
+    expect(catalogKeys.length).toBeGreaterThan(7)
+    expect(keys().map((each) => each.textContent)).toEqual([
+      `All keys${SONG_CATALOG.length}`,
+      ...catalogKeys.map((name) => `${shortKey(name)}${inKey(name).length}`),
+    ])
+    expect(key('All keys').getAttribute('aria-pressed')).toBe('true')
+    // Said in full to someone who cannot see the button.
+    const first = catalogKeys[0]!
+    expect(keys()[1]!.getAttribute('aria-label')).toMatch(new RegExp(`^${first}, \\d+ songs?$`))
+  })
+
+  it('narrows the list to one key at a time, and All keys widens it again', () => {
+    show()
+    const [one, another] = catalogKeys.filter((name) => inKey(name).length > 1)
+    fireEvent.click(key(`${shortKey(one!)}${inKey(one!).length}`))
+    expect(key(`${shortKey(one!)}${inKey(one!).length}`).getAttribute('aria-pressed')).toBe('true')
+    expect(key('All keys').getAttribute('aria-pressed')).toBe('false')
+    // The catalog's own songs in that key, each once, and no other key's.
+    expect(rows().map((row) => row.textContent)).toEqual(byGenre(inKey(one!)).map(written))
+
+    // Another key takes its place rather than joining it.
+    fireEvent.click(key(`${shortKey(another!)}${inKey(another!).length}`))
+    expect(keys().filter((each) => each.getAttribute('aria-pressed') === 'true')).toHaveLength(1)
+    expect(rows().map((row) => row.textContent)).toEqual(byGenre(inKey(another!)).map(written))
+
+    fireEvent.click(key('All keys'))
+    expect(rows()).toHaveLength(SONG_CATALOG.length)
+  })
+
+  it('counts each mood in the key chosen, and each key in the mood chosen', () => {
+    show()
+    // A key whose songs do not have every mood between them.
+    const name = catalogKeys.find(
+      (each) =>
+        inKey(each).length > 1 &&
+        SONG_MOODS.some((mood) => withMood(mood.id, inKey(each)).length === 0),
+    )!
+    const songs = inKey(name)
+    fireEvent.click(key(`${shortKey(name)}${songs.length}`))
+    expect(mood('All moods').textContent).toBe(`All moods (${songs.length})`)
+    for (const each of SONG_MOODS) {
+      const count = withMood(each.id, songs).length
+      expect(mood(each.label).textContent, each.id).toBe(`${each.label} (${count})`)
+      expect(mood(each.label).disabled, each.id).toBe(count === 0)
+    }
+
+    const had = SONG_MOODS.find((each) => withMood(each.id, songs).length > 0)!
+    chooseMood(had.label)
+    expect(rows().map((row) => row.textContent)).toEqual(
+      byGenre(withMood(had.id, songs)).map(written),
+    )
+    // The keys now count that mood's songs, and one none of them is in is held back.
+    const moody = withMood(had.id)
+    expect(key('All keys').textContent).toBe(`All keys${moody.length}`)
+    for (const [index, each] of catalogKeys.entries()) {
+      const count = inKey(each, moody).length
+      expect(keys()[index + 1]!.textContent, each).toBe(`${shortKey(each)}${count}`)
+      expect(keys()[index + 1]!.disabled, each).toBe(count === 0 && each !== name)
+    }
+  })
+
+  it('keeps the key from shelf to shelf, where the mood is let go, and says so when nothing is in it', () => {
+    show()
+    // A key classical has, and a genre with songs and none in that key.
+    const pick = catalogKeys.flatMap((name) => {
+      const without = SONG_GENRES.find(
+        (genre) => inGenre(genre.id).length > 0 && inKey(name, inGenre(genre.id)).length === 0,
+      )
+      return inKey(name, inGenre('classical')).length > 0 && without ? [{ name, without }] : []
+    })[0]!
+    fireEvent.click(shelf('Classical'))
+    const classical = inKey(pick.name, inGenre('classical'))
+    fireEvent.click(key(`${shortKey(pick.name)}${classical.length}`))
+    const had = SONG_MOODS.find((each) => withMood(each.id, classical).length > 0)!
+    chooseMood(had.label)
+    expect(headings()).toEqual([had.label])
+
+    fireEvent.click(shelf(pick.without.label))
+    expect(moods().value).toBe('')
+    const still = keys().find((each) => each.getAttribute('aria-pressed') === 'true')!
+    expect(still.textContent).toBe(`${shortKey(pick.name)}0`)
+    // Chosen, it is not held back, though it has nothing to show here.
+    expect(still.disabled).toBe(false)
+    expect(rows()).toHaveLength(0)
+    expect(dialog().textContent).toContain(`No song here is in ${pick.name}.`)
+  })
+
+  it('lists the player’s own songs in a key with the built-in ones', () => {
+    const notes: SongNote[] = [60, 62, 64, 65, 67, 69, 71, 72, 67, 64, 60].map((note, at) => ({
+      note,
+      velocity: 80,
+      startMs: at * 400,
+      durationMs: 400,
+      hand: 'right',
+      role: 'keyboard',
+    }))
+    const own = buildSong({
+      id: 'own',
+      title: 'A scale of my own',
+      bpm: 150,
+      beatsPerMeasure: 4,
+      notes,
+      source: 'midi',
+      handsInferred: false,
+    })
+    const name = songKey(own)!
+    expect(name).toBe('C major')
+    useSongStore.setState({ library: [own] })
+    show()
+
+    // Counted with the built-in songs of its key, and listed among them.
+    const count = inKey(name).length + 1
+    expect(key('All keys').textContent).toBe(`All keys${SONG_CATALOG.length + 1}`)
+    fireEvent.click(key(`${shortKey(name)}${count}`))
+    expect(headings()[0]).toBe('My songs')
+    expect(rows()).toHaveLength(count)
+    expect(rows()[0]!.textContent).toContain('A scale of my own')
+
+    // In another key it is not, and neither is its shelf's heading.
+    const other = catalogKeys.find((each) => each !== name && inKey(each).length > 0)!
+    fireEvent.click(key(`${shortKey(other)}${inKey(other).length}`))
+    expect(headings()).not.toContain('My songs')
+    expect(rows()).toHaveLength(inKey(other).length)
   })
 })

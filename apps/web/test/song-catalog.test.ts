@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { SONG_GENRES, SONG_MOODS } from '@sonara/shared'
+import { SONG_GENRES, SONG_MOODS, keyName } from '@sonara/shared'
 import { SONG_CATALOG, catalogSongTitle } from '@/features/songs/catalog'
 import { readSongBytes } from '@/features/songs/read-song'
 
@@ -52,20 +52,25 @@ describe('the built-in songs', () => {
     expect(names.filter((name, index) => names.indexOf(name) !== index)).toEqual([])
   })
 
-  it.each(SONG_CATALOG.map((entry) => [entry.id]))('%s reads as a piece for two hands', (id) => {
-    const result = readSongBytes(new Uint8Array(readFileSync(path.join(SCORES, `${id}.mxl`))), id)
-    if (!('song' in result)) throw new Error(`${id} could not be read: ${result.failure}`)
+  it.each(SONG_CATALOG.map((entry) => [entry.id, entry.key]))(
+    '%s reads as a piece for two hands, in %s',
+    (id, key) => {
+      const result = readSongBytes(new Uint8Array(readFileSync(path.join(SCORES, `${id}.mxl`))), id)
+      if (!('song' in result)) throw new Error(`${id} could not be read: ${result.failure}`)
 
-    const { notes } = result.song
-    const played = notes.filter((note) => note.role === 'keyboard')
-    // Nearly all of it under the fingers. What is not is a line of ornaments
-    // the engraver kept on a staff of its own: a note or two in a hundred, where
-    // a hand gone missing is forty.
-    expect(played.length / notes.length).toBeGreaterThan(0.98)
-    expect(played.some((note) => note.hand === 'right')).toBe(true)
-    expect(played.some((note) => note.hand === 'left')).toBe(true)
-    // From the staves, not guessed from how high each note is.
-    expect(result.song.handsInferred).toBe(false)
-    expect(result.song.measureCount).toBeGreaterThan(0)
-  })
+      const { notes } = result.song
+      const played = notes.filter((note) => note.role === 'keyboard')
+      // Nearly all of it under the fingers. What is not is a line of ornaments
+      // the engraver kept on a staff of its own: a note or two in a hundred, where
+      // a hand gone missing is forty.
+      expect(played.length / notes.length).toBeGreaterThan(0.98)
+      expect(played.some((note) => note.hand === 'right')).toBe(true)
+      expect(played.some((note) => note.hand === 'left')).toBe(true)
+      // From the staves, not guessed from how high each note is.
+      expect(result.song.handsInferred).toBe(false)
+      expect(result.song.measureCount).toBeGreaterThan(0)
+      // The key the chooser files it under is the one its score opens in.
+      expect(result.song.key && keyName(result.song.key)).toBe(key)
+    },
+  )
 })
