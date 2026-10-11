@@ -1,6 +1,6 @@
 import * as React from 'react'
 import {
-  keyReleases,
+  keysLeftFor,
   playDuration,
   playbackVelocity,
   scoreWindows,
@@ -68,10 +68,10 @@ export function useSongPlayback(song: Song | null) {
   const audioRef = React.useRef(audio)
   audioRef.current = audio
 
-  // The notes whose hand leaves the key before they end, and when. Worked out
-  // once a song: it is a reading of the whole score, and the tick asks it of
-  // every note it strikes.
-  const leaves = React.useMemo(() => (song ? keyReleases(song) : null), [song])
+  // For a note, the keys its hand has to leave to strike it, though their
+  // notes are not over. Worked out once a song: it is a reading of the whole
+  // score, and every strike asks it.
+  const leaves = React.useMemo(() => (song ? keysLeftFor(song) : null), [song])
 
   // Everything the tick reads goes through a ref: it runs forty times a second
   // and must not be rebuilt every time a control moves.
@@ -89,6 +89,8 @@ export function useSongPlayback(song: Song | null) {
    */
   const sounding = React.useRef(new Map<number, number>())
   const strikes = React.useRef(0)
+  /** The strike each note was last given, so a later note can tell whether that one still has its key. */
+  const struckAs = React.useRef(new WeakMap<SongNote, number>())
   /** Every timer still to fire: the notes waiting to be struck, and the releases. */
   const timers = React.useRef(new Set<number>())
 
@@ -153,11 +155,18 @@ export function useSongPlayback(song: Song | null) {
      * A note's moment: its key goes down, and comes up when its time is over.
      * Its sound too, where the audio clock was not given it.
      *
-     * Or the key alone comes up sooner, at `leavesMs` in the score's time:
-     * where the hand has to go before the note is over, the note sounds on and
-     * the key does not stay lit under a hand that is somewhere else.
+     * And the keys in `left` come up with it, though their notes sound on:
+     * the ones this note's hand has had to leave to reach it. Here, in the
+     * strike, rather than on a timer of their own. A timer waits its turn,
+     * and the turn comes after the page has drawn the chord — a fifth of a
+     * second in which the old key is lit under a hand that has plainly gone.
      */
-    const strike = (note: SongNote, scale: number, promisedSound: boolean, leavesMs?: number) => {
+    const strike = (
+      note: SongNote,
+      scale: number,
+      promisedSound: boolean,
+      left: readonly SongNote[] = [],
+    ) => {
       const velocity = velocityOf(note)
 
       // A drum is not a note. On the percussion channel the number names an
@@ -169,6 +178,14 @@ export function useSongPlayback(song: Song | null) {
       }
 
       const strikeId = ++strikes.current
+      struckAs.current.set(note, strikeId)
+      // Only a key its own strike still holds: struck again since, it is the
+      // later note's.
+      for (const key of left) {
+        const held = struckAs.current.get(key)
+        if (held !== undefined && sounding.current.get(key.note) === held)
+          keyboardActions.noteOff(key.note)
+      }
       if (!promisedSound) {
         // Struck again while it is still down: let go first, so the
         // instrument hears a new note rather than more of the old one.
@@ -181,11 +198,6 @@ export function useSongPlayback(song: Song | null) {
       // piece makes sense, but they are not notes to put fingers on, and
       // lighting them would say they were.
       if (note.role === 'keyboard') keyboardActions.noteOn(note.note, velocity, 'pointer')
-      if (leavesMs !== undefined)
-        after((leavesMs - note.startMs) / scale, () => {
-          // Struck again since: that strike holds the key now.
-          if (sounding.current.get(note.note) === strikeId) keyboardActions.noteOff(note.note)
-        })
 
       // The release is stretched by the same scale the gaps are, so a slow
       // pass is slower playing rather than the same playing with long gaps.

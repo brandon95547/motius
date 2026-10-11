@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { keyReleases } from './key-holds.js'
+import { keyReleases, keysLeftFor } from './key-holds.js'
 import { buildSong, type SongNote } from './song.js'
 
 const note = (
@@ -51,6 +51,14 @@ describe('a key its hand has left', () => {
     // The bass goes at the chord, two beats before its note ends. The chord is
     // one grip, and stays until it is over.
     expect(left(bar(0))).toEqual({ 43: 1000 })
+  })
+
+  it('says which note takes the hand away, for whoever is playing it', () => {
+    // The lowest note of the chord is the first of it the hand comes to.
+    const left = keysLeftFor(song(bar(0)))
+    expect([...left].map(([by, keys]) => [by.note, keys.map((key) => key.note)])).toEqual([
+      [59, [43]],
+    ])
   })
 
   it('does so in every bar, each for its own chord', () => {

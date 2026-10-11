@@ -37,12 +37,14 @@ function inReach(held: SongNote, struck: SongNote, hand: Hand): boolean {
   return reachable(held.finger as Finger, struck.finger as Finger, struck.note - held.note, hand)
 }
 
-/**
- * The notes whose key comes up before they end, each with the moment it does,
- * in the score's time. A note that is not here is down for as long as it lasts.
- */
-export function keyReleases(song: Song): Map<SongNote, number> {
-  const releases = new Map<SongNote, number>()
+/** A key its hand leaves early: the note it was sounding, and the note the hand goes to. */
+interface Leaving {
+  readonly left: SongNote
+  readonly by: SongNote
+}
+
+function leavings(song: Song): Leaving[] {
+  const found: Leaving[] = []
   for (const hand of ['left', 'right'] as const) {
     const notes = song.notes
       .filter((note) => note.role === 'keyboard' && note.hand === hand)
@@ -55,11 +57,35 @@ export function keyReleases(song: Song): Map<SongNote, number> {
       for (const before of held) {
         if (note.startMs - before.startMs <= TOGETHER_MS || inReach(before, note, hand))
           kept.push(before)
-        else releases.set(before, note.startMs)
+        else found.push({ left: before, by: note })
       }
       kept.push(note)
       held = kept
     }
   }
-  return releases
+  return found
+}
+
+/**
+ * The notes whose key comes up before they end, each with the moment it does,
+ * in the score's time. A note that is not here is down for as long as it lasts.
+ */
+export function keyReleases(song: Song): Map<SongNote, number> {
+  return new Map(leavings(song).map(({ left, by }) => [left, by.startMs]))
+}
+
+/**
+ * The same, asked the other way: for a note, the keys its hand leaves to
+ * strike it.
+ *
+ * For whoever is playing the song, which is the moment that matters there.
+ * A key let go by a clock of its own comes up when the clock gets round to
+ * it, and a page that is busy drawing the chord leaves the old key lit under
+ * it for as long as that takes. Let go by the note that takes the hand away,
+ * the one goes down and the other comes up in the same breath.
+ */
+export function keysLeftFor(song: Song): Map<SongNote, SongNote[]> {
+  const left = new Map<SongNote, SongNote[]>()
+  for (const { left: key, by } of leavings(song)) left.set(by, [...(left.get(by) ?? []), key])
+  return left
 }
