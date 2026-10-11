@@ -13,8 +13,14 @@ import { z } from 'zod'
  * changed to and has to know a genre or a mood from a typo. The songs
  * themselves, and what each starts as, are the app's
  * (`features/songs/catalog.ts`).
+ *
+ * Basic is first, and is not a kind of music: it is the shelf for someone
+ * starting, where the children's songs and the easy editions are, whatever
+ * they would otherwise be filed under. A shelf all the same, so a song on it
+ * is on no other, and keeps its moods.
  */
 export const SONG_GENRES = [
+  { id: 'basic', label: 'Basic' },
   { id: 'classical', label: 'Classical' },
   { id: 'gospel', label: 'Gospel' },
   { id: 'jazz', label: 'Jazz' },

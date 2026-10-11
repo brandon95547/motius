@@ -69,12 +69,14 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
 
 ### Songs
 
-- **Eighty-three pieces come with it**, from Bach to Fats Waller, in a chooser that
-  Songs opens on: shelved by genre — Classical, Gospel, Jazz, Blues, Pop, Rock,
-  Country, Soul & R&B, Folk & Traditional, New Age — and under every genre by
-  the same eight moods: Dramatic & Powerful, Dreamy & Atmospheric, Joyful &
-  Uplifting, Mysterious & Dark, Ominous & Apocalyptic, Playful & Energetic,
-  Romantic, Storytelling. A piece is in one genre and can have several moods;
+- **Eighty-three pieces come with it**, from Bach to Fats Waller, in a chooser
+  that Songs opens on: shelved by genre — Basic, Classical, Gospel, Jazz, Blues,
+  Pop, Rock, Country, Soul & R&B, Folk & Traditional, New Age, where Basic is
+  the shelf for someone starting: the children's songs and the easy editions —
+  and under every genre by the same eight moods: Dramatic & Powerful, Dreamy &
+  Atmospheric, Joyful & Uplifting, Mysterious & Dark, Ominous & Apocalyptic,
+  Playful & Energetic, Romantic, Storytelling. A piece is in one genre and can
+  have several moods;
   the moods are a dropdown over the list — all of them, or one at a time — and
   the list is searchable by title or composer. Either can be changed for any
   piece from the chooser ("Edit categories"), and the change is kept by the
