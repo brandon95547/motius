@@ -345,8 +345,8 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
   },
   // The fugue that follows the Prelude in C Major, in the ASAP dataset's
   // engraving (github.com/fosfrancesco/asap-dataset, CC BY-NC-SA 4.0), not
-  // taken from either library. The score gives no tempo, so it opens at the
-  // forty-eight of the performance the dataset pairs it with.
+  // taken from either library. The score gives no tempo; it is taken at
+  // seventy-two.
   {
     id: 'bach-fugue-in-c-major-bwv-846',
     title: 'Fugue in C Major, BWV 846',
