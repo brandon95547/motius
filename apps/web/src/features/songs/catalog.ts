@@ -92,6 +92,17 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
     genre: 'classical',
     moods: ['romantic'],
   },
+  // The Mutopia Project's edition (after Berners, 1908; typeset by Chris Sawer,
+  // public domain), converted from its LilyPond source. It takes the place of
+  // the PDMX engraving, and opens at the speed its source plays it: 108 minims
+  // a minute.
+  {
+    id: 'beethoven-pathetique-sonata-3',
+    title: 'Pathétique Sonata, 3rd Movement',
+    composer: 'Ludwig van Beethoven',
+    genre: 'classical',
+    moods: ['mysterious', 'ominous'],
+  },
   {
     id: 'beethoven-fur-elise',
     title: 'Für Elise',
