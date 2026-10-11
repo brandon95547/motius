@@ -205,6 +205,17 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
     genre: 'classical',
     moods: ['mysterious'],
   },
+  // Read bar by bar from the Mutopia Project's edition (after Breitkopf &
+  // Härtel, 1850; typeset by Ryan Prince, CC BY 3.0), not taken from either
+  // library. The cadenza is one long bar, and what stands under the octave
+  // bracket is written where it sounds.
+  {
+    id: 'liszt-consolation-no-3',
+    title: 'Consolation No. 3 in D-flat Major',
+    composer: 'Franz Liszt',
+    genre: 'classical',
+    moods: ['mysterious'],
+  },
   // A library engraving corrected, bar by bar, against Godowsky's edition (Art
   // Publication Society, 1923). Its last pages are on four staves, two to a
   // hand, and so are they here.

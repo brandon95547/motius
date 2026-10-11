@@ -69,7 +69,7 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
 
 ### Songs
 
-- **Eighty-three pieces come with it**, from Bach to Fats Waller, in a chooser that
+- **Eighty-four pieces come with it**, from Bach to Fats Waller, in a chooser that
   Songs opens on: shelved by genre — Classical, Gospel, Jazz, Blues, Pop, Rock,
   Country, Soul & R&B, Folk & Traditional, New Age — and under every genre by
   the same eight moods: Dramatic & Powerful, Dreamy & Atmospheric, Joyful &
@@ -523,6 +523,10 @@ page's and not a reading.
 The first and third movements of Beethoven's Pathétique are likewise a PDMX
 engraving corrected against the Peters edition, its left-hand tremolo
 shorthand written out as the eighth notes it stands for.
+Liszt's Consolation No. 3 was read, bar by bar, from the
+[Mutopia Project](https://www.mutopiaproject.org)'s edition (after Breitkopf &
+Härtel, 1850), typeset by Ryan Prince and licensed under
+[Creative Commons Attribution 3.0](https://creativecommons.org/licenses/by/3.0/).
 
 Fifteen are recent pieces their own composers published under CC0, giving up their
 rights in them; `catalog.ts` has the page each was released on. One more is not in
