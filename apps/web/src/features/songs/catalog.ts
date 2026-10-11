@@ -365,14 +365,6 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
     edition: 'Version 2',
   },
   {
-    id: 'happy-birthday-to-you',
-    title: 'Happy Birthday to You',
-    composer: 'Patty and Mildred J. Hill',
-    key: 'C major',
-    genre: 'basic',
-    moods: ['joyful'],
-  },
-  {
     id: 'happy-birthday-to-you-easy',
     title: 'Happy Birthday to You',
     composer: 'Patty and Mildred J. Hill',

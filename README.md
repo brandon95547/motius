@@ -69,7 +69,7 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
 
 ### Songs
 
-- **Eighty-three pieces come with it**, from Bach to Fats Waller, in a chooser
+- **Eighty-two pieces come with it**, from Bach to Fats Waller, in a chooser
   that Songs opens on: shelved by genre — Basic, Classical, Gospel, Jazz, Blues,
   Pop, Rock, Country, Soul & R&B, Folk & Traditional, New Age, where Basic is
   the shelf for someone starting: the children's songs and the easy editions —
