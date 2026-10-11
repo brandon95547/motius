@@ -426,14 +426,6 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
     moods: ['dramatic'],
   },
   {
-    id: 'handel-halvorsen-passacaglia',
-    title: 'Passacaglia',
-    composer: 'George Frideric Handel, arr. Johan Halvorsen',
-    key: 'A minor',
-    genre: 'classical',
-    moods: ['dramatic'],
-  },
-  {
     id: 'tchaikovsky-swan-lake',
     title: 'Swan Lake',
     composer: 'Pyotr Ilyich Tchaikovsky',
