@@ -69,7 +69,7 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
 
 ### Songs
 
-- **Eighty-five pieces come with it**, from Bach to Fats Waller, in a chooser that
+- **Eighty-four pieces come with it**, from Bach to Fats Waller, in a chooser that
   Songs opens on: shelved by genre — Classical, Gospel, Jazz, Blues, Pop, Rock,
   Country, Soul & R&B, Folk & Traditional, New Age — and under every genre by
   the same eight moods: Dramatic & Powerful, Dreamy & Atmospheric, Joyful &
@@ -534,11 +534,6 @@ Liszt's Consolation No. 3 was read, bar by bar, from the
 [Mutopia Project](https://www.mutopiaproject.org)'s edition (after Breitkopf &
 Härtel, 1850), typeset by Ryan Prince and licensed under
 [Creative Commons Attribution 3.0](https://creativecommons.org/licenses/by/3.0/).
-Bach's Fugue in C Major, BWV 846, is the engraving in the
-[ASAP dataset](https://github.com/fosfrancesco/asap-dataset) (Foscarin, McLeod,
-Rigaux, Jacquemard and Sakai, 2020), which is licensed under
-[Creative Commons Attribution-NonCommercial-ShareAlike 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/):
-shared with credit, and not for commercial use.
 
 Fifteen are recent pieces their own composers published under CC0, giving up their
 rights in them; `catalog.ts` has the page each was released on. One more is not in

@@ -398,18 +398,6 @@ export const SONG_CATALOG: readonly CatalogSong[] = [
     genre: 'classical',
     moods: ['dramatic'],
   },
-  // The fugue that follows the Prelude in C Major, in the ASAP dataset's
-  // engraving (github.com/fosfrancesco/asap-dataset, CC BY-NC-SA 4.0), not
-  // taken from either library. The score gives no tempo; it is taken at
-  // seventy-two.
-  {
-    id: 'bach-fugue-in-c-major-bwv-846',
-    title: 'Fugue in C Major, BWV 846',
-    composer: 'Johann Sebastian Bach',
-    key: 'C major',
-    genre: 'classical',
-    moods: ['dramatic'],
-  },
   {
     id: 'handel-halvorsen-passacaglia',
     title: 'Passacaglia',
