@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { click, clickContext } from './click'
+import { click, clickContext, wakeClickContext } from './click'
 
 /** How far ahead clicks are scheduled, and how often the scheduler looks. */
 const LOOKAHEAD_S = 0.12
@@ -30,7 +30,7 @@ export function useMetronome(enabled: boolean, bpm: number, beatsPerBar = 4, epo
     if (!enabled) return
     const audio = clickContext()
     if (!audio) return
-    void audio.resume?.().catch(() => {})
+    wakeClickContext()
 
     let next = audio.currentTime + 0.05
     let beat = 0

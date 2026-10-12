@@ -1,5 +1,5 @@
 import success from '@/assets/sounds/success-2.mp3'
-import { clickContext } from './click'
+import { clickContext, wakeClickContext } from './click'
 
 /**
  * The app's sound effects: short cues that answer something the player did.
@@ -72,7 +72,8 @@ export function playSoundEffect(name: SoundEffect) {
   const effect = EFFECTS[name]
   if (!audio || !buffer) return
   try {
-    if (audio.state === 'suspended') void audio.resume().catch(() => {})
+    // Awake for as long as the cue lasts; asleep again a while after it.
+    wakeClickContext(buffer.duration * 1000)
     stopSoundEffect(name)
     const source = audio.createBufferSource()
     const gain = audio.createGain()
@@ -108,12 +109,21 @@ export function stopSoundEffect(name: SoundEffect) {
 /**
  * A context made before the player has touched the page starts suspended, and
  * only a gesture may start it. The piano listens for one on its own context;
- * this is the same for the cues', kept live because a backgrounded tab can be
- * suspended again.
+ * this is the same for the cues'.
+ *
+ * Until it has run once, and no longer. After that a click or a cue wakes the
+ * context itself when it has something to sound (`wakeClickContext`), and a
+ * touch that woke it every time would keep it running for as long as anyone
+ * was using the page, with nothing to play.
  */
 function unlockOnGesture(audio: AudioContext) {
   const unlock = () => {
-    if (audio.state === 'suspended') void audio.resume().catch(() => {})
+    if (audio.state === 'running') {
+      globalThis.removeEventListener('pointerdown', unlock)
+      globalThis.removeEventListener('keydown', unlock)
+      return
+    }
+    wakeClickContext()
   }
   globalThis.addEventListener('pointerdown', unlock)
   globalThis.addEventListener('keydown', unlock)

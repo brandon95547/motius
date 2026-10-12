@@ -1,4 +1,5 @@
 import { drumVoice, type DrumVoice } from '@sonara/shared'
+import { sleepWhenQuiet, type Quiet } from './quiet'
 
 /**
  * A drum kit made rather than sampled.
@@ -30,6 +31,10 @@ function makeNoise(context: AudioContext): AudioBuffer {
   return data ? buffer : buffer
 }
 
+let quiet: Quiet | null = null
+/** A crash cymbal is the longest thing the kit plays. */
+const DRUM_RINGS_MS = 2500
+
 function ensure(): Kit | null {
   try {
     if (kit) return kit
@@ -38,6 +43,8 @@ function ensure(): Kit | null {
     out.gain.value = 0.9
     out.connect(context.destination)
     kit = { context, out, noise: makeNoise(context) }
+    // Asleep between songs that have a drummer: see `sleepWhenQuiet`.
+    quiet = sleepWhenQuiet(context)
     return kit
   } catch {
     // No audio context available. The song still plays; it just has no kit.
@@ -203,8 +210,10 @@ const VOICES: Record<DrumVoice, (kitRef: Kit, at: number, level: number) => void
 export function hitDrum(note: number, velocity: number) {
   const active = ensure()
   if (!active) return
-  // Browsers suspend a context created before the first gesture.
-  if (active.context.state === 'suspended') void active.context.resume()
+  // Browsers suspend a context created before the first gesture, and this
+  // one is put to sleep when no drum has sounded for a while: a hit wakes it,
+  // for as long as the longest of them rings.
+  quiet?.wake(DRUM_RINGS_MS)
   const level = Math.max(0.05, Math.min(1, velocity / 127)) * 0.9
   VOICES[drumVoice(note)](active, active.context.currentTime, level)
 }

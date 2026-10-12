@@ -333,6 +333,14 @@ The sustain pedal is held by the provider rather than by either engine: it is a
 property of the performance, not of the instrument, so every engine gets
 identical pedal behavior and an engine swap mid-pedal cannot strand a note.
 
+An audio engine with nothing to play is put to sleep. A running `AudioContext`
+renders silence at full price — about a twentieth of a processor core for the
+two Sonara keeps, for as long as the tab is open — so each one is suspended a
+minute after its last sound, or five seconds after if the page is hidden, and
+woken by the next note, click or touch (`audio/quiet.ts`). Waking takes about
+fifteen milliseconds. A key held down, or held by the pedal, keeps it awake for
+as long as it is held.
+
 ### The learning system
 
 Everything Sonara can teach reduces to the same thing: an ordered list of steps,

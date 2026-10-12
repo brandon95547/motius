@@ -14,22 +14,35 @@ import { RunMeter } from '@/features/learning/RunMeter'
  */
 export function SongProgress() {
   const song = useCurrentSong()
-  const positionMs = useSongStore((state) => state.positionMs)
   const seek = useSongStore((state) => state.seek)
   const mode = useSongStore((state) => state.mode)
   const stepIndex = useSongStore((state) => state.stepIndex)
   const stepCount = useSongStore((state) => state.stepCount)
-  if (!song) return null
 
-  const learning = mode === 'learn'
   // The slider runs over the performance, repeats and all, so it only ever
   // moves forward. The bar is the one on the page: the number printed over the
   // music being played, which goes back when a repeat does.
-  const total = playDuration(song)
-  const fraction = total > 0 ? positionMs / total : 0
-  const bar =
-    song.measures[barIndexAt(song.measures, scoreMsAt(song, positionMs))]?.number ??
-    Math.min(song.measureCount, Math.floor(positionMs / song.measureMs) + 1)
+  const total = song ? playDuration(song) : 0
+  /*
+   * Where the slider stands, in its own thousandths, and the bar's number.
+   *
+   * Asked of the store as those two rather than as the time. The playhead
+   * moves forty times a second and a thousandth of a five-minute piece goes
+   * by three times: watching the time redrew the slider, and laid the row out
+   * again, on every tick of the clock for a change nobody could see.
+   */
+  const thousandths = useSongStore((state) =>
+    total > 0 ? Math.round(Math.min(1, Math.max(0, state.positionMs / total)) * 1000) : 0,
+  )
+  const bar = useSongStore((state) =>
+    song
+      ? (song.measures[barIndexAt(song.measures, scoreMsAt(song, state.positionMs))]?.number ??
+        Math.min(song.measureCount, Math.floor(state.positionMs / song.measureMs) + 1))
+      : 0,
+  )
+  if (!song) return null
+
+  const learning = mode === 'learn'
   const lastBar = song.measures.at(-1)?.number ?? song.measureCount
 
   // Learn cannot be scrubbed — it advances by playing — so it gets the same
@@ -48,14 +61,14 @@ export function SongProgress() {
         min={0}
         max={1000}
         step={1}
-        value={Math.round(Math.min(1, Math.max(0, fraction)) * 1000)}
+        value={thousandths}
         aria-label="Position in the song"
         aria-valuetext={`Bar ${bar}`}
         onChange={(event) => seek((Number(event.target.value) / 1000) * total)}
         style={
           {
             '--slider-from': '0%',
-            '--slider-to': `${Math.min(1, Math.max(0, fraction)) * 100}%`,
+            '--slider-to': `${thousandths / 10}%`,
           } as React.CSSProperties
         }
       />

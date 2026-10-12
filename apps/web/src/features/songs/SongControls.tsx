@@ -220,7 +220,6 @@ export function SongTransport() {
   const mode = useSongStore((state) => state.mode)
   const learning = useSongStore((state) => state.learning)
   const playing = useSongStore((state) => state.playing)
-  const positionMs = useSongStore((state) => state.positionMs)
   const { startLearning, resetLearning, setPlaying, seek } = useSongStore.getState()
 
   if (!song) {
@@ -238,7 +237,10 @@ export function SongTransport() {
   }
 
   const learn = mode === 'learn'
-  const skip = (bars: number) => seek(skipBars(song, positionMs, bars))
+  // Where the playhead is when a skip is pressed, asked then. Watched instead,
+  // it redrew the transport forty times a second for as long as a song played,
+  // to keep ready a number that is wanted on a click.
+  const skip = (bars: number) => seek(skipBars(song, useSongStore.getState().positionMs, bars))
 
   return (
     <div className="bar-swap">

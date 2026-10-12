@@ -2,6 +2,7 @@ import * as React from 'react'
 import type { Instrument } from '@sonara/shared'
 import { SynthEngine } from './synth-engine'
 import { SampledEngine } from './sampled-engine'
+import { sleepWhenQuiet, type Quiet } from './quiet'
 import type { AudioEngine } from './types'
 
 /**
@@ -78,6 +79,8 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const masterRef = React.useRef<GainNode | null>(null)
   const engineRef = React.useRef<AudioEngine | null>(null)
   const loadRef = React.useRef<AbortController | null>(null)
+  /** What puts the context to sleep when nothing has sounded for a while, and wakes it. */
+  const quietRef = React.useRef<Quiet | null>(null)
 
   // Notes released while the pedal is down. They keep sounding until it lifts.
   const pedalRef = React.useRef(false)
@@ -108,11 +111,16 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       master.connect(context.destination)
       contextRef.current = context
       masterRef.current = master
+      // Asleep after a minute of nothing, unless a key is down or held by the
+      // pedal: those sound for as long as they are, and nothing says how long.
+      quietRef.current = sleepWhenQuiet(
+        context,
+        () => heldRef.current.size > 0 || pendingRef.current.size > 0,
+      )
     }
 
-    const context = contextRef.current
-    if (context.state === 'suspended') void context.resume().catch(() => {})
-    return context
+    quietRef.current?.wake()
+    return contextRef.current
   }, [volume])
 
   // Any gesture anywhere unlocks audio. Kept live rather than run once: a
@@ -122,6 +130,8 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     const unlock = () => {
       const context = contextRef.current
       if (!context) return
+      // A touch anywhere is someone at the instrument: awake, and for a while.
+      quietRef.current?.wake()
       void context.resume().then(
         () => setStatus((current) => (current.unlocked ? current : { ...current, unlocked: true })),
         () => {},
@@ -173,14 +183,16 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
         // own voicing. Instant, and correct on its own for `synth` instruments.
         swapEngine(new SynthEngine(context, master, instrument))
         const wantsSamples = instrument.engine.kind !== 'synth'
-        setStatus({
-          unlocked: context.state === 'running',
+        // Unlocked once is unlocked: a context put to sleep for the quiet is
+        // not one waiting for a first touch, and must not say that it is.
+        setStatus((current) => ({
+          unlocked: current.unlocked || context.state === 'running',
           instrumentId: instrument.id,
           kind: 'synth',
           loadingSamples: wantsSamples,
           progress: 0,
           fallbackReason: null,
-        })
+        }))
         if (!wantsSamples) return
 
         // Step two: the samples, in the background.
@@ -229,14 +241,19 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     engineRef.current?.noteOn(note, velocity)
     // A first keystroke can arrive before the context has resumed — a click on
     // a key IS the unlocking gesture. Resuming here means that first note is
-    // heard rather than swallowed.
-    void contextRef.current?.resume()
+    // heard rather than swallowed. The same goes for the first note after a
+    // long quiet, which finds the context asleep.
+    quietRef.current?.wake()
   }, [])
 
   const play = React.useCallback(
     (note: number, velocity: number, afterMs: number, durationMs: number) => {
       const context = contextRef.current
       const engine = engineRef.current
+      // Wanted until the note is over, whoever ends up sounding it. Found
+      // asleep, the context is woken here and this one note is the caller's to
+      // strike: the next finds the clock running.
+      quietRef.current?.wake(Math.max(0, afterMs) + durationMs)
       if (!context || !engine || context.state !== 'running') return false
       // Counted from the audio clock's own "now". The context can also say
       // which of its moments went out at which moment of the page's clock, and
@@ -257,6 +274,8 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
 
   const noteOff = React.useCallback((note: number) => {
     heldRef.current.delete(note)
+    // Let go is not over: the note rings out, and the wait starts from here.
+    quietRef.current?.wake()
     if (pedalRef.current) {
       pendingRef.current.add(note)
       return
@@ -273,6 +292,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       if (!heldRef.current.has(note)) engineRef.current?.noteOff(note)
     }
     pendingRef.current.clear()
+    quietRef.current?.wake()
   }, [])
 
   const panic = React.useCallback(() => {
@@ -314,6 +334,8 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       loadRef.current = null
       engineRef.current?.dispose()
       engineRef.current = null
+      quietRef.current?.dispose()
+      quietRef.current = null
       const context = contextRef.current
       contextRef.current = null
       masterRef.current = null
