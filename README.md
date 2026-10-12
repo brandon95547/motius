@@ -14,23 +14,30 @@ The dashboard has four categories, and each of the last three a page of its
 sections:
 
 - **Songs** — the song library, and the one category that is itself a place.
-- **Lessons** — Getting Started, Reading Sheet Music, Piano Technique, Music
-  Theory, Musical Expression.
+- **Lessons** — nine, in the order they are taught: Piano Foundations, Music
+  Notation & Reading, Rhythm & Timing, Scales, Intervals & Keys, Chords &
+  Harmony, Piano Technique, Musical Expression, Musical Structure & Styles,
+  Practice & Repertoire.
 - **Explore** — Scales, Chords, Arpeggios, Progressions, Cadences, Intervals.
 - **Practice** — Daily Practice, Fingering Exercises, Sight-Reading, Rhythm.
+
+Each place is a numbered card, three to a row. Under those pages a bar along
+the bottom leads to the places at the top of the app: Home (the dashboard),
+Lessons, Songs, Practice, Progress and Search. It is not there in an area,
+where the bottom of the screen is the keyboard's.
 
 Where you are is said in the bar across the top — `Dashboard › Practice` — and
 each step of it is a way back. A section that is built opens what it is for:
 Scales, Chords and Arpeggios their areas, Cadences the cadences, Daily Practice
-the routines, Fingering Exercises the exercises below, Getting Started the
-fundamentals. A section that is not built yet (Reading Sheet Music, Piano
-Technique, Music Theory, Musical Expression, Progressions, Intervals,
-Sight-Reading, Rhythm) has a page of its own that says so, at the address it
-will keep — `#/practice/sight-reading` — so what is built there later is built
-in a place that already exists.
+the routines, Fingering Exercises the exercises below, Piano Foundations the
+fundamentals. A place that is not built yet (the other eight lessons,
+Progressions, Intervals, Sight-Reading, Rhythm, and Progress and Search
+themselves) has a page of its own that says so, at the address it will keep —
+`#/practice/sight-reading`, `#/progress` — so what is built there later is
+built in a place that already exists.
 
 The whole of it is one table (`features/areas/areas.tsx`), from which the
-dashboard, those pages and the menu are all drawn.
+dashboard, those pages, the bar along the bottom and the menu are all drawn.
 
 ### The instrument
 

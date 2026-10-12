@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { AudioProvider } from '@/audio/AudioProvider'
 import { MidiProvider } from '@/midi/MidiProvider'
+import { BottomNav } from '@/components/BottomNav'
 import { TopBar } from '@/components/TopBar'
 import { Dashboard } from '@/features/areas/Dashboard'
 import { CATEGORIES, placeOf } from '@/features/areas/areas'
@@ -14,10 +15,14 @@ import { usePanelStore } from '@/state/panel-store'
  * The dashboard and the pages under it.
  *
  * Four categories where there were six areas, the sections of three of them a
- * page down, and a page for each section that is not built yet. What is pinned
+ * page down, and a page for each place that is not built yet. What is pinned
  * is that every place in the table can be reached and says where it is — a
  * card that opens nothing, or a page with no way back, is a dead end in the
  * one part of the app whose whole job is getting somewhere else.
+ *
+ * And that they are laid out as the mock has them (new dashboard.png,
+ * 2026-10-12): each place a numbered card, the nine lessons in their order,
+ * and the bar along the bottom under all of it.
  */
 
 const queries = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -30,7 +35,12 @@ function Pages() {
       <AudioProvider>
         <MidiProvider>
           <TopBar />
-          {page !== 'area' && <Dashboard />}
+          {page !== 'area' && (
+            <>
+              <Dashboard />
+              <BottomNav />
+            </>
+          )}
         </MidiProvider>
       </AudioProvider>
     </QueryClientProvider>
@@ -39,7 +49,11 @@ function Pages() {
 
 const cards = () =>
   [...document.querySelectorAll<HTMLElement>('.area-card__name')].map((name) => name.textContent)
-const card = (name: string) => screen.getByRole('button', { name: new RegExp(`^(Open )?${name}`) })
+const numbers = () =>
+  [...document.querySelectorAll<HTMLElement>('.area-card__number')].map((n) => n.textContent)
+// A card, and not the place of the same name in the bar along the bottom.
+const card = (name: string) =>
+  within(screen.getByRole('main')).getByRole('button', { name: new RegExp(`^(Open )?${name}`) })
 const trail = () =>
   [...document.querySelectorAll('.top-bar__trail > :not(svg)')].map((step) => step.textContent)
 const at = async (hash: string) =>
@@ -58,14 +72,15 @@ afterEach(() => {
 })
 
 describe('the dashboard', () => {
-  it('has four categories, each a name and a line about it', () => {
+  it('has four categories, each a number, a name and a line about it', () => {
     render(<Pages />)
     expect(cards()).toEqual(['Songs', 'Lessons', 'Explore', 'Practice'])
+    expect(numbers()).toEqual(['01', '02', '03', '04'])
     // What is in a category is on its page, not listed on its card.
     for (const { label, description } of CATEGORIES) {
       expect(card(label).querySelector('.area-card__description')!.textContent).toBe(description)
       expect(card(label).querySelectorAll('ul, li, .area-card__inside')).toHaveLength(0)
-      expect(card(label).querySelector('.area-card__status')!.textContent).not.toBe('Coming soon')
+      expect(card(label).getAttribute('title')).toBe(`Open ${label}`)
     }
     expect(screen.queryByText('Sight-Reading')).toBeNull()
   })
@@ -120,14 +135,33 @@ describe('a category’s page', () => {
     await waitFor(() => expect(usePageStore.getState().page).toBe('dashboard'))
   })
 
-  it('says which sections are still to come', async () => {
+  it('has the nine lessons of the mock, numbered in the order they are taught', async () => {
+    await open('lessons')
+    expect(cards()).toEqual([
+      'Piano Foundations',
+      'Music Notation & Reading',
+      'Rhythm & Timing',
+      'Scales, Intervals & Keys',
+      'Chords & Harmony',
+      'Piano Technique',
+      'Musical Expression',
+      'Musical Structure & Styles',
+      'Practice & Repertoire',
+    ])
+    expect(numbers()).toEqual(['01', '02', '03', '04', '05', '06', '07', '08', '09'])
+    // The number is the order, which a reader of the page already has.
+    for (const number of document.querySelectorAll('.area-card__number'))
+      expect(number.getAttribute('aria-hidden')).toBe('true')
+  })
+
+  it('draws a section still to come like the others, and says so where the pointer rests', async () => {
     await open('explore')
-    const status = (name: string) => card(name).querySelector('.area-card__status')!.textContent
-    expect(status('Progressions')).toBe('Coming soon')
-    expect(status('Intervals')).toBe('Coming soon')
-    expect(status('Chords')).toBe('Open')
-    // The one that was last open says where it was left.
-    expect(status('Scales')).toBe(useLearningStore.getState().exercise!.title)
+    const says = (name: string) => card(name).getAttribute('title')
+    expect(says('Progressions')).toBe('Progressions — coming soon')
+    expect(says('Intervals')).toBe('Intervals — coming soon')
+    expect(says('Chords')).toBe('Open Chords')
+    // Nothing on the card itself sets one apart: no status, no other ring.
+    expect(document.querySelectorAll('.area-card__status, [data-coming]')).toHaveLength(0)
   })
 
   it.each([
@@ -146,18 +180,22 @@ describe('a category’s page', () => {
     expect(useLearningStore.getState().exercise).not.toBeNull()
   })
 
-  it('opens Getting Started on the fundamentals, over the page it was opened from', async () => {
+  it('opens Piano Foundations on the fundamentals, over the page it was opened from', async () => {
     await open('lessons')
-    fireEvent.click(card('Getting Started'))
+    fireEvent.click(card('Piano Foundations'))
     expect(usePanelStore.getState().panel).toBe('fundamentals')
     expect(usePageStore.getState()).toMatchObject({ page: 'category', category: 'lessons' })
   })
 
   it.each([
-    ['lessons', 'Reading Sheet Music', 'reading-sheet-music'],
+    ['lessons', 'Music Notation & Reading', 'music-notation-and-reading'],
+    ['lessons', 'Rhythm & Timing', 'rhythm-and-timing'],
+    ['lessons', 'Scales, Intervals & Keys', 'scales-intervals-and-keys'],
+    ['lessons', 'Chords & Harmony', 'chords-and-harmony'],
     ['lessons', 'Piano Technique', 'piano-technique'],
-    ['lessons', 'Music Theory', 'music-theory'],
     ['lessons', 'Musical Expression', 'musical-expression'],
+    ['lessons', 'Musical Structure & Styles', 'musical-structure-and-styles'],
+    ['lessons', 'Practice & Repertoire', 'practice-and-repertoire'],
     ['explore', 'Progressions', 'progressions'],
     ['explore', 'Intervals', 'intervals'],
     ['practice', 'Sight-Reading', 'sight-reading'],
@@ -181,6 +219,72 @@ describe('a category’s page', () => {
       expect(usePageStore.getState().page).toBe('category')
     },
   )
+})
+
+describe('the bar along the bottom', () => {
+  const bar = () => within(screen.getByRole('navigation', { name: 'Primary' }))
+  const here = () =>
+    bar()
+      .getAllByRole('button')
+      .filter((item) => item.getAttribute('aria-current') === 'page')
+      .map((item) => item.textContent)
+
+  it('has the six places of the mock, in its order, each with its word', () => {
+    render(<Pages />)
+    expect(
+      bar()
+        .getAllByRole('button')
+        .map((item) => item.textContent),
+    ).toEqual(['Home', 'Lessons', 'Songs', 'Practice', 'Progress', 'Search'])
+    expect(here()).toEqual(['Home'])
+  })
+
+  it('goes to a category’s page, and marks it for as long as you are under it', async () => {
+    render(<Pages />)
+    fireEvent.click(bar().getByRole('button', { name: 'Lessons' }))
+    await at('#/lessons')
+    expect(here()).toEqual(['Lessons'])
+
+    fireEvent.click(card('Rhythm & Timing'))
+    await at('#/lessons/rhythm-and-timing')
+    expect(here()).toEqual(['Lessons'])
+
+    fireEvent.click(bar().getByRole('button', { name: 'Home' }))
+    await waitFor(() => expect(usePageStore.getState().page).toBe('dashboard'))
+    expect(here()).toEqual(['Home'])
+  })
+
+  it('keeps Home marked on Explore, which has no place of its own in it', async () => {
+    render(<Pages />)
+    fireEvent.click(card('Explore'))
+    await at('#/explore')
+    expect(here()).toEqual(['Home'])
+  })
+
+  it.each([
+    ['Progress', '#/progress'],
+    ['Search', '#/search'],
+  ] as const)('opens %s on a page that says it is to come', async (name, hash) => {
+    render(<Pages />)
+    fireEvent.click(bar().getByRole('button', { name }))
+    await at(hash)
+    expect(here()).toEqual([name])
+    expect(trail()).toEqual(['Dashboard', name])
+
+    const page = within(screen.getByRole('main'))
+    expect(screen.getByRole('main').getAttribute('aria-label')).toBe(name)
+    expect(page.getByText('Coming soon')).toBeDefined()
+    fireEvent.click(page.getByRole('button', { name: 'Back to Dashboard' }))
+    await waitFor(() => expect(usePageStore.getState().page).toBe('dashboard'))
+  })
+
+  it('opens Songs as the area it is, where the bar gives way to the keys', async () => {
+    render(<Pages />)
+    fireEvent.click(bar().getByRole('button', { name: 'Songs' }))
+    await at('#/songs')
+    expect(usePageStore.getState().page).toBe('area')
+    expect(screen.queryByRole('navigation', { name: 'Primary' })).toBeNull()
+  })
 })
 
 describe('where an area is filed', () => {

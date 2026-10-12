@@ -24,6 +24,7 @@ import { useLearningStore } from '@/state/learning-store'
 import { usePanelStore } from '@/state/panel-store'
 import { usePageStore, usePageSync } from '@/state/page-store'
 import { Dashboard } from '@/features/areas/Dashboard'
+import { BottomNav } from '@/components/BottomNav'
 import { preloadSoundEffects } from '@/audio/sound-effects'
 
 const queryClient = new QueryClient({
@@ -122,14 +123,18 @@ function Shell() {
    * area's options slide in over its left edge rather than taking width from it.
    *
    * The dashboard takes the workspace's place: it is where you choose what to
-   * play, not where you play it.
+   * play, not where you play it. Under it, where the keys would be, the places
+   * to choose between.
    */
   return (
     <div className="app-shell">
       <TopBar />
 
       {page !== 'area' ? (
-        <Dashboard />
+        <>
+          <Dashboard />
+          <BottomNav />
+        </>
       ) : (
         <div className="workspace">
           <OptionsDrawer />

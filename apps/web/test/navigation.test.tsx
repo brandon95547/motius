@@ -157,6 +157,17 @@ describe('the pages between the dashboard and the areas', () => {
     expect(usePageStore.getState()).toMatchObject({ page: 'category', section: null })
   })
 
+  it('opens a place that is not built by its address, as the page that says so', async () => {
+    renderHook(() => usePageSync())
+    globalThis.location.hash = '#/progress'
+    await waitFor(() => expect(usePageStore.getState().page).toBe('category'))
+    expect(usePageStore.getState()).toMatchObject({ category: 'progress', section: null })
+
+    globalThis.location.hash = '#/search'
+    await waitFor(() => expect(usePageStore.getState().category).toBe('search'))
+    expect(usePageStore.getState().page).toBe('category')
+  })
+
   it('keeps Songs an area: the category that is one has no page of its own', async () => {
     renderHook(() => usePageSync())
     globalThis.location.hash = '#/songs'

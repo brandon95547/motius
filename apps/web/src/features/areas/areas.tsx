@@ -1,48 +1,67 @@
 import {
+  AudioLines,
   BookOpen,
   CalendarCheck,
+  ChartNoAxesColumn,
   ChartNoAxesColumnIncreasing,
   Compass,
   Drum,
-  Dumbbell,
   Eye,
-  FileMusic,
-  Flag,
   GraduationCap,
   Hand,
+  House,
+  KeyboardMusic,
   Layers,
   Milestone,
   Music,
-  Piano,
+  Music4,
   Route,
   Ruler,
-  Sparkles,
+  Search,
+  Target,
   Waves,
-  type LucideIcon,
 } from 'lucide-react'
 import type { ProgressionType } from '@motius/shared'
 import type { LearningTopic } from '@/state/learning-store'
+import { MetronomeIcon } from '@/ui/MetronomeIcon'
 
 /**
  * Where everything in the app is: four categories, and the sections in three
  * of them.
  *
- * The dashboard, the pages under it and the menu are all drawn from this one
- * table, so they cannot disagree about what a place is called, what it looks
- * like, where it is or whether it is built yet.
+ * The dashboard, the pages under it, the bar along the bottom and the menu are
+ * all drawn from this one table, so they cannot disagree about what a place is
+ * called, what it looks like, where it is or whether it is built yet.
  *
  * A section that is built says what it opens: one of the practice areas, or a
  * panel. One that is not says nothing, and has a page of its own that says so
  * — the place is there, with its name on it, before what goes in it is.
+ *
+ * Two more places are at the top with the categories and are on no card:
+ * Progress and Search, which the bar along the bottom leads to. Neither is
+ * built, so each is a page that says so.
  */
 
 /**
  * The card accents there are. A card is given one of these; there is no
- * colour of its own to give it.
+ * color of its own to give it. The first six are named for the areas they
+ * were first given to, and the last three for what they are.
  */
-export type Accent = 'songs' | 'scales' | 'chords' | 'arpeggios' | 'progressions' | 'exercises'
+export type Accent =
+  | 'songs'
+  | 'scales'
+  | 'chords'
+  | 'arpeggios'
+  | 'progressions'
+  | 'exercises'
+  | 'rose'
+  | 'teal'
+  | 'pink'
 
-export type CategoryId = 'songs' | 'lessons' | 'explore' | 'practice'
+export type CategoryId = 'songs' | 'lessons' | 'explore' | 'practice' | 'progress' | 'search'
+
+/** Drawn like the icon set's own: square, in the current color, at the size asked for. */
+type PlaceIcon = React.ComponentType<{ size?: number }>
 
 /** What a card opens, where what it is for has been built. */
 export type Opens =
@@ -56,7 +75,7 @@ export type Opens =
 
 interface Place {
   readonly label: string
-  readonly icon: LucideIcon
+  readonly icon: PlaceIcon
   readonly description: string
   readonly accent: Accent
   /** Absent for a place that is not built: it has a page that says so. */
@@ -70,7 +89,7 @@ export interface Section extends Place {
 
 export interface Category extends Place {
   readonly id: CategoryId
-  /** None for a category that is itself the place: Songs. */
+  /** None for a category that is itself the place — Songs — or that is not built. */
   readonly sections: readonly Section[]
 }
 
@@ -87,46 +106,74 @@ export const CATEGORIES: readonly Category[] = [
   {
     id: 'lessons',
     label: 'Lessons',
-    icon: GraduationCap,
+    icon: BookOpen,
     description: 'From the first note on: reading music, technique, theory and expression.',
     accent: 'arpeggios',
+    // In the order they are taught, which is the number each card carries.
     sections: [
       {
-        id: 'getting-started',
-        label: 'Getting Started',
-        icon: Flag,
-        description:
-          'The keyboard, the notes and the scales: the ground everything else stands on.',
+        id: 'piano-foundations',
+        label: 'Piano Foundations',
+        icon: KeyboardMusic,
+        description: 'Learn the keyboard, notes, and how to play your first melodies.',
         accent: 'songs',
         opens: { kind: 'panel', panel: 'fundamentals' },
       },
       {
-        id: 'reading-sheet-music',
-        label: 'Reading Sheet Music',
-        icon: FileMusic,
-        description: 'The staff and its clefs, note values, key and time signatures.',
+        id: 'music-notation-and-reading',
+        label: 'Music Notation & Reading',
+        icon: BookOpen,
+        description: 'Master the staff, clefs, note values and sight-reading.',
         accent: 'arpeggios',
+      },
+      {
+        id: 'rhythm-and-timing',
+        label: 'Rhythm & Timing',
+        icon: MetronomeIcon,
+        description: 'Develop your sense of rhythm, beat and tempo.',
+        accent: 'exercises',
+      },
+      {
+        id: 'scales-intervals-and-keys',
+        label: 'Scales, Intervals & Keys',
+        icon: Music,
+        description: 'Explore intervals, scales, modes and key signatures.',
+        accent: 'rose',
+      },
+      {
+        id: 'chords-and-harmony',
+        label: 'Chords & Harmony',
+        icon: Layers,
+        description: 'Learn chords, inversions, progressions and harmony.',
+        accent: 'scales',
       },
       {
         id: 'piano-technique',
         label: 'Piano Technique',
-        icon: Piano,
-        description: 'Posture, touch, and how the hand moves across the keys.',
-        accent: 'exercises',
-      },
-      {
-        id: 'music-theory',
-        label: 'Music Theory',
-        icon: BookOpen,
-        description: 'How scales, intervals and chords are built, and why they sound as they do.',
-        accent: 'scales',
+        icon: Hand,
+        description: 'Build your fingering, coordination and pedal skills.',
+        accent: 'progressions',
       },
       {
         id: 'musical-expression',
         label: 'Musical Expression',
-        icon: Sparkles,
-        description: 'Dynamics, phrasing, articulation and the pedal.',
-        accent: 'chords',
+        icon: AudioLines,
+        description: 'Play with dynamics, articulation and phrasing.',
+        accent: 'arpeggios',
+      },
+      {
+        id: 'musical-structure-and-styles',
+        label: 'Musical Structure & Styles',
+        icon: Music4,
+        description: 'Discover song forms, genres and great composers.',
+        accent: 'teal',
+      },
+      {
+        id: 'practice-and-repertoire',
+        label: 'Practice & Repertoire',
+        icon: GraduationCap,
+        description: 'Exercises, ear training, songs and track your progress.',
+        accent: 'pink',
       },
     ],
   },
@@ -188,7 +235,7 @@ export const CATEGORIES: readonly Category[] = [
   {
     id: 'practice',
     label: 'Practice',
-    icon: Dumbbell,
+    icon: Target,
     description: 'What to play today: routines, fingering, sight-reading and rhythm.',
     accent: 'exercises',
     sections: [
@@ -227,8 +274,44 @@ export const CATEGORIES: readonly Category[] = [
   },
 ]
 
+/**
+ * At the top with the categories, and not among them: on no card and in no
+ * menu, and reached from the bar along the bottom. Neither is built yet.
+ */
+export const TO_COME: readonly Category[] = [
+  {
+    id: 'progress',
+    label: 'Progress',
+    icon: ChartNoAxesColumn,
+    description: 'What you have practiced, and how it is coming along.',
+    accent: 'exercises',
+    sections: [],
+  },
+  {
+    id: 'search',
+    label: 'Search',
+    icon: Search,
+    description: 'Find a lesson, a song or an exercise by its name.',
+    accent: 'arpeggios',
+    sections: [],
+  },
+]
+
 export const findCategory = (id: string | null | undefined): Category | null =>
-  CATEGORIES.find((category) => category.id === id) ?? null
+  [...CATEGORIES, ...TO_COME].find((category) => category.id === id) ?? null
+
+/** Whether there is anything at a place yet: something it opens, or sections of its own. */
+export const isBuilt = (place: Category | Section): boolean =>
+  Boolean(place.opens) || ('sections' in place && place.sections.length > 0)
+
+/**
+ * The bar along the bottom: the dashboard, and five of the places at the top.
+ * Explore is not one of them, and is reached from the dashboard.
+ */
+export const HOME = { id: 'home', label: 'Home', icon: House } as const
+export const DESTINATIONS: readonly Category[] = (
+  ['lessons', 'songs', 'practice', 'progress', 'search'] as const
+).map((id) => findCategory(id)!)
 
 export const findSection = (category: Category, id: string | null | undefined): Section | null =>
   category.sections.find((section) => section.id === id) ?? null

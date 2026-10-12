@@ -22,10 +22,11 @@ import { useSongStore } from './song-store'
  * know about it.
  *
  * Between the dashboard and the areas there are two kinds of page. A category
- * — `#/explore` — lists its sections. A section that is not built yet has a
- * page that says so, under its category: `#/practice/sight-reading`. A section
- * that is built has no page of its own; it opens the area it is for, at the
- * address that area has always had.
+ * — `#/explore` — lists its sections, or, where it is not built yet, says so:
+ * `#/progress`. A section that is not built yet has a page that says so, under
+ * its category: `#/practice/sight-reading`. A section that is built has no
+ * page of its own; it opens the area it is for, at the address that area has
+ * always had.
  *
  * An area with types of its own carries the type as a second step —
  * `#/progressions/cadences` — for the same reason: a reload should land on the
@@ -75,7 +76,8 @@ function placeIn(hash: string): Place | null {
     }
   }
   const category = findCategory(name)
-  if (!category || category.sections.length === 0) return null
+  // A category that is itself a place has no page: its address is its area's.
+  if (!category || category.opens) return null
   const section = findSection(category, second)
   // A section that is built is not a page: its address is its area's. Named
   // here, it is the category it belongs to.
@@ -157,7 +159,7 @@ function open(place: Category | Section, address: string) {
 
 export const pageActions = {
   openDashboard: () => go('#/'),
-  /** A category: its page of sections, or — Songs — the area it is. */
+  /** A category: its page — of sections, or saying it is to come — or, Songs, the area it is. */
   openCategory: (category: Category) => open(category, `#/${category.id}`),
   /** A section: what it is for, or the page that says it is still to come. */
   openSection: (category: Category, section: Section) =>
