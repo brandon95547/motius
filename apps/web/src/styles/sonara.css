@@ -416,9 +416,12 @@
   padding: 0;
   border: 0;
   cursor: pointer;
-  /* Transitions are on colour only. A transform transition would smear the
-     attack — the visual has to land on the same frame as the note. */
-  transition: background-color var(--duration-instant) var(--ease-standard);
+  /* No transition, on anything. A key lights on the frame its note sounds and
+     goes out on the frame it is let go, which is what a key does. A fade of
+     even 75ms was also the dearest thing on the page: for as long as a song
+     played there was always a key part-way through one, so the whole keyboard
+     was drawn again on every frame instead of only when a key changed —
+     two-fifths of what it cost to play a fast piece. */
 }
 
 .piano-key:focus-visible {
@@ -464,6 +467,12 @@
     inset 0 6px 0 var(--c-key-black),
     inset 0 -3px 0 var(--c-key-bevel),
     0 2px 4px -1px var(--c-key-drop);
+  /* Each on a layer of its own, for the shadow just above. A blurred shadow is
+     the one costly thing a key is drawn with, and the keys share a surface:
+     light one and all thirty-six shadows were blurred again with it. Kept
+     apart, a black key is drawn when it changes and at no other time, which
+     took a third off what the keyboard costs while a song plays. */
+  will-change: transform;
 }
 @media (hover: hover) {
   .piano-key--black:hover:not([data-active='true']) {

@@ -311,6 +311,15 @@ a piano key is a depiction of a physical object, and a "white key" assigned
 `--ds-surface-raised` because that is where it sits in the hierarchy is a piano
 nobody recognizes. The reasoning is written next to the values.
 
+A key changes colour on the frame its note sounds, with no fade, and each black
+key is drawn on a layer of its own. Both are for what the keyboard costs while
+a song plays. A fade of 75ms kept some key part-way through one at every
+moment of a fast piece, so the browser drew a frame sixty times a second
+instead of when a key changed; and the black keys' blurred shadows shared a
+surface with every other key, so lighting one key blurred all of them again.
+Playing the Moonlight Sonata's third movement cost one and a half processor
+cores before the two changes and about four-fifths of one after.
+
 ### Audio
 
 Two engines behind one interface.
