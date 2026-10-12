@@ -28,13 +28,7 @@ import { useRecordingStore } from '@/state/recording-store'
 import { useCurrentSong } from '@/state/song-store'
 import { BACKDROPS, useBackdropStore } from '@/state/backdrop-store'
 import { COLOR_THEMES, useThemeStore } from '@/state/theme-store'
-import {
-  CATEGORIES,
-  DESTINATIONS,
-  findCategory,
-  findSection,
-  placeOf,
-} from '@/features/areas/areas'
+import { CATEGORIES, DESTINATIONS, findCategory, pagesUnder, placeOf } from '@/features/areas/areas'
 import { OptionsButton } from '@/components/OptionsDrawer'
 import { LastTakeButton, RecordButton } from '@/features/recording/RecordControls'
 import {
@@ -143,36 +137,47 @@ function Brand({ keep, deep = false }: { keep: boolean; deep?: boolean }) {
 
 /**
  * Where you are, on the pages that lead to the areas: the dashboard's name, or
- * the way down to the page that is up — Dashboard, Chords & Harmony,
- * Progressions — each step but the last a way back to it.
+ * the way down to the page that is up — Dashboard, Piano Foundations, Keyboard
+ * Layout — each step but the last a way back to it.
  *
  * It is the page's heading. Those pages have none of their own: the bar is the
  * one place a page's name is on every page, and a second, larger one under it
  * was the same word twice over a grid of cards that were the point.
+ *
+ * Each step back says how far up it is, which is what the stylesheet folds the
+ * trail by when the bar is too narrow for the whole way down.
  */
 function PageTitle() {
   const categoryId = usePageStore((state) => state.category)
-  const sectionId = usePageStore((state) => state.section)
+  const path = usePageStore((state) => state.path)
   const category = findCategory(categoryId)
-  const section = category && findSection(category, sectionId)
+  const way = category ? pagesUnder(category, path) : []
   const trail = [
     { label: 'Dashboard', open: pageActions.openDashboard },
     ...(category
       ? [{ label: category.label, open: () => pageActions.openCategory(category) }]
       : []),
-    ...(category && section ? [{ label: section.label, open: () => {} }] : []),
+    ...way.map((section, index) => ({
+      label: section.label,
+      open: () => pageActions.openSection(category!, way.slice(0, index + 1)),
+    })),
   ]
 
   return (
     <nav className="top-bar__trail" aria-label="You are here">
       {trail.map((step, index) =>
         index === trail.length - 1 ? (
-          <h1 key={step.label} className="top-bar__title" aria-current="page">
+          <h1 key={index} className="top-bar__title" aria-current="page">
             {step.label}
           </h1>
         ) : (
-          <React.Fragment key={step.label}>
-            <button type="button" className="top-bar__crumb" onClick={step.open}>
+          <React.Fragment key={index}>
+            <button
+              type="button"
+              className="top-bar__crumb"
+              data-up={trail.length - 1 - index}
+              onClick={step.open}
+            >
               {step.label}
             </button>
             <ChevronRight size={16} className="top-bar__crumb-mark" aria-hidden />

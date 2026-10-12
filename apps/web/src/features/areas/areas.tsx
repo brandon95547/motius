@@ -1,18 +1,26 @@
 import {
+  ALargeSmall,
+  ArrowUpDown,
   AudioLines,
   BookOpen,
   CalendarCheck,
   ChartNoAxesColumn,
   ChartNoAxesColumnIncreasing,
-  Flag,
+  Compass,
+  Contrast,
   GraduationCap,
   Hand,
+  Hash,
   House,
   KeyboardMusic,
   Layers,
+  MapPin,
   Milestone,
+  MoveHorizontal,
   Music,
+  Music2,
   Music4,
+  Piano,
   Route,
   Ruler,
   Search,
@@ -36,9 +44,15 @@ import { MetronomeIcon } from '@/ui/MetronomeIcon'
  * all drawn from this one table, so they cannot disagree about what a place is
  * called, what it looks like, where it is or whether it is built yet.
  *
+ * What is in a category is its sections, and a section may have sections of
+ * its own, as far down as the subject goes: Piano Foundations has Keyboard
+ * Layout, which has White and black keys, which has its three lessons. Each of
+ * them with something under it is a page of cards.
+ *
  * A section that is built says what it opens: one of the practice areas, or a
- * panel. A place that is not says nothing, and has a page of its own that says
- * so — the place is there, with its name on it, before what goes in it is.
+ * panel. A place with nothing under it and nothing to open has a page of its
+ * own that says so — the place is there, with its name on it, before what goes
+ * in it is. Every lesson is one of those so far.
  *
  * Five more places are at the top and on no card: the ones the bar along the
  * bottom leads to. Songs is the area. Lessons, Practice, Progress and Search
@@ -94,22 +108,48 @@ export type Opens =
 interface Place {
   readonly label: string
   readonly icon: PlaceIcon
-  readonly description: string
+  /** A line about it, for its card. A lesson has only its name so far. */
+  readonly description?: string
   readonly accent: Accent
-  /** Absent for a place that is not built: it has a page that says so. */
+  /** Absent for a place that is a page: of its sections, or saying it is to come. */
   readonly opens?: Opens
 }
 
 export interface Section extends Place {
   /** Its name in the address: `#/chords-and-harmony/progressions`. */
   readonly id: string
+  /** What is under it, where it is a page of cards itself. */
+  readonly sections?: readonly Section[]
 }
 
 export interface Category extends Place {
   readonly id: CategoryId
+  readonly description: string
   /** None for a place that is itself an area — Songs — or that is not built. */
   readonly sections: readonly Section[]
 }
+
+/** A name as it is written in an address: `Fingers & Hand Positions` is `fingers-and-hand-positions`. */
+const slug = (label: string) =>
+  label
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+
+/**
+ * The lessons of a section, by their names, in the order they are taught. None
+ * is written yet, so each is a page that says so, under the icon and the color
+ * of what it is part of. A lesson's address is its name: renaming one moves it.
+ */
+const lessons = (of: Pick<Place, 'icon' | 'accent'>, labels: readonly string[]): Section[] =>
+  labels.map((label) => ({ id: slug(label), label, icon: of.icon, accent: of.accent }))
+
+/** One of a section's topics: a page of its lessons, which wear its icon and its color. */
+const topic = (
+  place: Required<Pick<Section, 'label' | 'icon' | 'description' | 'accent'>>,
+  labels: readonly string[],
+): Section => ({ id: slug(place.label), ...place, sections: lessons(place, labels) })
 
 /** Songs: an area, a place in the bar along the bottom, and a section of the ninth category. */
 const SONGS = {
@@ -129,16 +169,119 @@ export const CATEGORIES: readonly Category[] = [
     icon: KeyboardMusic,
     description: 'Learn the keyboard, notes, and how to play your first melodies.',
     accent: 'songs',
+    // The user's outline of 2026-10-12, in its order and its words.
     sections: [
       {
-        id: 'getting-started',
-        label: 'Getting Started',
-        icon: Flag,
-        description:
-          'The keyboard, the notes and the scales: the ground everything else stands on.',
+        id: 'keyboard-layout',
+        label: 'Keyboard Layout',
+        icon: Piano,
+        description: 'White and black keys, the musical alphabet and keyboard navigation.',
         accent: 'songs',
-        opens: { kind: 'panel', panel: 'fundamentals' },
+        sections: [
+          topic(
+            {
+              label: 'White and black keys',
+              icon: Contrast,
+              description: 'Two-black-key groups, three-black-key groups and keyboard patterns.',
+              accent: 'songs',
+            },
+            ['Two-black-key groups', 'Three-black-key groups', 'Recognizing keyboard patterns'],
+          ),
+          topic(
+            {
+              label: 'Musical alphabet',
+              icon: ALargeSmall,
+              description: 'Notes A through G, repeating note names, and finding C and F.',
+              accent: 'songs',
+            },
+            ['Notes A through G', 'Repeating note names', 'Finding C and F'],
+          ),
+          topic(
+            {
+              label: 'Keyboard navigation',
+              icon: Compass,
+              description: 'Finding Middle C, locating notes, moving left and right, and octaves.',
+              accent: 'songs',
+            },
+            [
+              'Finding Middle C',
+              'Locating notes across the keyboard',
+              'Moving left and right',
+              'Recognizing octaves',
+            ],
+          ),
+        ],
       },
+      topic(
+        {
+          label: 'Understanding Pitch',
+          icon: ArrowUpDown,
+          description: 'High and low notes, pitch direction, repeated notes and octaves.',
+          accent: 'arpeggios',
+        },
+        [
+          'High and low notes',
+          'Ascending and descending notes',
+          'Repeated notes',
+          'Octave relationships',
+          'Pitch direction',
+          'Recognizing pitch changes',
+        ],
+      ),
+      {
+        id: 'fingers-and-hand-positions',
+        label: 'Fingers & Hand Positions',
+        icon: Hand,
+        description: 'Finger numbering, starting positions and hand movement.',
+        accent: 'exercises',
+        sections: [
+          topic(
+            {
+              label: 'Finger numbering',
+              icon: Hash,
+              description: 'Right hand and left hand, 1 to 5.',
+              accent: 'exercises',
+            },
+            ['Right hand (1–5)', 'Left hand (1–5)'],
+          ),
+          topic(
+            {
+              label: 'Starting positions',
+              icon: MapPin,
+              description: 'Middle C, C and G positions, and five-finger positions.',
+              accent: 'exercises',
+            },
+            ['Middle C position', 'C position', 'G position', 'Five-finger positions'],
+          ),
+          topic(
+            {
+              label: 'Hand movement',
+              icon: MoveHorizontal,
+              description: 'Moving between positions and octaves, and extended hand positions.',
+              accent: 'exercises',
+            },
+            ['Moving between positions', 'Extended hand positions', 'Moving between octaves'],
+          ),
+        ],
+      },
+      topic(
+        {
+          label: 'Playing Your First Notes',
+          icon: Music2,
+          description: 'From single notes to simple melodies, with each hand and with both.',
+          accent: 'rose',
+        },
+        [
+          'Playing individual notes',
+          'Playing consecutive notes',
+          'Playing repeated notes',
+          'Playing ascending and descending sequences',
+          'Playing with the right hand',
+          'Playing with the left hand',
+          'Playing with both hands',
+          'Playing simple melodies',
+        ],
+      ),
     ],
   },
   {
@@ -320,12 +463,26 @@ export const DESTINATIONS: readonly Category[] = [
 export const findCategory = (id: string | null | undefined): Category | null =>
   [...CATEGORIES, ...DESTINATIONS].find((category) => category.id === id) ?? null
 
-export const findSection = (category: Category, id: string | null | undefined): Section | null =>
-  category.sections.find((section) => section.id === id) ?? null
+/**
+ * The pages on the way down from a category, as far as the names lead to one.
+ * A name that is no section stops it there, and so does a section that opens
+ * something: that is not a page, and its address is its area's.
+ */
+export function pagesUnder(category: Category, ids: readonly string[]): Section[] {
+  const pages: Section[] = []
+  let sections: readonly Section[] | undefined = category.sections
+  for (const id of ids) {
+    const next: Section | undefined = sections?.find((section) => section.id === id)
+    if (!next || next.opens) break
+    pages.push(next)
+    sections = next.sections
+  }
+  return pages
+}
 
 /** Whether there is anything at a place yet: something it opens, or sections of its own. */
 export const isBuilt = (place: Category | Section): boolean =>
-  Boolean(place.opens) || ('sections' in place && place.sections.length > 0)
+  Boolean(place.opens) || (place.sections?.length ?? 0) > 0
 
 /** Whether a place opens this area — on this type of progression, where it names one. */
 const leadsTo = (place: Place, topic: LearningTopic, progression: ProgressionType) =>

@@ -13,7 +13,8 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
 The dashboard has nine categories, each a numbered card, three to a row, in the
 order they are taught:
 
-1. **Piano Foundations** — Getting Started (the fundamentals).
+1. **Piano Foundations** — Keyboard Layout, Understanding Pitch, Fingers & Hand
+   Positions, Playing Your First Notes.
 2. **Music Notation & Reading**
 3. **Rhythm & Timing**
 4. **Scales, Intervals & Keys** — Scales, Intervals.
@@ -23,22 +24,29 @@ order they are taught:
 8. **Musical Structure & Styles**
 9. **Practice & Repertoire** — Daily Practice, Songs.
 
-A category with something in it opens a page of its sections. Under the
-dashboard and those pages a bar along the bottom leads to the other places at
-the top of the app: Home (the dashboard), Lessons, Songs, Practice, Progress
-and Search. It is not there in an area, where the bottom of the screen is the
-keyboard's and the menu is the way out.
+A category with something in it opens a page of its sections, and a section
+may have sections of its own, as far down as the subject goes. Piano
+Foundations is laid out in full: Keyboard Layout has White and black keys,
+Musical alphabet and Keyboard navigation, each a page of its lessons; Fingers &
+Hand Positions has Finger numbering, Starting positions and Hand movement; and
+Understanding Pitch and Playing Your First Notes are pages of lessons
+themselves. Under the dashboard and those pages a bar along the bottom leads to
+the other places at the top of the app: Home (the dashboard), Lessons, Songs,
+Practice, Progress and Search. It is not there in an area, where the bottom of
+the screen is the keyboard's and the menu is the way out.
 
-Where you are is said in the bar across the top — `Dashboard › Chords &
-Harmony` — and each step of it is a way back. A section that is built opens
+Where you are is said in the bar across the top — `Dashboard › Piano
+Foundations › Keyboard Layout` — and each step of it is a way back; on a
+narrow bar the steps furthest up fold away first. A section that is built opens
 what it is for: Scales, Chords and Arpeggios their areas, Cadences the
 cadences, Daily Practice the routines, Fingering Exercises the exercises below,
-Songs the song library, Getting Started the fundamentals. A place that is not
-built yet (four of the nine categories, the Intervals and Progressions
+Songs the song library. A place that is not built yet (every lesson of Piano
+Foundations, four of the nine categories, the Intervals and Progressions
 sections, and Lessons, Practice, Progress and Search in the bar) has a page of
-its own that says so, at the address it will keep — `#/rhythm-and-timing`,
-`#/chords-and-harmony/progressions`, `#/progress` — so what is built there
-later is built in a place that already exists.
+its own that says so, at the address it will keep —
+`#/piano-foundations/keyboard-layout/white-and-black-keys/two-black-key-groups`,
+`#/rhythm-and-timing`, `#/progress` — so what is built there later is built in
+a place that already exists.
 
 The whole of it is one table (`features/areas/areas.tsx`), from which the
 dashboard, those pages, the bar along the bottom and the menu are all drawn.

@@ -5,17 +5,17 @@ import {
   CATEGORIES,
   COMING_SOON,
   findCategory,
-  findSection,
   isBuilt,
+  pagesUnder,
   type Accent,
   type Category,
   type Section,
 } from './areas'
 
 /**
- * The pages that lead to the areas: the dashboard, with its nine categories; a
- * category's page, with its sections; and the page a place has while there is
- * nothing in it yet.
+ * The pages that lead to the areas: the dashboard, with its nine categories;
+ * the page of a category or of a section, with what is under it; and the page
+ * a place has while there is nothing in it yet.
  *
  * Drawn to the dashboard mock (new dashboard.png, 2026-10-12): the practice
  * room behind everything, and each place a plain dark card in an accent, three
@@ -33,25 +33,36 @@ import {
 export function Dashboard() {
   const page = usePageStore((state) => state.page)
   const categoryId = usePageStore((state) => state.category)
-  const sectionId = usePageStore((state) => state.section)
+  const path = usePageStore((state) => state.path)
   const category = findCategory(categoryId)
-  const section = category && findSection(category, sectionId)
+  if (page === 'dashboard' || !category) return <Categories />
 
-  if (page === 'section' && category && section)
+  // The way down to the page that is up, and the page itself at the end of it.
+  const way = pagesUnder(category, path)
+  const place = way[way.length - 1] ?? category
+  const above = way.length > 1 ? way[way.length - 2]! : way.length === 1 ? category : null
+
+  if (!isBuilt(place))
     return (
       <ComingSoon
-        place={section}
-        back={category.label}
-        onBack={() => pageActions.openCategory(category)}
+        place={place}
+        back={above?.label ?? 'Dashboard'}
+        onBack={() =>
+          !above
+            ? pageActions.openDashboard()
+            : way.length > 1
+              ? pageActions.openSection(category, way.slice(0, -1))
+              : pageActions.openCategory(category)
+        }
       />
     )
-  if (page === 'category' && category)
-    return isBuilt(category) ? (
-      <CategoryPage category={category} />
-    ) : (
-      <ComingSoon place={category} back="Dashboard" onBack={pageActions.openDashboard} />
-    )
-  return <Categories />
+  return (
+    <Cards
+      label={place.label}
+      places={place.sections ?? []}
+      onOpen={(section) => pageActions.openSection(category, [...way, section])}
+    />
+  )
 }
 
 /**
@@ -66,37 +77,27 @@ const gridFor = (count: number) =>
   )
 
 function Categories() {
-  return (
-    <main className="dashboard" aria-label="Dashboard">
-      <div className="dashboard__inner">
-        <ul className={gridFor(CATEGORIES.length)}>
-          {CATEGORIES.map((category, index) => (
-            <li key={category.id} className="flex">
-              <PlaceCard
-                place={category}
-                number={index + 1}
-                onOpen={() => pageActions.openCategory(category)}
-              />
-            </li>
-          ))}
-        </ul>
-      </div>
-    </main>
-  )
+  return <Cards label="Dashboard" places={CATEGORIES} onOpen={pageActions.openCategory} />
 }
 
-function CategoryPage({ category }: { category: Category }) {
+/** A page of cards: the places under one, numbered in their order. */
+function Cards<P extends Category | Section>({
+  label,
+  places,
+  onOpen,
+}: {
+  /** The page's name, for what cannot see the bar across the top. */
+  label: string
+  places: readonly P[]
+  onOpen: (place: P) => void
+}) {
   return (
-    <main className="dashboard" aria-label={category.label}>
+    <main className="dashboard" aria-label={label}>
       <div className="dashboard__inner">
-        <ul className={gridFor(category.sections.length)}>
-          {category.sections.map((section, index) => (
-            <li key={section.id} className="flex">
-              <PlaceCard
-                place={section}
-                number={index + 1}
-                onOpen={() => pageActions.openSection(category, section)}
-              />
+        <ul className={gridFor(places.length)}>
+          {places.map((place, index) => (
+            <li key={place.id} className="flex">
+              <PlaceCard place={place} number={index + 1} onOpen={() => onOpen(place)} />
             </li>
           ))}
         </ul>
@@ -106,8 +107,8 @@ function CategoryPage({ category }: { category: Category }) {
 }
 
 /**
- * One place, as a card: a category on the dashboard, a section on its
- * category's page.
+ * One place, as a card: a category on the dashboard, a section on the page of
+ * what it is under.
  */
 function PlaceCard({
   place,
@@ -138,7 +139,7 @@ function PlaceCard({
         <Icon size={28} />
       </span>
       <span className="area-card__name">{place.label}</span>
-      <span className="area-card__description">{place.description}</span>
+      {place.description && <span className="area-card__description">{place.description}</span>}
       <span className="area-card__go" aria-hidden>
         <ArrowRight size={18} />
       </span>
@@ -173,7 +174,7 @@ function ComingSoon({
           </span>
           <span className="area-card__name">{place.label}</span>
           <span className="placeholder__rule" aria-hidden />
-          <p className="area-card__description">{place.description}</p>
+          {place.description && <p className="area-card__description">{place.description}</p>}
           <p className="placeholder__status">
             <Hammer size={14} aria-hidden />
             {COMING_SOON}

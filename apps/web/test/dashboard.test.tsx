@@ -6,7 +6,13 @@ import { MidiProvider } from '@/midi/MidiProvider'
 import { BottomNav } from '@/components/BottomNav'
 import { TopBar } from '@/components/TopBar'
 import { Dashboard } from '@/features/areas/Dashboard'
-import { CATEGORIES, findCategory, placeOf, type CategoryId } from '@/features/areas/areas'
+import {
+  CATEGORIES,
+  findCategory,
+  placeOf,
+  type CategoryId,
+  type Section,
+} from '@/features/areas/areas'
 import { useLearningStore } from '@/state/learning-store'
 import { pageActions, usePageStore, usePageSync } from '@/state/page-store'
 import { usePanelStore } from '@/state/panel-store'
@@ -74,7 +80,7 @@ const category = (id: CategoryId) => findCategory(id)!
 
 beforeEach(() => {
   globalThis.location.hash = ''
-  usePageStore.setState({ page: 'dashboard', category: null, section: null })
+  usePageStore.setState({ page: 'dashboard', category: null, path: [] })
   // Scales is what was last open, as it is when the app is first started.
   useLearningStore.getState().setTopic('scales')
 })
@@ -156,7 +162,6 @@ describe('a category’s page', () => {
   })
 
   it.each([
-    ['piano-foundations', ['Getting Started']],
     ['scales-intervals-and-keys', ['Scales', 'Intervals']],
     ['piano-technique', ['Fingering Exercises']],
     ['practice-and-repertoire', ['Daily Practice', 'Songs']],
@@ -189,16 +194,6 @@ describe('a category’s page', () => {
     if (topic !== 'songs') expect(useLearningStore.getState().exercise).not.toBeNull()
   })
 
-  it('opens Getting Started on the fundamentals, over the page it was opened from', async () => {
-    await open('piano-foundations')
-    fireEvent.click(card('Getting Started'))
-    expect(usePanelStore.getState().panel).toBe('fundamentals')
-    expect(usePageStore.getState()).toMatchObject({
-      page: 'category',
-      category: 'piano-foundations',
-    })
-  })
-
   it.each([
     ['scales-intervals-and-keys', 'Intervals', 'intervals'],
     ['chords-and-harmony', 'Progressions', 'progressions'],
@@ -211,7 +206,7 @@ describe('a category’s page', () => {
       expect(usePageStore.getState()).toMatchObject({
         page: 'section',
         category: id,
-        section: sectionId,
+        path: [sectionId],
       })
 
       const { label } = category(id)
@@ -243,6 +238,192 @@ describe('a category’s page', () => {
     expect(page.getByText('Coming soon')).toBeDefined()
     fireEvent.click(page.getByRole('button', { name: 'Back to Dashboard' }))
     await waitFor(() => expect(usePageStore.getState().page).toBe('dashboard'))
+  })
+})
+
+/**
+ * Piano Foundations, as the user outlined it (2026-10-12): four sections, two
+ * of them in topics, and the lessons under those. The outline is the user's,
+ * word for word and in their order, and the table has to be that outline — not
+ * one like it.
+ */
+const FOUNDATIONS = {
+  'Keyboard Layout': {
+    'White and black keys': [
+      'Two-black-key groups',
+      'Three-black-key groups',
+      'Recognizing keyboard patterns',
+    ],
+    'Musical alphabet': ['Notes A through G', 'Repeating note names', 'Finding C and F'],
+    'Keyboard navigation': [
+      'Finding Middle C',
+      'Locating notes across the keyboard',
+      'Moving left and right',
+      'Recognizing octaves',
+    ],
+  },
+  'Understanding Pitch': [
+    'High and low notes',
+    'Ascending and descending notes',
+    'Repeated notes',
+    'Octave relationships',
+    'Pitch direction',
+    'Recognizing pitch changes',
+  ],
+  'Fingers & Hand Positions': {
+    'Finger numbering': ['Right hand (1–5)', 'Left hand (1–5)'],
+    'Starting positions': [
+      'Middle C position',
+      'C position',
+      'G position',
+      'Five-finger positions',
+    ],
+    'Hand movement': [
+      'Moving between positions',
+      'Extended hand positions',
+      'Moving between octaves',
+    ],
+  },
+  'Playing Your First Notes': [
+    'Playing individual notes',
+    'Playing consecutive notes',
+    'Playing repeated notes',
+    'Playing ascending and descending sequences',
+    'Playing with the right hand',
+    'Playing with the left hand',
+    'Playing with both hands',
+    'Playing simple melodies',
+  ],
+}
+
+type Outline = readonly string[] | { readonly [label: string]: Outline }
+/** The names under a place, as far down as they go: a list at the bottom, a table above it. */
+const outlineOf = (sections: readonly Section[]): Outline =>
+  sections.every((section) => !section.sections?.length)
+    ? sections.map((section) => section.label)
+    : Object.fromEntries(
+        sections.map((section) => [section.label, outlineOf(section.sections ?? [])]),
+      )
+
+describe('Piano Foundations', () => {
+  const foundations = () => category('piano-foundations')
+  const open = async (hash: string) => {
+    render(<Pages />)
+    act(() => {
+      globalThis.location.hash = hash
+    })
+    await at(hash)
+    await waitFor(() => expect(usePageStore.getState().page).not.toBe('dashboard'))
+  }
+
+  it('is the outline it was given, in its order and its words', () => {
+    expect(outlineOf(foundations().sections)).toEqual(FOUNDATIONS)
+    // In the order written, which a table compared key by key would not say.
+    expect(foundations().sections.map((section) => section.label)).toEqual(Object.keys(FOUNDATIONS))
+  })
+
+  it('has its four sections as cards, numbered, each with a line about it', async () => {
+    await open('#/piano-foundations')
+    expect(cards()).toEqual(Object.keys(FOUNDATIONS))
+    expect(numbers()).toEqual(['01', '02', '03', '04'])
+    for (const name of Object.keys(FOUNDATIONS)) {
+      expect(card(name).querySelector('.area-card__description')!.textContent).not.toBe('')
+      expect(card(name).getAttribute('title')).toBe(`Open ${name}`)
+    }
+  })
+
+  it('opens a section onto its topics, and a topic onto its lessons', async () => {
+    await open('#/piano-foundations')
+    fireEvent.click(card('Keyboard Layout'))
+    await at('#/piano-foundations/keyboard-layout')
+    expect(usePageStore.getState()).toMatchObject({
+      page: 'section',
+      category: 'piano-foundations',
+      path: ['keyboard-layout'],
+    })
+    expect(cards()).toEqual(Object.keys(FOUNDATIONS['Keyboard Layout']))
+    expect(trail()).toEqual(['Dashboard', 'Piano Foundations', 'Keyboard Layout'])
+    expect(screen.getByRole('main').getAttribute('aria-label')).toBe('Keyboard Layout')
+
+    fireEvent.click(card('White and black keys'))
+    await at('#/piano-foundations/keyboard-layout/white-and-black-keys')
+    expect(cards()).toEqual(FOUNDATIONS['Keyboard Layout']['White and black keys'])
+    expect(numbers()).toEqual(['01', '02', '03'])
+    expect(trail()).toEqual([
+      'Dashboard',
+      'Piano Foundations',
+      'Keyboard Layout',
+      'White and black keys',
+    ])
+  })
+
+  it('opens a section with no topics straight onto its lessons', async () => {
+    await open('#/piano-foundations/understanding-pitch')
+    expect(cards()).toEqual(FOUNDATIONS['Understanding Pitch'])
+    expect(numbers()).toEqual(['01', '02', '03', '04', '05', '06'])
+  })
+
+  it('draws a lesson as a card with its name and no line about it, still to come', async () => {
+    await open('#/piano-foundations/keyboard-layout/white-and-black-keys')
+    const lesson = card('Two-black-key groups')
+    expect(lesson.querySelector('.area-card__description')).toBeNull()
+    expect(lesson.getAttribute('title')).toBe('Two-black-key groups — coming soon')
+  })
+
+  it('gives a lesson a page that says it is to come, and the way back to its topic', async () => {
+    await open('#/piano-foundations/keyboard-layout/white-and-black-keys')
+    fireEvent.click(card('Two-black-key groups'))
+    const address = '#/piano-foundations/keyboard-layout/white-and-black-keys/two-black-key-groups'
+    await at(address)
+    expect(usePageStore.getState().path).toEqual([
+      'keyboard-layout',
+      'white-and-black-keys',
+      'two-black-key-groups',
+    ])
+
+    const page = within(screen.getByRole('main'))
+    expect(screen.getByRole('main').getAttribute('aria-label')).toBe('Two-black-key groups')
+    expect(page.getByText('Coming soon')).toBeDefined()
+    expect(trail()).toEqual([
+      'Dashboard',
+      'Piano Foundations',
+      'Keyboard Layout',
+      'White and black keys',
+      'Two-black-key groups',
+    ])
+
+    fireEvent.click(page.getByRole('button', { name: 'Back to White and black keys' }))
+    await at('#/piano-foundations/keyboard-layout/white-and-black-keys')
+    expect(cards()).toEqual(FOUNDATIONS['Keyboard Layout']['White and black keys'])
+  })
+
+  it('makes every step of the way down a way back to it', async () => {
+    await open('#/piano-foundations/fingers-and-hand-positions/starting-positions/g-position')
+    const bar = within(screen.getByRole('navigation', { name: 'You are here' }))
+
+    fireEvent.click(bar.getByRole('button', { name: 'Starting positions' }))
+    await at('#/piano-foundations/fingers-and-hand-positions/starting-positions')
+    fireEvent.click(bar.getByRole('button', { name: 'Fingers & Hand Positions' }))
+    await at('#/piano-foundations/fingers-and-hand-positions')
+    expect(cards()).toEqual(Object.keys(FOUNDATIONS['Fingers & Hand Positions']))
+    fireEvent.click(bar.getByRole('button', { name: 'Piano Foundations' }))
+    await at('#/piano-foundations')
+    fireEvent.click(bar.getByRole('button', { name: 'Dashboard' }))
+    await waitFor(() => expect(usePageStore.getState().page).toBe('dashboard'))
+  })
+
+  it('says how far up each step back is, for the bar to fold the furthest first', async () => {
+    await open('#/piano-foundations/keyboard-layout/musical-alphabet/finding-c-and-f')
+    const steps = [...document.querySelectorAll<HTMLElement>('.top-bar__crumb')].map((step) => [
+      step.textContent,
+      step.dataset.up,
+    ])
+    expect(steps).toEqual([
+      ['Dashboard', '4'],
+      ['Piano Foundations', '3'],
+      ['Keyboard Layout', '2'],
+      ['Musical alphabet', '1'],
+    ])
   })
 })
 

@@ -1516,10 +1516,16 @@
   color: var(--c-bar-fg);
 }
 .top-bar__crumb {
-  flex: none;
+  /* A step back gives way before the page's own name loses a pixel: cut
+     short, it is still a way back. */
+  flex: 0 9999 auto;
+  min-width: 2.5rem;
   min-height: 32px;
+  overflow: hidden;
   font-size: 1.125rem;
   font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--c-bar-fg-muted);
   transition: color var(--duration-fast) var(--ease-standard);
 }
@@ -1540,11 +1546,25 @@
     min-height: 44px;
   }
 }
-/* Too narrow for the whole way down: the page's own name, and the step above
-   it as the way back. */
-@media (max-width: 39.999rem) {
-  .top-bar__crumb:not(:nth-last-of-type(1)),
-  .top-bar__crumb:not(:nth-last-of-type(1)) + .top-bar__crumb-mark {
+/* Too narrow for the whole way down — which is five steps to a lesson — the
+   steps furthest up go first: three back, then two, then the page's own name
+   and the step above it as the way back. The widths are where the longest way
+   down there is stops fitting, measured. */
+@media (max-width: 89.999rem) {
+  .top-bar__crumb:not([data-up='1'], [data-up='2'], [data-up='3']),
+  .top-bar__crumb:not([data-up='1'], [data-up='2'], [data-up='3']) + .top-bar__crumb-mark {
+    display: none;
+  }
+}
+@media (max-width: 75.999rem) {
+  .top-bar__crumb:not([data-up='1'], [data-up='2']),
+  .top-bar__crumb:not([data-up='1'], [data-up='2']) + .top-bar__crumb-mark {
+    display: none;
+  }
+}
+@media (max-width: 63.999rem) {
+  .top-bar__crumb:not([data-up='1']),
+  .top-bar__crumb:not([data-up='1']) + .top-bar__crumb-mark {
     display: none;
   }
 }
@@ -2454,9 +2474,9 @@
     box-shadow 200ms var(--ease-standard);
 }
 /* The card that opens a place. Its number and its icon across the top; its
-   name the full width under them; then the line about it, with the arrow in
-   the corner beside it. Whatever height a taller neighbor gives it goes to the
-   last row, so the arrow stays in the corner. */
+   name the full width under them; then the line about it, where it has one,
+   with the arrow in the corner beside it. Whatever height a taller neighbor
+   gives it goes to the last row, so the arrow stays in the corner. */
 button.area-card {
   display: grid;
   grid-template:
@@ -2531,6 +2551,9 @@ button.area-card .area-card__description {
   place-items: center;
   width: 44px;
   height: 44px;
+  /* As far under the name as the line about it is. On a lesson's card there
+     is no line, and the arrow would otherwise sit against the name. */
+  margin-top: 12px;
   border: 1.5px solid var(--accent);
   border-radius: var(--radius-pill);
   color: var(--c-dash-ink);

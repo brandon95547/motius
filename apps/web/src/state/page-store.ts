@@ -3,7 +3,7 @@ import { create } from 'zustand'
 import { findProgressionType, type ProgressionType } from '@motius/shared'
 import {
   findCategory,
-  findSection,
+  pagesUnder,
   type Category,
   type CategoryId,
   type Section,
@@ -23,11 +23,11 @@ import { useSongStore } from './song-store'
  *
  * Between the dashboard and the areas there are two kinds of page. A category
  * — `#/chords-and-harmony` — lists its sections, or, where it is not built
- * yet, says so: `#/rhythm-and-timing`, `#/progress`. A section that is not
- * built yet has a page that says so, under its category:
- * `#/chords-and-harmony/progressions`. A section that is built has no page of
- * its own; it opens the area it is for, at the address that area has always
- * had.
+ * yet, says so: `#/rhythm-and-timing`, `#/progress`. A section is a page under
+ * its category, and the address is the way down to it, however far that is:
+ * `#/piano-foundations/keyboard-layout/white-and-black-keys`. It lists its own
+ * sections, or says it is still to come. A section that opens an area has no
+ * page of its own; it opens the area, at the address that area has always had.
  *
  * An area with types of its own carries the type as a second step —
  * `#/progressions/cadences` — for the same reason: a reload should land on the
@@ -41,10 +41,10 @@ export type Page = 'dashboard' | 'category' | 'section' | 'area'
 
 interface PageState {
   page: Page
-  /** The category whose page is up, or whose section's is. */
+  /** The category whose page is up, or that the section whose page is up is under. */
   category: CategoryId | null
-  /** The section whose page is up: one that is not built yet. */
-  section: string | null
+  /** The way down from the category to the section whose page is up. Empty on any other page. */
+  path: readonly string[]
 }
 
 /** An area: somewhere to play. */
@@ -55,36 +55,34 @@ interface AreaPlace {
   readonly progression: ProgressionType | null
 }
 
-/** A page of the dashboard's: a category, or a section that is still to come. */
+/** A page of the dashboard's: a category, or a section somewhere under one. */
 interface IndexPlace {
   readonly kind: 'category' | 'section'
   readonly category: CategoryId
-  readonly section: string | null
+  readonly path: readonly string[]
 }
 
 type Place = AreaPlace | IndexPlace
 
 /** The place a hash names, if it names one. */
 function placeIn(hash: string): Place | null {
-  const [name, second] = hash.replace(/^#\/?/, '').split('/')
+  const [name, ...rest] = hash.replace(/^#\/?/, '').split('/')
   // An area first: Songs is an area and a place in the bar, and its address is the area's.
   const area = AVAILABLE_TOPICS.find((topic) => topic === name)
   if (area) {
     return {
       kind: 'area',
       area,
-      progression: area === 'progressions' ? findProgressionType(second) : null,
+      progression: area === 'progressions' ? findProgressionType(rest[0]) : null,
     }
   }
   const category = findCategory(name)
   // A place that is itself an area has no page: its address is its area's.
   if (!category || category.opens) return null
-  const section = findSection(category, second)
-  // A section that is built is not a page: its address is its area's. Named
-  // here, it is the category it belongs to.
-  return section && !section.opens
-    ? { kind: 'section', category: category.id, section: section.id }
-    : { kind: 'category', category: category.id, section: null }
+  // As far down as the address names a page. A section that opens an area is
+  // not one — its address is its area's — so named here it is the page above it.
+  const path = pagesUnder(category, rest).map((section) => section.id)
+  return { kind: path.length > 0 ? 'section' : 'category', category: category.id, path }
 }
 
 /** The song chooser belongs to Songs, and leaving the area puts it away. */
@@ -112,10 +110,10 @@ if (initialPlace?.kind === 'area') enter(initialPlace)
 /** What the store says for a place: which page, and whose. */
 const stateFor = (place: Place | null): PageState =>
   !place
-    ? { page: 'dashboard', category: null, section: null }
+    ? { page: 'dashboard', category: null, path: [] }
     : place.kind === 'area'
-      ? { page: 'area', category: null, section: null }
-      : { page: place.kind, category: place.category, section: place.section }
+      ? { page: 'area', category: null, path: [] }
+      : { page: place.kind, category: place.category, path: place.path }
 
 export const usePageStore = create<PageState>(() => stateFor(initialPlace))
 
@@ -149,7 +147,11 @@ const openArea = (topic: LearningTopic) =>
 /** One of Progressions' types — which is also how the area's own menu changes it. */
 const openProgression = (type: ProgressionType) => go(`#/progressions/${type}`)
 
-/** Goes to what a card is for: its area or its panel, or the page that says it is to come. */
+/** The address of a page under the dashboard: a category, and the way down from it. */
+const addressOf = (category: Category, path: readonly Section[] = []) =>
+  `#/${[category, ...path].map((place) => place.id).join('/')}`
+
+/** Goes to what a card is for: its area or its panel, or the page it has at its address. */
 function open(place: Category | Section, address: string) {
   const { opens } = place
   if (!opens) go(address)
@@ -161,10 +163,13 @@ function open(place: Category | Section, address: string) {
 export const pageActions = {
   openDashboard: () => go('#/'),
   /** A category: its page — of sections, or saying it is to come — or, Songs, the area it is. */
-  openCategory: (category: Category) => open(category, `#/${category.id}`),
-  /** A section: what it is for, or the page that says it is still to come. */
-  openSection: (category: Category, section: Section) =>
-    open(section, `#/${category.id}/${section.id}`),
+  openCategory: (category: Category) => open(category, addressOf(category)),
+  /**
+   * A section, by the way down to it from its category: what it is for, or
+   * its page — of its own sections, or saying it is still to come.
+   */
+  openSection: (category: Category, path: readonly Section[]) =>
+    open(path[path.length - 1]!, addressOf(category, path)),
   openArea,
   openProgression,
 }
