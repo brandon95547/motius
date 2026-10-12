@@ -2512,34 +2512,6 @@ button.area-card:focus-visible {
 button.area-card:hover .area-card__go {
   background-color: color-mix(in srgb, var(--accent) 18%, transparent);
 }
-/* What a card holds, where it holds several things: their names, in the quiet
-   ink, so the four categories say what is behind them before they are opened. */
-.area-card__inside {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 14px;
-  margin-top: 14px;
-  font-size: 0.8125rem;
-  line-height: 1.5;
-  color: var(--c-dash-quiet);
-}
-/* Each with a point of the card's accent before it: a separator that still
-   reads as one when the list wraps, where a dot between names is left hanging
-   at the end of a line. */
-.area-card__inside > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  white-space: nowrap;
-}
-.area-card__inside > span::before {
-  content: '';
-  flex: none;
-  width: 4px;
-  height: 4px;
-  border-radius: var(--radius-pill);
-  background-color: var(--accent);
-}
 /* Not built yet: the same card, so the shape of the app is visible, with a
    grey ring where the accent ring would be. It still opens — onto the page
    that says what is coming. */

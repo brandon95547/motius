@@ -78,8 +78,6 @@ function Categories() {
               <PlaceCard
                 place={category}
                 current={where(category)}
-                // What is inside, where there is more than one thing.
-                inside={category.sections.map((entry) => entry.label)}
                 onOpen={() => pageActions.openCategory(category)}
               />
             </li>
@@ -118,19 +116,17 @@ function CategoryPage({ category }: { category: Category }) {
 function PlaceCard({
   place,
   current,
-  inside = [],
   onOpen,
 }: {
   place: Category | Section
   /** What was left open there, to go back to. */
   current?: string
-  /** The names of what it holds, for a card that holds several things. */
-  inside?: readonly string[]
   onOpen: () => void
 }) {
   const Icon = place.icon
-  // A category is built if anything in it is; a section, if it opens something.
-  const built = Boolean(place.opens) || inside.length > 0
+  // A section is built if it opens something; a category, if it is a place
+  // itself or has a page of sections to open.
+  const built = Boolean(place.opens) || ('sections' in place && place.sections.length > 0)
 
   return (
     <button
@@ -147,13 +143,6 @@ function PlaceCard({
       <span className="area-card__name">{place.label}</span>
       <span className="area-card__rule" aria-hidden />
       <span className="area-card__description">{place.description}</span>
-      {inside.length > 0 && (
-        <span className="area-card__inside">
-          {inside.map((name) => (
-            <span key={name}>{name}</span>
-          ))}
-        </span>
-      )}
       <span className="area-card__foot">
         {built ? (
           // Where you left off, in small capitals; or, with nothing to go

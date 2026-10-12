@@ -58,35 +58,16 @@ afterEach(() => {
 })
 
 describe('the dashboard', () => {
-  it('has four categories, and says what is in each', () => {
+  it('has four categories, each a name and a line about it', () => {
     render(<Pages />)
     expect(cards()).toEqual(['Songs', 'Lessons', 'Explore', 'Practice'])
-    const inside = (name: string) =>
-      [...card(name).querySelectorAll('.area-card__inside > span')].map(
-        (entry) => entry.textContent,
-      )
-    expect(inside('Songs')).toEqual([])
-    expect(inside('Lessons')).toEqual([
-      'Getting Started',
-      'Reading Sheet Music',
-      'Piano Technique',
-      'Music Theory',
-      'Musical Expression',
-    ])
-    expect(inside('Explore')).toEqual([
-      'Scales',
-      'Chords',
-      'Arpeggios',
-      'Progressions',
-      'Cadences',
-      'Intervals',
-    ])
-    expect(inside('Practice')).toEqual([
-      'Daily Practice',
-      'Fingering Exercises',
-      'Sight-Reading',
-      'Rhythm',
-    ])
+    // What is in a category is on its page, not listed on its card.
+    for (const { label, description } of CATEGORIES) {
+      expect(card(label).querySelector('.area-card__description')!.textContent).toBe(description)
+      expect(card(label).querySelectorAll('ul, li, .area-card__inside')).toHaveLength(0)
+      expect(card(label).querySelector('.area-card__status')!.textContent).not.toBe('Coming soon')
+    }
+    expect(screen.queryByText('Sight-Reading')).toBeNull()
   })
 
   it('is named in the bar, and has no heading or other words of its own', () => {
