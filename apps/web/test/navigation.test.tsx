@@ -182,9 +182,9 @@ describe('the pages between the dashboard and the areas', () => {
 
   it('opens a place that is not built by its address, as the page that says so', async () => {
     renderHook(() => usePageSync())
-    globalThis.location.hash = '#/rhythm-and-timing'
+    globalThis.location.hash = '#/musical-expression'
     await waitFor(() => expect(usePageStore.getState().page).toBe('category'))
-    expect(usePageStore.getState()).toMatchObject({ category: 'rhythm-and-timing', path: [] })
+    expect(usePageStore.getState()).toMatchObject({ category: 'musical-expression', path: [] })
 
     // And the places the bar along the bottom leads to.
     for (const place of ['lessons', 'practice', 'progress', 'search']) {

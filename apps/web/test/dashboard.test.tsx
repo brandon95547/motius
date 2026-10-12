@@ -69,9 +69,12 @@ const cards = () =>
   [...document.querySelectorAll<HTMLElement>('.area-card__name')].map((name) => name.textContent)
 const numbers = () =>
   [...document.querySelectorAll<HTMLElement>('.area-card__number')].map((n) => n.textContent)
-// A card, and not the place of the same name in the bar along the bottom.
+// A card, and not the place of the same name in the bar along the bottom. By
+// its name as written: `Cut time (2/2)` is not a pattern.
 const card = (name: string) =>
-  within(screen.getByRole('main')).getByRole('button', { name: new RegExp(`^(Open )?${name}`) })
+  within(screen.getByRole('main')).getByRole('button', {
+    name: new RegExp(`^(Open )?${name.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}`),
+  })
 const trail = () =>
   [...document.querySelectorAll('.top-bar__trail > :not(svg)')].map((step) => step.textContent)
 const at = async (hash: string) =>
@@ -126,7 +129,9 @@ describe('the dashboard', () => {
 
   it('draws a category still to come like the others, and says so where the pointer rests', () => {
     render(<Pages />)
-    expect(card('Rhythm & Timing').getAttribute('title')).toBe('Rhythm & Timing — coming soon')
+    expect(card('Musical Expression').getAttribute('title')).toBe(
+      'Musical Expression — coming soon',
+    )
     expect(card('Chords & Harmony').getAttribute('title')).toBe('Open Chords & Harmony')
     // Nothing on the card itself sets one apart: no status, no other ring.
     expect(document.querySelectorAll('.area-card__status, [data-coming]')).toHaveLength(0)
@@ -222,8 +227,6 @@ describe('a category’s page', () => {
   )
 
   it.each([
-    ['music-notation-and-reading', 'Music Notation & Reading'],
-    ['rhythm-and-timing', 'Rhythm & Timing'],
     ['musical-expression', 'Musical Expression'],
     ['musical-structure-and-styles', 'Musical Structure & Styles'],
   ] as const)('%s, with nothing in it yet, is a page that says so', async (id, label) => {
@@ -293,6 +296,128 @@ const FOUNDATIONS = {
     'Playing with the left hand',
     'Playing with both hands',
     'Playing simple melodies',
+  ],
+}
+
+/** Music Notation & Reading, as outlined the same day. A name with `[]` under it is a lesson among topics. */
+const NOTATION = {
+  'Musical Staff': {
+    'Staff lines and spaces': [],
+    'Treble clef': ['Line notes', 'Space notes'],
+    'Bass clef': ['Line notes', 'Space notes'],
+    'Grand staff': ['Treble and bass staff relationships', 'Middle C on the grand staff'],
+    'Ledger lines': ['Notes above the staff', 'Notes below the staff'],
+  },
+  'Notes & Notation': [
+    'Note heads',
+    'Stems',
+    'Flags',
+    'Beams',
+    'Note placement',
+    'Notes written simultaneously',
+    'Stem direction',
+  ],
+  'Musical Symbols': {
+    Accidentals: ['Sharps', 'Flats', 'Naturals', 'Enharmonic notes'],
+    'Key signatures': [],
+    'Bar lines': ['Single bar lines', 'Double bar lines', 'Final bar lines'],
+    'Repetition symbols': [
+      'Repeat signs',
+      'First and second endings',
+      'Da Capo',
+      'Dal Segno',
+      'Fine',
+      'Coda',
+    ],
+    'Additional symbols': ['Ties', 'Slurs', 'Fermatas', 'Octave signs (8va and 8vb)'],
+  },
+  'Sight-Reading': [
+    'Recognizing notes',
+    'Reading treble clef',
+    'Reading bass clef',
+    'Reading both staves',
+    'Reading intervals',
+    'Recognizing repeated notes',
+    'Recognizing melodic patterns',
+    'Reading ahead',
+    'Reading unfamiliar music',
+    'Reading chords on the staff',
+  ],
+  'Music Writing': [
+    'Writing notes on the staff',
+    'Writing accidentals',
+    'Writing key signatures',
+    'Writing simple melodies',
+    'Writing two-part music',
+    'Converting letter notes into notation',
+    'Transcribing melodies',
+  ],
+}
+
+/** Rhythm & Timing, likewise. */
+const RHYTHM = {
+  'Beat & Counting': [
+    'Understanding pulse',
+    'Strong and weak beats',
+    'Counting beats',
+    'Counting aloud',
+    'Subdividing beats',
+    'Keeping a steady pulse',
+  ],
+  'Tempo & Metronome': [
+    'Understanding tempo',
+    'Beats per minute (BPM)',
+    'Using a metronome',
+    'Slow and fast tempos',
+    'Maintaining consistent timing',
+    'Changing tempo',
+  ],
+  'Time Signatures': {
+    'Measures and bar lines': [],
+    'Simple meter': ['2/4', '3/4', '4/4'],
+    'Compound meter': ['6/8'],
+    'Common time': [],
+    'Cut time (2/2)': [],
+    'Changing time signatures': [],
+    'Beat groupings': [],
+  },
+  'Note Values': {
+    'Whole notes': [],
+    'Half notes': [],
+    'Quarter notes': [],
+    'Eighth notes': [],
+    'Sixteenth notes': [],
+    'Dotted notes': ['Dotted half notes', 'Dotted quarter notes', 'Dotted eighth notes'],
+    Triplets: [],
+    'Note-duration relationships': [],
+  },
+  Rests: [
+    'Whole rests',
+    'Half rests',
+    'Quarter rests',
+    'Eighth rests',
+    'Sixteenth rests',
+    'Dotted rests',
+    'Counting silence',
+  ],
+  'Rhythm Patterns': [
+    'Repeated rhythms',
+    'Pickup measures',
+    'Syncopation',
+    'Swing rhythms',
+    'Shuffle rhythms',
+    'Dotted rhythms',
+    'Triplet patterns',
+    'Rhythmic accompaniment',
+    'Independent rhythms between hands',
+  ],
+  'Rhythm Exercises': [
+    'Clapping rhythms',
+    'Tapping beats',
+    'Counting note values',
+    'Recognizing rhythm patterns',
+    'Metronome challenges',
+    'Playing rhythms on the keyboard',
   ],
 }
 
@@ -424,6 +549,120 @@ describe('Piano Foundations', () => {
       ['Keyboard Layout', '2'],
       ['Musical alphabet', '1'],
     ])
+  })
+})
+
+describe('the categories outlined after it', () => {
+  const open = async (hash: string) => {
+    render(<Pages />)
+    act(() => {
+      globalThis.location.hash = hash
+    })
+    await at(hash)
+    await waitFor(() => expect(usePageStore.getState().page).not.toBe('dashboard'))
+  }
+  /** Every name in order, a level at a time: what a table compared key by key does not check. */
+  const inOrder = (sections: readonly Section[]): unknown[] =>
+    sections.map((section) =>
+      section.sections?.length ? [section.label, inOrder(section.sections)] : section.label,
+    )
+  const written = (outline: Outline): unknown[] =>
+    Array.isArray(outline)
+      ? [...outline]
+      : Object.entries(outline).map(([label, under]) =>
+          Array.isArray(under) && under.length === 0 ? label : [label, written(under)],
+        )
+
+  it.each([
+    ['music-notation-and-reading', NOTATION],
+    ['rhythm-and-timing', RHYTHM],
+  ] as const)('%s is the outline it was given, in its order and its words', (id, outline) => {
+    expect(outlineOf(category(id).sections)).toEqual(outline)
+    expect(inOrder(category(id).sections)).toEqual(written(outline))
+  })
+
+  it.each([
+    ['piano-foundations', 33],
+    ['music-notation-and-reading', 51],
+    ['rhythm-and-timing', 53],
+  ] as const)('%s has every one of its %i lessons still to come', (id, count) => {
+    const leaves = (sections: readonly Section[]): Section[] =>
+      sections.flatMap((section) =>
+        section.sections?.length ? leaves(section.sections) : [section],
+      )
+    const lessons = leaves(category(id).sections)
+    expect(lessons).toHaveLength(count)
+    // A page with its name on it, and nothing to open or to say yet.
+    for (const lesson of lessons) {
+      expect(lesson.opens).toBeUndefined()
+      expect(lesson.description).toBeUndefined()
+    }
+  })
+
+  it('has Music Notation & Reading’s five sections as cards, and Rhythm & Timing’s seven', async () => {
+    await open('#/music-notation-and-reading')
+    expect(cards()).toEqual(Object.keys(NOTATION))
+    expect(numbers()).toEqual(['01', '02', '03', '04', '05'])
+    cleanup()
+
+    await open('#/rhythm-and-timing')
+    expect(cards()).toEqual(Object.keys(RHYTHM))
+    expect(numbers()).toEqual(['01', '02', '03', '04', '05', '06', '07'])
+  })
+
+  it('has lessons and topics side by side where the outline does', async () => {
+    await open('#/rhythm-and-timing/time-signatures')
+    expect(cards()).toEqual(Object.keys(RHYTHM['Time Signatures']))
+    // A topic says what is in it and opens; a lesson has only its name, and is to come.
+    expect(card('Simple meter').querySelector('.area-card__description')!.textContent).toBe(
+      '2/4, 3/4 and 4/4.',
+    )
+    expect(card('Simple meter').getAttribute('title')).toBe('Open Simple meter')
+    expect(card('Cut time (2/2)').querySelector('.area-card__description')).toBeNull()
+    expect(card('Cut time (2/2)').getAttribute('title')).toBe('Cut time (2/2) — coming soon')
+
+    fireEvent.click(card('Simple meter'))
+    await at('#/rhythm-and-timing/time-signatures/simple-meter')
+    expect(cards()).toEqual(['2/4', '3/4', '4/4'])
+  })
+
+  it('gives a lesson named in figures an address, and a page that says it is to come', async () => {
+    await open('#/rhythm-and-timing/time-signatures/simple-meter')
+    fireEvent.click(card('3/4'))
+    await at('#/rhythm-and-timing/time-signatures/simple-meter/3-4')
+    expect(trail()).toEqual([
+      'Dashboard',
+      'Rhythm & Timing',
+      'Time Signatures',
+      'Simple meter',
+      '3/4',
+    ])
+    expect(within(screen.getByRole('main')).getByText('Coming soon')).toBeDefined()
+  })
+
+  it('keeps apart two lessons of the same name under different topics', async () => {
+    await open('#/music-notation-and-reading/musical-staff/bass-clef/line-notes')
+    expect(trail().slice(-2)).toEqual(['Bass clef', 'Line notes'])
+    fireEvent.click(
+      within(screen.getByRole('main')).getByRole('button', { name: 'Back to Bass clef' }),
+    )
+    await at('#/music-notation-and-reading/musical-staff/bass-clef')
+    expect(cards()).toEqual(['Line notes', 'Space notes'])
+  })
+
+  it('has a topic wear its section’s icon and color unless it was given its own', () => {
+    const staff = category('music-notation-and-reading').sections[0]!
+    for (const under of staff.sections!) {
+      expect(under.icon).toBe(staff.icon)
+      expect(under.accent).toBe(staff.accent)
+    }
+    const symbols = category('music-notation-and-reading').sections[2]!
+    const [accidentals, keySignatures] = symbols.sections!
+    expect(accidentals!.icon).not.toBe(symbols.icon)
+    expect(accidentals!.accent).toBe(symbols.accent)
+    expect(keySignatures!.icon).toBe(symbols.icon)
+    // And a lesson wears its topic's.
+    expect(accidentals!.sections![0]!.icon).toBe(accidentals!.icon)
   })
 })
 

@@ -23,7 +23,7 @@ import { useSongStore } from './song-store'
  *
  * Between the dashboard and the areas there are two kinds of page. A category
  * — `#/chords-and-harmony` — lists its sections, or, where it is not built
- * yet, says so: `#/rhythm-and-timing`, `#/progress`. A section is a page under
+ * yet, says so: `#/musical-expression`, `#/progress`. A section is a page under
  * its category, and the address is the way down to it, however far that is:
  * `#/piano-foundations/keyboard-layout/white-and-black-keys`. It lists its own
  * sections, or says it is still to come. A section that opens an area has no
