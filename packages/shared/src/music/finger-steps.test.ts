@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { fingerSteps } from './finger-steps.js'
+import { fingerSteps, type StepHints } from './finger-steps.js'
 import { chordCost, holdable, reach } from './hand-model.js'
 
-const grip = (steps: number[][], hand: 'right' | 'left' = 'right') =>
-  fingerSteps(steps, hand).map((step) => (step ? step.fingers.join('') : null))
+const grip = (steps: number[][], hand: 'right' | 'left' = 'right', hints: StepHints = {}) =>
+  fingerSteps(steps, hand, hints).map((step) => (step ? step.fingers.join('') : null))
 
 describe('holding a chord', () => {
   it('checks every pair of fingers, not just the neighbours', () => {
@@ -82,12 +82,55 @@ describe('a part that is not all chords or all melody', () => {
     expect(grip(mixed).every((f) => f !== null)).toBe(true)
   })
 
-  it('leaves a blank where no hand reaches, and carries on after it', () => {
+  it('fingers a step no hand closes on as one that arrives in pieces, and carries on through it', () => {
+    // It used to be left blank. It is still played — leapt, or spread — and a
+    // player still wants to know what with.
     const withGap = [[60], [62], [36, 84], [72], [74]]
-    const result = grip(withGap)
-    expect(result[2]).toBeNull()
-    expect(result[0]).not.toBeNull()
-    expect(result[4]).not.toBeNull()
+    const result = fingerSteps(withGap, 'right')
+    expect(result.every((step) => step !== null)).toBe(true)
+    expect(result[2]).toEqual({ fingers: [1, 5], rolled: true })
+    expect(result[1]!.rolled).toBe(false)
+  })
+
+  it('moves the hand where the notes leave no fingering that stays in position', () => {
+    // Thumb, little finger, and then nothing: the little finger cannot be the
+    // lower note of a rising octave. Forbidding the move left the whole
+    // stretch unfingered, which is how one bar of broken octaves blanked the
+    // nine hundred notes it sat among.
+    const octaves = grip([[48], [60], [72], [84], [72], [60], [48]])
+    expect(octaves.every((finger) => finger !== null)).toBe(true)
+    // The thumb at the bottom of each octave and an outer finger at the top.
+    expect(octaves.filter((_, index) => index % 2 === 0)).toEqual(['1', '1', '1', '1'])
+    expect(octaves.filter((_, index) => index % 2 === 1).every((f) => f === '4' || f === '5')).toBe(
+      true,
+    )
+    // The left hand takes its octave 5 1 and then jumps for the tune.
+    expect(grip([[36], [48], [60], [62], [64], [65], [67]], 'left').join('')).toBe('5154321')
+  })
+
+  it('lets go of a bass note to take the chord over it as a chord', () => {
+    // A waltz bass. The octave from the low C is in reach of 5 and 1, and
+    // nobody plays it so and then crosses over the thumb for the rest.
+    const waltz = [[36], [55], [60], [64], [41], [57], [60], [65]]
+    expect(grip(waltz, 'left').join('')).toBe('55215321')
+  })
+
+  it('lands a leap on the finger that takes the hand least far', () => {
+    // Up two octaves to one note and back: the little finger, not the thumb.
+    expect(grip([[60], [62], [64], [84], [64], [62], [60]]).join('')).toBe('1235321')
+  })
+
+  it('does not move the hand where it could have stayed', () => {
+    // Between neighbouring notes a move costs more than any fingering in
+    // position, so an ordinary line is fingered exactly as it was before the
+    // move was allowed.
+    expect(grip([[60], [62], [64], [65], [67], [69], [71], [72]]).join('')).toBe('12312345')
+    expect(grip([[60], [62], [64], [65], [67], [65], [64], [62], [60]]).join('')).toBe('123454321')
+  })
+
+  it('keeps a repeated note on its finger', () => {
+    const fingers = grip([[60], [60], [60], [62], [64]])
+    expect(new Set(fingers.slice(0, 3)).size).toBe(1)
   })
 
   it('never puts one finger on two notes of the same step', () => {
@@ -119,17 +162,68 @@ describe('chords wider than the hand', () => {
     expect(reach([43, 50, 53, 55, 59], [5, 4, 3, 2, 1], 'left')).toBe('rolled')
   })
 
-  it('will not call an unplayable chord a roll', () => {
-    // A roll is one note struck away from a grip. If the grip itself is out of
-    // reach it is two hands, not a roll, and no fingering is the right answer.
+  it('fingers a chord no hand holds in the order the hand lies, and says it is spread', () => {
+    // A roll is one note struck away from a grip, and this is not that: the
+    // grip itself is out of reach. `reach` still says so. It is fingered all
+    // the same, with the fingers that leave least beyond reach.
     expect(reach([36, 60, 84], [5, 3, 1], 'left')).toBe('no')
-    expect(grip([[36, 60, 84]], 'left')).toEqual([null])
+    const [wide] = fingerSteps([[36, 60, 84]], 'left')
+    expect(wide!.rolled).toBe(true)
+    // Little finger at the bottom, thumb at the top, and one between.
+    expect([wide!.fingers[0], wide!.fingers[2]]).toEqual([5, 1])
+    expect(new Set(wide!.fingers).size).toBe(3)
+    // Two notes a nineteenth apart: the little finger and the thumb.
+    expect(fingerSteps([[36, 55]], 'left')).toEqual([{ fingers: [5, 1], rolled: true }])
   })
 
-  it('does not roll a bare interval', () => {
-    // Two notes have no grip to roll into, so a span nothing reaches is simply
-    // out of reach — one hand is not playing a nineteenth.
-    expect(grip([[36, 55]], 'left')).toEqual([null])
+  it('lays the hand across more keys than it has fingers', () => {
+    const [cluster] = fingerSteps([[60, 62, 64, 65, 67, 69]], 'right')
+    expect(cluster!.fingers).toEqual([1, 2, 3, 3, 4, 5])
+    expect(cluster!.rolled).toBe(true)
+  })
+})
+
+describe('what the search is told besides the notes', () => {
+  const scale = [[60], [62], [64], [65], [67], [69], [71], [72]]
+
+  it('fingers a step as the score prints it, and everything round it to suit', () => {
+    // An editor's 1 on G: the thumb passes there, not on F.
+    const given = scale.map((_, index) => (index === 4 ? [1 as const] : undefined))
+    const fingers = grip(scale, 'right', { given })
+    expect(fingers[4]).toBe('1')
+    // What leads up to it no longer passes the thumb on F.
+    expect(fingers.slice(0, 4).join('')).toBe('1234')
+  })
+
+  it('keeps a printed finger on one note of a chord and chooses the others', () => {
+    // C E G with the score's 2 on E: 1 2 5 and not the 1 3 5 it would choose.
+    const [chord] = fingerSteps([[60, 64, 67]], 'right', { given: [[undefined, 2, undefined]] })
+    expect(chord!.fingers[1]).toBe(2)
+    expect(new Set(chord!.fingers).size).toBe(3)
+  })
+
+  it('keeps what the score prints even where it would never have offered it', () => {
+    // Two notes under the thumb, which a held chord's fingers cannot be: the
+    // editor's, and it stands.
+    const [chord] = fingerSteps([[60, 62, 67]], 'right', { given: [[1, 1, undefined]] })
+    expect(chord!.fingers.slice(0, 2)).toEqual([1, 1])
+    expect(chord!.fingers[2]).toBeGreaterThan(1)
+  })
+
+  it('leans a single note toward the finger a scale gives it', () => {
+    // Left hand up G major, by a system that starts it on the 3rd finger.
+    const run = [[43], [45], [47], [48], [50], [52], [54], [55]]
+    const wanted = [3, 2, 1, 3, 2, 1, 4, 3] as const
+    expect(grip(run, 'left').join('')).toBe('54321321')
+    expect(grip(run, 'left', { preferred: [...wanted] }).join('')).toBe('32132143')
+  })
+
+  it('does not charge an arpeggio fingering as a hand out of position', () => {
+    // The thumb under the 3rd finger across a fourth: out of reach by the span
+    // table, and what every scale book prints for C major.
+    const arpeggio = [[60], [64], [67], [72], [76], [79], [84]]
+    const wanted = [undefined, 2, 3, 1, 2, 3, undefined] as const
+    expect(grip(arpeggio, 'right', { preferred: [...wanted] }).join('')).toBe('1231235')
   })
 })
 

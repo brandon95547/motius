@@ -71,6 +71,48 @@ describe('the built-in songs', () => {
       expect(result.song.measureCount).toBeGreaterThan(0)
       // The key the chooser files it under is the one its score opens in.
       expect(result.song.key && keyName(result.song.key)).toBe(key)
+
+      // A finger on every note there is to play, and a real one. This is a
+      // piano teacher: a bar with no fingering in it is a bar the learner is
+      // left to guess at, and forty-five of these pieces used to have some.
+      const unfingered = played.filter(
+        (note) => note.finger === undefined || note.finger < 1 || note.finger > 5,
+      )
+      expect(unfingered.length, `${id}: notes without a finger`).toBe(0)
+      // And whatever the score printed is still what the note says.
+      expect(played.filter((note) => note.fingerGiven).every((note) => note.finger)).toBe(true)
+      expect(['score', 'mixed', 'derived']).toContain(result.song.fingeringSource)
     },
   )
+
+  it('keeps every finger a score prints, and fills in round them', () => {
+    // Für Elise, which is here both bare and as an editor fingered it: a
+    // quarter of its notes. Those are kept, flagged as the score's, and the
+    // rest worked out from them.
+    const read = (fingering?: 'traditional' | 'natural') =>
+      SONG_CATALOG.filter((entry) => entry.id.startsWith('beethoven-fur-elise')).map((entry) => {
+        const result = readSongBytes(
+          new Uint8Array(readFileSync(path.join(SCORES, `${entry.id}.mxl`))),
+          entry.id,
+          { fingering },
+        )
+        if (!('song' in result)) throw new Error(`${entry.id} could not be read`)
+        return result.song
+      })
+    const mixed = read().filter((song) => song.fingeringSource === 'mixed')
+    expect(mixed.length).toBeGreaterThan(0)
+    for (const song of mixed) {
+      const given = song.notes.filter((note) => note.fingerGiven)
+      expect(given.length).toBeGreaterThan(0)
+      expect(given.length).toBeLessThan(song.notes.length)
+      expect(song.fingeredBy).toBe('traditional')
+      // The same score under the other system: the editor's fingers are the
+      // same fingers on the same notes.
+      const other = read('natural').find((again) => again.title === song.title)!
+      expect(other.fingeredBy).toBe('natural')
+      expect(other.notes.filter((note) => note.fingerGiven).map((note) => note.finger)).toEqual(
+        given.map((note) => note.finger),
+      )
+    }
+  })
 })

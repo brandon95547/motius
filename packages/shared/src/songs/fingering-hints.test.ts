@@ -96,4 +96,16 @@ describe('which fingerings a staff should print', () => {
     // The hand card and the keys read the note, not this.
     expect(fingered.notes.every((n) => n.finger !== undefined)).toBe(true)
   })
+  it('always prints a finger the score itself printed', () => {
+    // 1 2 3 4 5 up five notes: the 3 merely follows, and would be left out.
+    // An editor who wrote it there meant it to be read.
+    const run = [60, 62, 64, 65, 67].map((pitch, i) =>
+      note(pitch, i * 300, i === 2 ? { finger: 3 } : {}),
+    )
+    const fingered = fingerSong(song(run))
+    const shown = fingeringHints(fingered)
+    expect(fingered.notes.map((n) => n.finger)).toEqual([1, 2, 3, 4, 5])
+    expect(shown.has(fingered.notes[2]!)).toBe(true)
+    expect(shown.has(fingered.notes[3]!)).toBe(false)
+  })
 })

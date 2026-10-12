@@ -1,4 +1,4 @@
-import type { Song, SongGenre, SongMood } from '@sonara/shared'
+import type { FingeringSystemId, Song, SongGenre, SongMood } from '@sonara/shared'
 import { readSongBytes } from './read-song'
 
 /**
@@ -797,11 +797,16 @@ export const catalogSongTitle = (entry: CatalogSong): string =>
  * engraved by many hands, and call themselves "Song", "Ballade I" and nothing
  * at all.
  */
-export async function loadCatalogSong(entry: CatalogSong, signal?: AbortSignal): Promise<Song> {
+export async function loadCatalogSong(
+  entry: CatalogSong,
+  signal?: AbortSignal,
+  /** The fingering system to finger it by. The default one when left out. */
+  fingering?: FingeringSystemId,
+): Promise<Song> {
   const name = `${entry.id}.mxl`
   const response = await fetch(`${import.meta.env.BASE_URL}songs/${name}`, { signal })
   if (!response.ok) throw new Error(`${name} answered ${response.status}`)
-  const result = readSongBytes(new Uint8Array(await response.arrayBuffer()), name)
+  const result = readSongBytes(new Uint8Array(await response.arrayBuffer()), name, { fingering })
   if (!('song' in result)) throw new Error(`${name} could not be read: ${result.failure}`)
   return { ...result.song, id: catalogSongId(entry), title: catalogSongTitle(entry) }
 }

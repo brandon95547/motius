@@ -139,13 +139,20 @@ export interface SongNote {
    */
   readonly role: PartRole
   /**
-   * The finger the score asks for, 1-5, when the score said.
+   * The finger for this note, 1-5: the one the score asks for, or the one
+   * worked out where it asks for none (`fingerGiven` says which).
    *
-   * Only MusicXML carries this; MIDI has nowhere to put it. Absent means
-   * nobody has fingered the piece, which is a different thing from finger 1
+   * Only MusicXML carries a finger; MIDI has nowhere to put it. Absent means
+   * nobody has fingered the note, which is a different thing from finger 1
    * and has to read differently on screen.
    */
   readonly finger?: number
+  /**
+   * The finger is the score's own: an editor wrote it, and it is kept whatever
+   * else about the fingering is worked out again. Set when a song is fingered
+   * (see `fingerSong`); a note without it has a finger that was worked out.
+   */
+  readonly fingerGiven?: boolean
   /** The dynamic marking in force — `mf`, `ff` — when the score gives one. */
   readonly dynamic?: string
   /**
@@ -282,8 +289,18 @@ export interface Song {
    * `score` means somebody wrote it in the file. `derived` means Sonara worked
    * it out, which is a weaker claim and has to be shown as one — a suggested
    * finger drawn as though the score asked for it is worse than no finger.
+   * `mixed` is the usual case for a published score: it marks the fingers that
+   * are in doubt, and the rest were worked out from those. Each note says
+   * which it is, in `fingerGiven`.
    */
-  readonly fingeringSource?: 'score' | 'derived'
+  readonly fingeringSource?: 'score' | 'derived' | 'mixed'
+  /**
+   * The fingering system the worked-out fingers follow: its scales' and its
+   * arpeggios'. Absent on a song nothing has fingered, and on one fingered
+   * before there was a choice — which is how such a song is known to be due
+   * for fingering again.
+   */
+  readonly fingeredBy?: string
   /** Sustain pedal, where the score marks it. */
   readonly pedal: readonly PedalSpan[]
   /** Chord symbols, from the file or from the notes. */

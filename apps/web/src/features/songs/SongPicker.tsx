@@ -16,6 +16,7 @@ import { cn } from '@/lib/cn'
 import { Button, IconButton } from '@/ui/Button'
 import { controlShell, FilterChip, Select } from '@/ui/Controls'
 import { Dialog } from '@/ui/Dialog'
+import { useLearningStore } from '@/state/learning-store'
 import { useSongStore } from '@/state/song-store'
 import { SONG_CATALOG, catalogSongId, loadCatalogSong, type CatalogSong } from './catalog'
 import { readSong, type ImportFailure, type ImportResult } from './read-song'
@@ -208,7 +209,11 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
     setFailed(null)
     setLoading(entry.id)
     try {
-      const song = await loadCatalogSong(entry, controller.signal)
+      const song = await loadCatalogSong(
+        entry,
+        controller.signal,
+        useLearningStore.getState().fingeringSystem,
+      )
       if (controller.signal.aborted) return
       openBuiltIn(song)
       onClose()
@@ -229,7 +234,9 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
     setImportError(null)
     let imported = 0
     for (const file of files) {
-      const result = await readSong(file)
+      const result = await readSong(file, {
+        fingering: useLearningStore.getState().fingeringSystem,
+      })
       if ('song' in result) {
         add(result.song)
         imported++

@@ -290,6 +290,33 @@ export function reach(
 }
 
 /**
+ * How far out of reach a grip is: the semitones by which its pairs of fingers
+ * lie beyond what each pair can span, added up. Nothing, for a grip the hand
+ * can hold.
+ *
+ * For the chords no hand closes on — a bass note and a melody two octaves
+ * above it, written on one staff. They are still played, spread or leapt, and
+ * still fingered, and of the ways to finger one this says which asks least.
+ */
+export function overreach(
+  pitches: readonly number[],
+  assignment: readonly Finger[],
+  hand: Hand,
+): number {
+  let beyond = 0
+  for (let i = 0; i < pitches.length; i++) {
+    for (let j = i + 1; j < pitches.length; j++) {
+      const f = assignment[i]!
+      const g = assignment[j]!
+      if (f === g) continue
+      const span = asRightHand(pitches[j]! - pitches[i]!, hand)
+      beyond += Math.max(0, span - maxPrac(f, g), minPrac(f, g) - span)
+    }
+  }
+  return beyond
+}
+
+/**
  * How hard a chord is to hold.
  *
  * The span rules only — stretch, small and large — applied to every pair of

@@ -2,6 +2,7 @@ import * as React from 'react'
 import { Loader2, Search } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useDismissable } from '@/lib/hooks'
+import { useLearningStore } from '@/state/learning-store'
 import { useSongStore } from '@/state/song-store'
 import { loadCatalogSong } from './catalog'
 import { findSongs, type SongMatch } from './song-search'
@@ -79,7 +80,11 @@ export function SongSearch({ className }: { className?: string }) {
     setFailed(null)
     setLoading(match.id)
     try {
-      const song = await loadCatalogSong(match.entry, controller.signal)
+      const song = await loadCatalogSong(
+        match.entry,
+        controller.signal,
+        useLearningStore.getState().fingeringSystem,
+      )
       if (controller.signal.aborted) return
       openBuiltIn(song)
       done()

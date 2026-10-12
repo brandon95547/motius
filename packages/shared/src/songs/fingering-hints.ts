@@ -94,6 +94,9 @@ export function fingeringHints(song: Song): Set<SongNote> {
       }
 
       if (show) for (const note of notes) if (note.finger !== undefined) shown.add(note)
+      // What an editor printed is printed. It was the editor's judgement that
+      // the finger needed saying there, and that is not second-guessed.
+      for (const note of notes) if (note.fingerGiven) shown.add(note)
       previous = { notes, endMs, shape, anchor }
     }
   }

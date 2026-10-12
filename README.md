@@ -160,32 +160,68 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
 ### Fingering on import
 
 MIDI has nowhere to record which finger plays a note — the format has no field
-for it — and plenty of scores are published unfingered. Sonara works it out.
+for it — and a published score marks only the fingers that are in doubt: where
+the hand is put down, where it moves, where the obvious choice is the wrong one.
+The rest is left to a player who knows how a hand lies and how a scale is
+fingered. A learner does not yet, so Sonara works the rest out, and **every
+note of every song has a finger**: all eighty-two of the songs that come with
+it, and whatever is imported after them.
 
-- A **fingered score is never touched.** Whoever edited it knew more than this
-  does.
-- Otherwise each hand's part is cut into runs of single notes and each run is
+It goes on three things.
+
+- **What the score prints.** An editor's finger is the one thing about a
+  passage that is known and not inferred. It is kept exactly, and the notes
+  round it are fingered to arrive at it and to leave it — which is what the
+  mark was for. A score with a few fingers in it used to be left with only
+  those; now they are where the rest starts from. Inside a scale run, a printed
+  finger is read as the editor saying where the thumb goes, and the run's two
+  groups are placed to agree with it.
+- **How a hand lies.** Each hand's part is cut into stretches and each is
   fingered by searching every possibility against a published model of what a
   hand finds difficult (Parncutt et al., _Music Perception_ 14(4), 1997 — twelve
   weighted rules the authors tested against fingerings pianists wrote on Czerny
-  studies).
-- **Chords are fingered too**, from the shapes the method books print — keyed by
-  the intervals between the notes, so no key or root has to be worked out first.
-  That table is needed because the hand model cannot reach it: `1 3 5` and
-  `1 2 4` cost a C major triad exactly the same, so the spans leave the choice
-  open and only a book closes it.
-- **A chord too wide to hold is rolled, not refused.** A bass note a tenth under
-  a grip is ordinary piano writing and a printed edition fingers it without
-  comment. A chord whose _inner_ notes are out of reach is two hands, and gets
-  nothing.
-- **You can always tell which you are looking at.** Worked-out fingering is
-  labeled _Suggested_; fingering an editor wrote is labeled _Fingered score_.
+  studies). Chords are fingered from the shapes the method books print, keyed
+  by the intervals between the notes: the hand model cannot choose between
+  `1 3 5` and `1 2 4` for a C major triad, and a book can.
+- **How scales and arpeggios are fingered**, by whichever fingering system is
+  chosen under Settings ▸ Fingering. A run up or down a scale is fingered as
+  that scale is, a run through a chord as its arpeggio is, and a broken chord —
+  an Alberti bass — as the chord is held. So the left hand running down G major
+  in a piece takes the fingers it was taught for G major, and different ones
+  under the other system. Changing the setting fingers the open song again;
+  what the score printed does not change. Five notes in a row are left as a
+  hand position, whatever scale they are from: a scale's fingering is where
+  the thumb passes, and it only has to from the sixth.
+
+Two things it used to refuse and no longer does.
+
+- **The hand moves.** Two notes that some pair of fingers could reach, taken
+  with a pair that cannot, were forbidden outright — right for two notes and
+  wrong for a passage. Three notes an octave apart, going up, are thumb, little
+  finger, and then nothing; with no way through, the whole stretch came back
+  unfingered, and one bar of broken octaves blanked the nine hundred notes
+  round it. That was nearly all of the fingering that was missing. A move is
+  now priced: more than anything in position between neighbouring notes, and
+  little across an octave, where a hand lets go of a bass note to take the
+  chord over it. A leap is charged by how far the hand travels, which is why a
+  bass note lands on the 5th finger.
+- **A chord no hand can hold is fingered anyway**, in the order the hand lies,
+  and marked as one that arrives in pieces. A bass note with a melody two
+  octaves over it on the same staff is still played, and a player still wants
+  to know what with. About one note in fifty of the built-in songs is in a
+  chord like that.
+
+**You can always tell which you are looking at.** A note says whether its
+finger is the score's, and a song is labeled _Fingered score_ where an editor
+fingered all of it, _Suggested_ where Sonara did, and _Score and suggested_ for
+the usual case between. The staff prints the fingers a reader could not have
+worked out — a new position, a leap, a change of shape — and always the ones
+the score itself printed; Settings ▸ Staff ▸ Fingering prints all of them, or
+none.
 
 Imported through the real path, a MIDI C major scale up and back down comes out
 `1 2 3 1 2 3 4 5 · 4 3 2 1 3 2 1` — the fingering a method book prints, from a
-file that could not have contained it. On a real four-part arrangement, 735 of
-its 737 keyboard notes come out fingered; the two that do not are a nineteenth
-in one hand, which is not a chord.
+file that could not have contained it.
 
 The full reference for all of this — the twelve rules, the span tables, the
 published scale fingerings and how they were verified — is

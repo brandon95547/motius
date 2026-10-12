@@ -1,5 +1,5 @@
 import { Info } from 'lucide-react'
-import { keyName } from '@sonara/shared'
+import { fingeringSystem, keyName } from '@sonara/shared'
 import { Card } from '@/ui/Surface'
 import { Chip } from '@/ui/Display'
 import { HandDiagram } from '@/features/learning/HandDiagram'
@@ -80,7 +80,11 @@ export function SongHandCard() {
             out. One vocabulary for both, so the distinction carries. */}
         {song.hasFingering && (
           <Chip tone={song.fingeringSource === 'score' ? 'neutral' : 'warning'}>
-            {song.fingeringSource === 'score' ? 'Fingered score' : 'Suggested'}
+            {song.fingeringSource === 'score'
+              ? 'Fingered score'
+              : song.fingeringSource === 'mixed'
+                ? 'Score and suggested'
+                : 'Suggested'}
           </Chip>
         )}
       </div>
@@ -143,8 +147,18 @@ export function SongHandCard() {
       {song.fingeringSource === 'derived' && (
         <p className="flex items-start gap-2 text-caption text-[var(--ds-fg-muted)]">
           <Info size={13} className="mt-0.5 shrink-0" aria-hidden />
-          Worked out, not read — from the shapes the method books print and a published model of
-          what a hand can reach. A fingered score always overrides it.
+          Worked out, not read — from the way {fingeringSystem(song.fingeredBy).shortName} fingering
+          takes a scale and a chord, and a published model of what a hand can reach. A fingered
+          score always overrides it.
+        </p>
+      )}
+      {song.fingeringSource === 'mixed' && (
+        <p className="flex items-start gap-2 text-caption text-[var(--ds-fg-muted)]">
+          <Info size={13} className="mt-0.5 shrink-0" aria-hidden />
+          The score marks the fingers that are in doubt, and those are kept as printed. The notes
+          between them are worked out — from the score&rsquo;s marks, the way{' '}
+          {fingeringSystem(song.fingeredBy).shortName} fingering takes a scale and a chord, and what
+          a hand can reach.
         </p>
       )}
 

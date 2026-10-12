@@ -105,6 +105,11 @@ interface SongState {
   open: (id: string) => void
   /** Opens a built-in song, keeping it for the rest of the session. */
   openBuiltIn: (song: Song) => void
+  /**
+   * Puts a song back in place of the one with its id — the same song, fingered
+   * again. Nothing about where the player is in it changes.
+   */
+  replace: (song: Song) => void
   remove: (id: string) => void
   setPlaying: (playing: boolean) => void
   seek: (positionMs: number) => void
@@ -312,6 +317,16 @@ export const useSongStore = create<SongState>((set) => ({
       tempoScale: OPENING_SCALE,
       ...IDLE,
     })),
+
+  replace: (song) =>
+    set((state) => {
+      if (state.library.some((held) => held.id === song.id)) {
+        const library = state.library.map((held) => (held.id === song.id ? song : held))
+        save(library)
+        return { library }
+      }
+      return { builtIn: state.builtIn.map((held) => (held.id === song.id ? song : held)) }
+    }),
 
   remove: (id) =>
     set((state) => {

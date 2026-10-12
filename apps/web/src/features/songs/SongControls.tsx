@@ -1,5 +1,6 @@
 import { ListMusic, Pause, Play, SkipBack, SkipForward } from 'lucide-react'
-import { skipBars } from '@sonara/shared'
+import * as React from 'react'
+import { fingerSong, skipBars, type Song } from '@sonara/shared'
 import { cn } from '@/lib/cn'
 import { Button } from '@/ui/Button'
 import { Field, SegmentedControl, Switch } from '@/ui/Controls'
@@ -8,6 +9,7 @@ import { BarTabs } from '@/ui/BarTabs'
 import { TempoField } from '@/ui/TempoField'
 import { MetronomeIcon } from '@/ui/MetronomeIcon'
 import { MODE_ICONS, OptionGroup, StartStopButton } from '@/features/learning/ScaleControls'
+import { useLearningStore } from '@/state/learning-store'
 import { useCurrentSong, useSongStore, type SongMode, type SongPart } from '@/state/song-store'
 import { panelActions } from '@/state/panel-store'
 import { useSongPlayback } from './use-song-playback'
@@ -26,9 +28,30 @@ import { useSongLearning } from './use-song-learning'
  */
 export function SongEngine() {
   const song = useCurrentSong()
+  useSongFingering(song)
   useSongPlayback(song)
   useSongLearning(song)
   return null
+}
+
+/**
+ * Keeps the open song fingered by the fingering system that is chosen.
+ *
+ * A song is fingered when it is read, by the system chosen then. So one opened
+ * after the setting is changed, or changed under, has the other system's
+ * scales in it; and one kept in the library from before every note was
+ * fingered has gaps. Either is fingered again here, once, when it is the song
+ * that is open — not the whole library at once, which would be seconds of
+ * work for songs nobody is looking at.
+ */
+function useSongFingering(song: Song | null) {
+  const system = useLearningStore((state) => state.fingeringSystem)
+  React.useEffect(() => {
+    if (!song || song.fingeredBy === system) return
+    const fingered = fingerSong(song, { system })
+    // A song with nothing to finger comes back as it went in.
+    if (fingered !== song) useSongStore.getState().replace(fingered)
+  }, [song, system])
 }
 
 const PART_OPTIONS: readonly { value: SongPart; label: string }[] = [
@@ -108,7 +131,9 @@ export function SongOptions() {
                 description={
                   song.fingeringSource === 'score'
                     ? 'See-through hands over the keyboard, playing the fingering the score gives.'
-                    : 'See-through hands over the keyboard, playing the fingering Sonara suggests.'
+                    : song.fingeringSource === 'mixed'
+                      ? 'See-through hands over the keyboard, playing the fingering the score gives and, between its marks, the one Sonara suggests.'
+                      : 'See-through hands over the keyboard, playing the fingering Sonara suggests.'
                 }
                 checked={hands}
                 onChange={setHands}

@@ -1,4 +1,4 @@
-import { fingerSong, type Song } from '@sonara/shared'
+import { fingerSong, type FingeringSystemId, type Song } from '@sonara/shared'
 import { isZip, readMscz, readMxl } from './archive'
 import { importMidi } from './import-midi'
 import { importMuseScore } from './import-musescore'
@@ -21,18 +21,28 @@ export type ImportFailure = 'pdf' | 'empty' | 'unknown'
 
 export type ImportResult = { song: Song } | { failure: ImportFailure; name: string }
 
-export async function readSong(file: File): Promise<ImportResult> {
-  return readSongBytes(new Uint8Array(await file.arrayBuffer()), file.name)
+export interface ReadOptions {
+  /** The fingering system the song's scales and arpeggios are fingered by. */
+  readonly fingering?: FingeringSystemId
+}
+
+export async function readSong(file: File, options: ReadOptions = {}): Promise<ImportResult> {
+  return readSongBytes(new Uint8Array(await file.arrayBuffer()), file.name, options)
 }
 
 /** The same, for a score that did not come through a file input: the built-in songs. */
-export function readSongBytes(bytes: Uint8Array, name: string): ImportResult {
+export function readSongBytes(
+  bytes: Uint8Array,
+  name: string,
+  options: ReadOptions = {},
+): ImportResult {
   const fallbackTitle = name.replace(/\.[^.]+$/, '')
   const starts = (...magic: number[]) => magic.every((byte, index) => bytes[index] === byte)
   const fail = (failure: ImportFailure): ImportResult => ({ failure, name })
-  // Fingering the file did not carry. A score that has it keeps it; anything
-  // else gets what can be worked out, marked as worked out.
-  const done = (song: Song | null) => (song ? { song: fingerSong(song) } : fail('empty'))
+  // A finger for every note. What the file carries it keeps; the rest is
+  // worked out, and marked as worked out.
+  const fingered = (song: Song) => fingerSong(song, { system: options.fingering })
+  const done = (song: Song | null) => (song ? { song: fingered(song) } : fail('empty'))
 
   // "MThd" — the only thing a Standard MIDI File can begin with.
   if (starts(0x4d, 0x54, 0x68, 0x64)) return done(importMidi(bytes, fallbackTitle))
@@ -54,7 +64,7 @@ export function readSongBytes(bytes: Uint8Array, name: string): ImportResult {
       const song = /\.mscx$/i.test(entry.name)
         ? importMuseScore(entry.text, fallbackTitle)
         : importMusicXml(entry.text, fallbackTitle)
-      if (song) return { song: fingerSong(song) }
+      if (song) return { song: fingered(song) }
     }
     return fail('unknown')
   }
