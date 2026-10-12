@@ -28,7 +28,13 @@ import { useRecordingStore } from '@/state/recording-store'
 import { useCurrentSong } from '@/state/song-store'
 import { BACKDROPS, useBackdropStore } from '@/state/backdrop-store'
 import { COLOR_THEMES, useThemeStore } from '@/state/theme-store'
-import { CATEGORIES, findCategory, findSection, placeOf } from '@/features/areas/areas'
+import {
+  CATEGORIES,
+  DESTINATIONS,
+  findCategory,
+  findSection,
+  placeOf,
+} from '@/features/areas/areas'
 import { OptionsButton } from '@/components/OptionsDrawer'
 import { LastTakeButton, RecordButton } from '@/features/recording/RecordControls'
 import {
@@ -137,8 +143,8 @@ function Brand({ keep, deep = false }: { keep: boolean; deep?: boolean }) {
 
 /**
  * Where you are, on the pages that lead to the areas: the dashboard's name, or
- * the way down to the page that is up — Dashboard, Practice, Sight-Reading —
- * each step but the last a way back to it.
+ * the way down to the page that is up — Dashboard, Chords & Harmony,
+ * Progressions — each step but the last a way back to it.
  *
  * It is the page's heading. Those pages have none of their own: the bar is the
  * one place a page's name is on every page, and a second, larger one under it
@@ -265,13 +271,21 @@ function BackdropMenu({ className }: { className?: string }) {
 
 function Utilities({ area }: { area: string | null }) {
   const recording = useRecordingStore((state) => state.status)
-  // Which of the four categories you are in: the one whose page is up, or the
-  // one the open area is filed under.
+  // Which of the places in the menu you are at: Songs, or the category whose
+  // page is up, or the one the open area is filed under.
   const page = usePageStore((state) => state.page)
   const pageCategory = usePageStore((state) => state.category)
   const topic = useLearningStore((state) => state.topic)
   const progression = useLearningStore((state) => state.progressionType)
-  const here = page === 'area' ? placeOf(topic, progression)?.category.id : pageCategory
+  const here =
+    page !== 'area'
+      ? pageCategory
+      : topic === 'songs'
+        ? 'songs'
+        : placeOf(topic, progression)?.category.id
+  // The one place in the bar along the bottom that is somewhere to play. The
+  // bar is not there in an area, so the menu has it.
+  const songs = DESTINATIONS.find((place) => place.id === 'songs')!
   const live = recording === 'recording' || recording === 'counting'
   const progressLabel = area === 'songs' ? 'Hand position' : 'Progress'
   const ProgressIcon = area === 'songs' ? Hand : Gauge
@@ -323,14 +337,15 @@ function Utilities({ area }: { area: string | null }) {
       checked: page === 'dashboard',
       onSelect: pageActions.openDashboard,
     },
-    // The four categories, as the dashboard has them. What is inside one is
-    // on its page: a menu that listed all sixteen would be the dashboard again.
-    ...CATEGORIES.map((entry, index): MenuAction => ({
+    // Songs, then the nine categories as the dashboard has them. What is
+    // inside one is on its page: a menu that listed every section would be the
+    // dashboard and all its pages again.
+    ...[songs, ...CATEGORIES].map((entry, index): MenuAction => ({
       id: entry.id,
       label: entry.label,
       icon: <entry.icon size={16} />,
       checked: here === entry.id,
-      separated: index === 0,
+      separated: index <= 1,
       onSelect: () => pageActions.openCategory(entry),
     })),
     ...folded,

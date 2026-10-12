@@ -10,31 +10,35 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
 
 ### Finding your way
 
-The dashboard has four categories, and each of the last three a page of its
-sections:
+The dashboard has nine categories, each a numbered card, three to a row, in the
+order they are taught:
 
-- **Songs** — the song library, and the one category that is itself a place.
-- **Lessons** — nine, in the order they are taught: Piano Foundations, Music
-  Notation & Reading, Rhythm & Timing, Scales, Intervals & Keys, Chords &
-  Harmony, Piano Technique, Musical Expression, Musical Structure & Styles,
-  Practice & Repertoire.
-- **Explore** — Scales, Chords, Arpeggios, Progressions, Cadences, Intervals.
-- **Practice** — Daily Practice, Fingering Exercises, Sight-Reading, Rhythm.
+1. **Piano Foundations** — Getting Started (the fundamentals).
+2. **Music Notation & Reading**
+3. **Rhythm & Timing**
+4. **Scales, Intervals & Keys** — Scales, Intervals.
+5. **Chords & Harmony** — Chords, Arpeggios, Progressions, Cadences.
+6. **Piano Technique** — Fingering Exercises.
+7. **Musical Expression**
+8. **Musical Structure & Styles**
+9. **Practice & Repertoire** — Daily Practice, Songs.
 
-Each place is a numbered card, three to a row. Under those pages a bar along
-the bottom leads to the places at the top of the app: Home (the dashboard),
-Lessons, Songs, Practice, Progress and Search. It is not there in an area,
-where the bottom of the screen is the keyboard's.
+A category with something in it opens a page of its sections. Under the
+dashboard and those pages a bar along the bottom leads to the other places at
+the top of the app: Home (the dashboard), Lessons, Songs, Practice, Progress
+and Search. It is not there in an area, where the bottom of the screen is the
+keyboard's and the menu is the way out.
 
-Where you are is said in the bar across the top — `Dashboard › Practice` — and
-each step of it is a way back. A section that is built opens what it is for:
-Scales, Chords and Arpeggios their areas, Cadences the cadences, Daily Practice
-the routines, Fingering Exercises the exercises below, Piano Foundations the
-fundamentals. A place that is not built yet (the other eight lessons,
-Progressions, Intervals, Sight-Reading, Rhythm, and Progress and Search
-themselves) has a page of its own that says so, at the address it will keep —
-`#/practice/sight-reading`, `#/progress` — so what is built there later is
-built in a place that already exists.
+Where you are is said in the bar across the top — `Dashboard › Chords &
+Harmony` — and each step of it is a way back. A section that is built opens
+what it is for: Scales, Chords and Arpeggios their areas, Cadences the
+cadences, Daily Practice the routines, Fingering Exercises the exercises below,
+Songs the song library, Getting Started the fundamentals. A place that is not
+built yet (four of the nine categories, the Intervals and Progressions
+sections, and Lessons, Practice, Progress and Search in the bar) has a page of
+its own that says so, at the address it will keep — `#/rhythm-and-timing`,
+`#/chords-and-harmony/progressions`, `#/progress` — so what is built there
+later is built in a place that already exists.
 
 The whole of it is one table (`features/areas/areas.tsx`), from which the
 dashboard, those pages, the bar along the bottom and the menu are all drawn.

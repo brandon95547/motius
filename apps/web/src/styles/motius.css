@@ -2367,6 +2367,9 @@
   }
 }
 .dashboard__inner {
+  /* A card's width where there are three to a row, and the space between two. */
+  --card-gap: 24px;
+  --card-column: calc((76rem - 2 * var(--card-gap)) / 3);
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -2379,24 +2382,29 @@
      its first row above the top of the scroller and out of reach. */
   margin: auto;
 }
-/* Four places are two by two, each card the width it has three to a row. */
-.dashboard__inner:has(> .area-grid--four) {
-  max-width: 50rem;
+/* Fewer than three places are in the middle, and four are two by two: each
+   card the width it has three to a row, not stretched to fill one. */
+.dashboard__inner:has(> .area-grid--pairs) {
+  max-width: calc(2 * var(--card-column) + var(--card-gap));
+}
+.dashboard__inner:has(> .area-grid--one) {
+  max-width: var(--card-column);
 }
 .area-grid {
   display: grid;
   /* Never more than three across: a fourth would need 84.5rem, and the page is 76. */
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
   /* Wider than the Bible's 12–16px between cards, as the mock has them. */
-  gap: 24px;
+  gap: var(--card-gap);
 }
-/* Four of anything: one column, then two by two. Left to fill by itself the
+/* Two or four of anything: one column, then two. Left to fill by itself the
    grid makes three and one, and the one looks like an afterthought. */
-.area-grid--four {
+.area-grid--one,
+.area-grid--pairs {
   grid-template-columns: 1fr;
 }
 @media (min-width: 44rem) {
-  .area-grid--four {
+  .area-grid--pairs {
     grid-template-columns: repeat(2, 1fr);
   }
 }
@@ -2538,7 +2546,7 @@ button.area-card:hover .area-card__go {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  width: min(100%, 26rem);
+  width: min(100%, var(--card-column));
   margin-inline: auto;
 }
 .placeholder .area-card__name {

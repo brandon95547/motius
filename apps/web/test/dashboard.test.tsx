@@ -6,7 +6,7 @@ import { MidiProvider } from '@/midi/MidiProvider'
 import { BottomNav } from '@/components/BottomNav'
 import { TopBar } from '@/components/TopBar'
 import { Dashboard } from '@/features/areas/Dashboard'
-import { CATEGORIES, placeOf } from '@/features/areas/areas'
+import { CATEGORIES, findCategory, placeOf, type CategoryId } from '@/features/areas/areas'
 import { useLearningStore } from '@/state/learning-store'
 import { pageActions, usePageStore, usePageSync } from '@/state/page-store'
 import { usePanelStore } from '@/state/panel-store'
@@ -14,14 +14,14 @@ import { usePanelStore } from '@/state/panel-store'
 /**
  * The dashboard and the pages under it.
  *
- * Four categories where there were six areas, the sections of three of them a
- * page down, and a page for each place that is not built yet. What is pinned
- * is that every place in the table can be reached and says where it is — a
- * card that opens nothing, or a page with no way back, is a dead end in the
- * one part of the app whose whole job is getting somewhere else.
+ * Nine categories, as the mock has them (new dashboard.png, 2026-10-12), in
+ * place of the four there were; what those held filed under the nine; and a
+ * page for each place that is not built yet. What is pinned is that every
+ * place in the table can be reached and says where it is — a card that opens
+ * nothing, or a page with no way back, is a dead end in the one part of the
+ * app whose whole job is getting somewhere else.
  *
- * And that they are laid out as the mock has them (new dashboard.png,
- * 2026-10-12): each place a numbered card, the nine lessons in their order,
+ * And that they are laid out as the mock has them: each place a numbered card,
  * and the bar along the bottom under all of it.
  */
 
@@ -47,6 +47,18 @@ function Pages() {
   )
 }
 
+const NINE = [
+  'Piano Foundations',
+  'Music Notation & Reading',
+  'Rhythm & Timing',
+  'Scales, Intervals & Keys',
+  'Chords & Harmony',
+  'Piano Technique',
+  'Musical Expression',
+  'Musical Structure & Styles',
+  'Practice & Repertoire',
+]
+
 const cards = () =>
   [...document.querySelectorAll<HTMLElement>('.area-card__name')].map((name) => name.textContent)
 const numbers = () =>
@@ -58,6 +70,7 @@ const trail = () =>
   [...document.querySelectorAll('.top-bar__trail > :not(svg)')].map((step) => step.textContent)
 const at = async (hash: string) =>
   waitFor(() => expect(globalThis.location.hash).toBe(hash), { timeout: 3000 })
+const category = (id: CategoryId) => findCategory(id)!
 
 beforeEach(() => {
   globalThis.location.hash = ''
@@ -72,17 +85,26 @@ afterEach(() => {
 })
 
 describe('the dashboard', () => {
-  it('has four categories, each a number, a name and a line about it', () => {
+  it('has the nine categories of the mock, each a number, a name and a line about it', () => {
     render(<Pages />)
-    expect(cards()).toEqual(['Songs', 'Lessons', 'Explore', 'Practice'])
-    expect(numbers()).toEqual(['01', '02', '03', '04'])
+    expect(cards()).toEqual(NINE)
+    expect(numbers()).toEqual(['01', '02', '03', '04', '05', '06', '07', '08', '09'])
+    // The number is the order, which a reader of the page already has.
+    for (const number of document.querySelectorAll('.area-card__number'))
+      expect(number.getAttribute('aria-hidden')).toBe('true')
     // What is in a category is on its page, not listed on its card.
     for (const { label, description } of CATEGORIES) {
       expect(card(label).querySelector('.area-card__description')!.textContent).toBe(description)
       expect(card(label).querySelectorAll('ul, li, .area-card__inside')).toHaveLength(0)
-      expect(card(label).getAttribute('title')).toBe(`Open ${label}`)
     }
-    expect(screen.queryByText('Sight-Reading')).toBeNull()
+    expect(screen.queryByText('Fingering Exercises')).toBeNull()
+  })
+
+  it('has none of the four categories there were: what they held is under the nine', () => {
+    render(<Pages />)
+    for (const gone of ['Songs', 'Lessons', 'Explore', 'Practice'])
+      expect(cards()).not.toContain(gone)
+    expect(findCategory('explore')).toBeNull()
   })
 
   it('is named in the bar, and has no heading or other words of its own', () => {
@@ -96,129 +118,132 @@ describe('the dashboard', () => {
     expect(screen.getByRole('main').getAttribute('aria-label')).toBe('Dashboard')
   })
 
-  it('opens Songs straight onto the songs, and the others onto their pages', async () => {
+  it('draws a category still to come like the others, and says so where the pointer rests', () => {
     render(<Pages />)
-    fireEvent.click(card('Explore'))
-    await at('#/explore')
-    expect(usePageStore.getState()).toMatchObject({ page: 'category', category: 'explore' })
+    expect(card('Rhythm & Timing').getAttribute('title')).toBe('Rhythm & Timing — coming soon')
+    expect(card('Chords & Harmony').getAttribute('title')).toBe('Open Chords & Harmony')
+    // Nothing on the card itself sets one apart: no status, no other ring.
+    expect(document.querySelectorAll('.area-card__status, [data-coming]')).toHaveLength(0)
+  })
 
-    act(() => pageActions.openDashboard())
-    await waitFor(() => expect(usePageStore.getState().page).toBe('dashboard'))
-    fireEvent.click(card('Songs'))
-    await at('#/songs')
-    expect(usePageStore.getState().page).toBe('area')
-    expect(useLearningStore.getState().topic).toBe('songs')
+  it('opens a category with something in it onto its page', async () => {
+    render(<Pages />)
+    fireEvent.click(card('Chords & Harmony'))
+    await at('#/chords-and-harmony')
+    expect(usePageStore.getState()).toMatchObject({
+      page: 'category',
+      category: 'chords-and-harmony',
+    })
   })
 })
 
 describe('a category’s page', () => {
-  const open = async (id: 'lessons' | 'explore' | 'practice') => {
+  const open = async (id: CategoryId) => {
     render(<Pages />)
-    act(() => pageActions.openCategory(CATEGORIES.find((category) => category.id === id)!))
+    act(() => pageActions.openCategory(category(id)))
     await at(`#/${id}`)
   }
 
-  it('lists its sections, with the way back to the dashboard in the bar', async () => {
-    await open('explore')
-    expect(cards()).toEqual([
-      'Scales',
-      'Chords',
-      'Arpeggios',
-      'Progressions',
-      'Cadences',
-      'Intervals',
-    ])
-    expect(trail()).toEqual(['Dashboard', 'Explore'])
-    expect(screen.getByRole('heading', { name: 'Explore' })).toBeDefined()
+  it('lists its sections, numbered, with the way back to the dashboard in the bar', async () => {
+    await open('chords-and-harmony')
+    expect(cards()).toEqual(['Chords', 'Arpeggios', 'Progressions', 'Cadences'])
+    expect(numbers()).toEqual(['01', '02', '03', '04'])
+    expect(trail()).toEqual(['Dashboard', 'Chords & Harmony'])
+    expect(screen.getByRole('heading', { name: 'Chords & Harmony' })).toBeDefined()
 
     fireEvent.click(screen.getByRole('button', { name: 'Dashboard' }))
     await waitFor(() => expect(usePageStore.getState().page).toBe('dashboard'))
   })
 
-  it('has the nine lessons of the mock, numbered in the order they are taught', async () => {
-    await open('lessons')
-    expect(cards()).toEqual([
-      'Piano Foundations',
-      'Music Notation & Reading',
-      'Rhythm & Timing',
-      'Scales, Intervals & Keys',
-      'Chords & Harmony',
-      'Piano Technique',
-      'Musical Expression',
-      'Musical Structure & Styles',
-      'Practice & Repertoire',
-    ])
-    expect(numbers()).toEqual(['01', '02', '03', '04', '05', '06', '07', '08', '09'])
-    // The number is the order, which a reader of the page already has.
-    for (const number of document.querySelectorAll('.area-card__number'))
-      expect(number.getAttribute('aria-hidden')).toBe('true')
+  it.each([
+    ['piano-foundations', ['Getting Started']],
+    ['scales-intervals-and-keys', ['Scales', 'Intervals']],
+    ['piano-technique', ['Fingering Exercises']],
+    ['practice-and-repertoire', ['Daily Practice', 'Songs']],
+  ] as const)('%s holds what was moved to it', async (id, sections) => {
+    await open(id)
+    expect(cards()).toEqual(sections)
   })
 
-  it('draws a section still to come like the others, and says so where the pointer rests', async () => {
-    await open('explore')
+  it('says which sections are still to come, where the pointer rests', async () => {
+    await open('chords-and-harmony')
     const says = (name: string) => card(name).getAttribute('title')
     expect(says('Progressions')).toBe('Progressions — coming soon')
-    expect(says('Intervals')).toBe('Intervals — coming soon')
     expect(says('Chords')).toBe('Open Chords')
-    // Nothing on the card itself sets one apart: no status, no other ring.
-    expect(document.querySelectorAll('.area-card__status, [data-coming]')).toHaveLength(0)
   })
 
   it.each([
-    ['explore', 'Scales', '#/scales', 'scales'],
-    ['explore', 'Chords', '#/chords', 'chords'],
-    ['explore', 'Arpeggios', '#/arpeggios', 'arpeggios'],
-    ['explore', 'Cadences', '#/progressions/cadences', 'progressions'],
-    ['practice', 'Daily Practice', '#/exercises', 'exercises'],
-    ['practice', 'Fingering Exercises', '#/fingering', 'fingering'],
-  ] as const)('%s ▸ %s opens its area', async (category, section, hash, topic) => {
-    await open(category)
+    ['scales-intervals-and-keys', 'Scales', '#/scales', 'scales'],
+    ['chords-and-harmony', 'Chords', '#/chords', 'chords'],
+    ['chords-and-harmony', 'Arpeggios', '#/arpeggios', 'arpeggios'],
+    ['chords-and-harmony', 'Cadences', '#/progressions/cadences', 'progressions'],
+    ['piano-technique', 'Fingering Exercises', '#/fingering', 'fingering'],
+    ['practice-and-repertoire', 'Daily Practice', '#/exercises', 'exercises'],
+    ['practice-and-repertoire', 'Songs', '#/songs', 'songs'],
+  ] as const)('%s ▸ %s opens its area', async (id, section, hash, topic) => {
+    await open(id)
     fireEvent.click(card(section))
     await at(hash)
     expect(usePageStore.getState().page).toBe('area')
     expect(useLearningStore.getState().topic).toBe(topic)
-    expect(useLearningStore.getState().exercise).not.toBeNull()
+    if (topic !== 'songs') expect(useLearningStore.getState().exercise).not.toBeNull()
   })
 
-  it('opens Piano Foundations on the fundamentals, over the page it was opened from', async () => {
-    await open('lessons')
-    fireEvent.click(card('Piano Foundations'))
+  it('opens Getting Started on the fundamentals, over the page it was opened from', async () => {
+    await open('piano-foundations')
+    fireEvent.click(card('Getting Started'))
     expect(usePanelStore.getState().panel).toBe('fundamentals')
-    expect(usePageStore.getState()).toMatchObject({ page: 'category', category: 'lessons' })
+    expect(usePageStore.getState()).toMatchObject({
+      page: 'category',
+      category: 'piano-foundations',
+    })
   })
 
   it.each([
-    ['lessons', 'Music Notation & Reading', 'music-notation-and-reading'],
-    ['lessons', 'Rhythm & Timing', 'rhythm-and-timing'],
-    ['lessons', 'Scales, Intervals & Keys', 'scales-intervals-and-keys'],
-    ['lessons', 'Chords & Harmony', 'chords-and-harmony'],
-    ['lessons', 'Piano Technique', 'piano-technique'],
-    ['lessons', 'Musical Expression', 'musical-expression'],
-    ['lessons', 'Musical Structure & Styles', 'musical-structure-and-styles'],
-    ['lessons', 'Practice & Repertoire', 'practice-and-repertoire'],
-    ['explore', 'Progressions', 'progressions'],
-    ['explore', 'Intervals', 'intervals'],
-    ['practice', 'Sight-Reading', 'sight-reading'],
-    ['practice', 'Rhythm', 'rhythm'],
+    ['scales-intervals-and-keys', 'Intervals', 'intervals'],
+    ['chords-and-harmony', 'Progressions', 'progressions'],
   ] as const)(
     '%s ▸ %s has a page that says it is to come, and a way back',
-    async (category, section, id) => {
-      await open(category)
+    async (id, section, sectionId) => {
+      await open(id)
       fireEvent.click(card(section))
-      await at(`#/${category}/${id}`)
-      expect(usePageStore.getState()).toMatchObject({ page: 'section', category, section: id })
+      await at(`#/${id}/${sectionId}`)
+      expect(usePageStore.getState()).toMatchObject({
+        page: 'section',
+        category: id,
+        section: sectionId,
+      })
 
-      const label = CATEGORIES.find((entry) => entry.id === category)!.label
+      const { label } = category(id)
       expect(trail()).toEqual(['Dashboard', label, section])
       const page = within(screen.getByRole('main'))
       expect(page.getByText('Coming soon')).toBeDefined()
       expect(screen.getByRole('main').getAttribute('aria-label')).toBe(section)
 
       fireEvent.click(page.getByRole('button', { name: `Back to ${label}` }))
-      await at(`#/${category}`)
+      await at(`#/${id}`)
       expect(usePageStore.getState().page).toBe('category')
     },
   )
+
+  it.each([
+    ['music-notation-and-reading', 'Music Notation & Reading'],
+    ['rhythm-and-timing', 'Rhythm & Timing'],
+    ['musical-expression', 'Musical Expression'],
+    ['musical-structure-and-styles', 'Musical Structure & Styles'],
+  ] as const)('%s, with nothing in it yet, is a page that says so', async (id, label) => {
+    render(<Pages />)
+    fireEvent.click(card(label))
+    await at(`#/${id}`)
+    expect(usePageStore.getState()).toMatchObject({ page: 'category', category: id })
+
+    expect(trail()).toEqual(['Dashboard', label])
+    const page = within(screen.getByRole('main'))
+    expect(screen.getByRole('main').getAttribute('aria-label')).toBe(label)
+    expect(page.getByText('Coming soon')).toBeDefined()
+    fireEvent.click(page.getByRole('button', { name: 'Back to Dashboard' }))
+    await waitFor(() => expect(usePageStore.getState().page).toBe('dashboard'))
+  })
 })
 
 describe('the bar along the bottom', () => {
@@ -239,29 +264,23 @@ describe('the bar along the bottom', () => {
     expect(here()).toEqual(['Home'])
   })
 
-  it('goes to a category’s page, and marks it for as long as you are under it', async () => {
+  it('keeps Home marked on a category’s page, which is a page under the dashboard', async () => {
     render(<Pages />)
-    fireEvent.click(bar().getByRole('button', { name: 'Lessons' }))
-    await at('#/lessons')
-    expect(here()).toEqual(['Lessons'])
+    fireEvent.click(card('Chords & Harmony'))
+    await at('#/chords-and-harmony')
+    expect(here()).toEqual(['Home'])
 
-    fireEvent.click(card('Rhythm & Timing'))
-    await at('#/lessons/rhythm-and-timing')
-    expect(here()).toEqual(['Lessons'])
+    fireEvent.click(card('Progressions'))
+    await at('#/chords-and-harmony/progressions')
+    expect(here()).toEqual(['Home'])
 
     fireEvent.click(bar().getByRole('button', { name: 'Home' }))
     await waitFor(() => expect(usePageStore.getState().page).toBe('dashboard'))
-    expect(here()).toEqual(['Home'])
-  })
-
-  it('keeps Home marked on Explore, which has no place of its own in it', async () => {
-    render(<Pages />)
-    fireEvent.click(card('Explore'))
-    await at('#/explore')
-    expect(here()).toEqual(['Home'])
   })
 
   it.each([
+    ['Lessons', '#/lessons'],
+    ['Practice', '#/practice'],
     ['Progress', '#/progress'],
     ['Search', '#/search'],
   ] as const)('opens %s on a page that says it is to come', async (name, hash) => {
@@ -288,36 +307,53 @@ describe('the bar along the bottom', () => {
 })
 
 describe('where an area is filed', () => {
-  it('finds every practice area a home under one of the four', () => {
-    expect(placeOf('songs', 'cadences')?.category.id).toBe('songs')
-    for (const topic of ['scales', 'chords', 'arpeggios', 'progressions'] as const)
-      expect(placeOf(topic, 'cadences')?.category.id).toBe('explore')
-    expect(placeOf('progressions', 'cadences')?.section?.label).toBe('Cadences')
-    expect(placeOf('exercises', 'cadences')).toMatchObject({
-      category: { id: 'practice' },
-      section: { label: 'Daily Practice' },
-    })
-    expect(placeOf('fingering', 'cadences')?.section?.label).toBe('Fingering Exercises')
+  it('finds every practice area a home under one of the nine', () => {
+    const filed = (topic: Parameters<typeof placeOf>[0]) => {
+      const place = placeOf(topic, 'cadences')
+      return [place?.category.label, place?.section.label]
+    }
+    expect(filed('scales')).toEqual(['Scales, Intervals & Keys', 'Scales'])
+    expect(filed('chords')).toEqual(['Chords & Harmony', 'Chords'])
+    expect(filed('arpeggios')).toEqual(['Chords & Harmony', 'Arpeggios'])
+    expect(filed('progressions')).toEqual(['Chords & Harmony', 'Cadences'])
+    expect(filed('fingering')).toEqual(['Piano Technique', 'Fingering Exercises'])
+    expect(filed('exercises')).toEqual(['Practice & Repertoire', 'Daily Practice'])
+    expect(filed('songs')).toEqual(['Practice & Repertoire', 'Songs'])
   })
 
-  it('lists the dashboard and the four categories in the menu, and marks where you are', async () => {
+  it('lists the dashboard, Songs and the nine categories in the menu, and marks where you are', async () => {
     render(<Pages />)
     act(() => pageActions.openArea('fingering'))
     await at('#/fingering')
 
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }))
     const menu = within(screen.getByRole('menu'))
-    const places = ['Dashboard', 'Songs', 'Lessons', 'Explore', 'Practice']
+    const places = ['Dashboard', 'Songs', ...NINE]
     for (const place of places)
       expect(menu.getByRole('menuitemradio', { name: place })).toBeDefined()
     expect(menu.queryByRole('menuitemradio', { name: 'Scales' })).toBeNull()
+    expect(menu.queryByRole('menuitemradio', { name: 'Explore' })).toBeNull()
     const checked = places.filter(
       (place) =>
         menu.getByRole('menuitemradio', { name: place }).getAttribute('aria-checked') === 'true',
     )
-    expect(checked).toEqual(['Practice'])
+    expect(checked).toEqual(['Piano Technique'])
 
-    fireEvent.click(menu.getByRole('menuitemradio', { name: 'Explore' }))
-    await at('#/explore')
+    fireEvent.click(menu.getByRole('menuitemradio', { name: 'Chords & Harmony' }))
+    await at('#/chords-and-harmony')
+  })
+
+  it('marks Songs in the menu while a song is open, and not the category it is filed under', async () => {
+    render(<Pages />)
+    act(() => pageActions.openArea('songs'))
+    await at('#/songs')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }))
+    const menu = within(screen.getByRole('menu'))
+    const checked = menu
+      .getAllByRole('menuitemradio')
+      .filter((item) => item.getAttribute('aria-checked') === 'true')
+      .map((item) => item.textContent)
+    expect(checked).toEqual(['Songs'])
   })
 })

@@ -133,42 +133,57 @@ describe('moving between the dashboard and the areas', () => {
 describe('the pages between the dashboard and the areas', () => {
   it('opens a category by its address, and one of its unbuilt sections under it', async () => {
     renderHook(() => usePageSync())
-    globalThis.location.hash = '#/practice'
+    globalThis.location.hash = '#/chords-and-harmony'
     await waitFor(() => expect(usePageStore.getState().page).toBe('category'))
-    expect(usePageStore.getState().category).toBe('practice')
+    expect(usePageStore.getState().category).toBe('chords-and-harmony')
 
-    globalThis.location.hash = '#/practice/sight-reading'
+    globalThis.location.hash = '#/chords-and-harmony/progressions'
     await waitFor(() => expect(usePageStore.getState().page).toBe('section'))
     expect(usePageStore.getState()).toMatchObject({
-      category: 'practice',
-      section: 'sight-reading',
+      category: 'chords-and-harmony',
+      section: 'progressions',
     })
   })
 
   it('takes a built section’s name under its category as the category: its address is its area’s', async () => {
     renderHook(() => usePageSync())
-    globalThis.location.hash = '#/explore/scales'
+    globalThis.location.hash = '#/chords-and-harmony/chords'
     await waitFor(() => expect(usePageStore.getState().page).toBe('category'))
-    expect(usePageStore.getState()).toMatchObject({ category: 'explore', section: null })
+    expect(usePageStore.getState()).toMatchObject({
+      category: 'chords-and-harmony',
+      section: null,
+    })
 
     // And a name that is no section of it at all.
-    globalThis.location.hash = '#/explore/nonsense'
-    await waitFor(() => expect(globalThis.location.hash).toBe('#/explore/nonsense'))
+    globalThis.location.hash = '#/chords-and-harmony/nonsense'
+    await waitFor(() => expect(globalThis.location.hash).toBe('#/chords-and-harmony/nonsense'))
     expect(usePageStore.getState()).toMatchObject({ page: 'category', section: null })
   })
 
   it('opens a place that is not built by its address, as the page that says so', async () => {
     renderHook(() => usePageSync())
-    globalThis.location.hash = '#/progress'
+    globalThis.location.hash = '#/rhythm-and-timing'
     await waitFor(() => expect(usePageStore.getState().page).toBe('category'))
-    expect(usePageStore.getState()).toMatchObject({ category: 'progress', section: null })
+    expect(usePageStore.getState()).toMatchObject({ category: 'rhythm-and-timing', section: null })
 
-    globalThis.location.hash = '#/search'
-    await waitFor(() => expect(usePageStore.getState().category).toBe('search'))
-    expect(usePageStore.getState().page).toBe('category')
+    // And the places the bar along the bottom leads to.
+    for (const place of ['lessons', 'practice', 'progress', 'search']) {
+      globalThis.location.hash = `#/${place}`
+      await waitFor(() => expect(usePageStore.getState().category).toBe(place))
+      expect(usePageStore.getState().page).toBe('category')
+    }
   })
 
-  it('keeps Songs an area: the category that is one has no page of its own', async () => {
+  it('treats the address of a category there no longer is as the dashboard', async () => {
+    renderHook(() => usePageSync())
+    globalThis.location.hash = '#/chords-and-harmony'
+    await waitFor(() => expect(usePageStore.getState().page).toBe('category'))
+
+    globalThis.location.hash = '#/explore'
+    await waitFor(() => expect(usePageStore.getState().page).toBe('dashboard'))
+  })
+
+  it('keeps Songs an area: the place in the bar that is one has no page of its own', async () => {
     renderHook(() => usePageSync())
     globalThis.location.hash = '#/songs'
     await waitFor(() => expect(usePageStore.getState().page).toBe('area'))
@@ -181,7 +196,7 @@ describe('the pages between the dashboard and the areas', () => {
     await waitFor(() => expect(usePageStore.getState().page).toBe('area'))
     useSongStore.getState().setPlaying(true)
 
-    globalThis.location.hash = '#/lessons'
+    globalThis.location.hash = '#/practice-and-repertoire'
     await waitFor(() => expect(usePageStore.getState().page).toBe('category'))
     expect(useSongStore.getState().playing).toBe(false)
     expect(usePanelStore.getState().panel).toBeNull()

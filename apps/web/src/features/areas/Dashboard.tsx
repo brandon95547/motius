@@ -13,7 +13,7 @@ import {
 } from './areas'
 
 /**
- * The pages that lead to the areas: the dashboard, with its four categories; a
+ * The pages that lead to the areas: the dashboard, with its nine categories; a
  * category's page, with its sections; and the page a place has while there is
  * nothing in it yet.
  *
@@ -54,8 +54,16 @@ export function Dashboard() {
   return <Categories />
 }
 
-/** Four cards are laid out two by two. Any other number fills the grid, three to a row. */
-const gridFor = (count: number) => cn('area-grid', count === 4 && 'area-grid--four')
+/**
+ * One card is in the middle, two are side by side and four are two by two.
+ * Any other number fills the grid, three to a row.
+ */
+const gridFor = (count: number) =>
+  cn(
+    'area-grid',
+    count === 1 && 'area-grid--one',
+    (count === 2 || count === 4) && 'area-grid--pairs',
+  )
 
 function Categories() {
   return (

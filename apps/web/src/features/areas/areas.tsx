@@ -4,9 +4,7 @@ import {
   CalendarCheck,
   ChartNoAxesColumn,
   ChartNoAxesColumnIncreasing,
-  Compass,
-  Drum,
-  Eye,
+  Flag,
   GraduationCap,
   Hand,
   House,
@@ -26,20 +24,25 @@ import type { LearningTopic } from '@/state/learning-store'
 import { MetronomeIcon } from '@/ui/MetronomeIcon'
 
 /**
- * Where everything in the app is: four categories, and the sections in three
- * of them.
+ * Where everything in the app is: nine categories, and what is in each.
+ *
+ * The nine are the mock's (new dashboard.png, 2026-10-12), in its order and
+ * its words, and they took the place of the four there were — Songs, Lessons,
+ * Explore, Practice. What those held is filed under the nine: the scales with
+ * Scales, Intervals & Keys, the chords and what is made of them with Chords &
+ * Harmony, the fingering exercises with Piano Technique, and so on.
  *
  * The dashboard, the pages under it, the bar along the bottom and the menu are
  * all drawn from this one table, so they cannot disagree about what a place is
  * called, what it looks like, where it is or whether it is built yet.
  *
  * A section that is built says what it opens: one of the practice areas, or a
- * panel. One that is not says nothing, and has a page of its own that says so
- * — the place is there, with its name on it, before what goes in it is.
+ * panel. A place that is not says nothing, and has a page of its own that says
+ * so — the place is there, with its name on it, before what goes in it is.
  *
- * Two more places are at the top with the categories and are on no card:
- * Progress and Search, which the bar along the bottom leads to. Neither is
- * built, so each is a page that says so.
+ * Five more places are at the top and on no card: the ones the bar along the
+ * bottom leads to. Songs is the area. Lessons, Practice, Progress and Search
+ * are not built, so each is a page that says so.
  */
 
 /**
@@ -58,7 +61,22 @@ export type Accent =
   | 'teal'
   | 'pink'
 
-export type CategoryId = 'songs' | 'lessons' | 'explore' | 'practice' | 'progress' | 'search'
+export type CategoryId =
+  | 'piano-foundations'
+  | 'music-notation-and-reading'
+  | 'rhythm-and-timing'
+  | 'scales-intervals-and-keys'
+  | 'chords-and-harmony'
+  | 'piano-technique'
+  | 'musical-expression'
+  | 'musical-structure-and-styles'
+  | 'practice-and-repertoire'
+  // On no card: the bar along the bottom leads to these.
+  | 'lessons'
+  | 'songs'
+  | 'practice'
+  | 'progress'
+  | 'search'
 
 /** Drawn like the icon set's own: square, in the current color, at the size asked for. */
 type PlaceIcon = React.ComponentType<{ size?: number }>
@@ -83,106 +101,68 @@ interface Place {
 }
 
 export interface Section extends Place {
-  /** Its name in the address: `#/practice/sight-reading`. */
+  /** Its name in the address: `#/chords-and-harmony/progressions`. */
   readonly id: string
 }
 
 export interface Category extends Place {
   readonly id: CategoryId
-  /** None for a category that is itself the place — Songs — or that is not built. */
+  /** None for a place that is itself an area — Songs — or that is not built. */
   readonly sections: readonly Section[]
 }
 
+/** Songs: an area, a place in the bar along the bottom, and a section of the ninth category. */
+const SONGS = {
+  id: 'songs',
+  label: 'Songs',
+  icon: Music,
+  description: 'Pick a piece or bring your own, and learn it a hand at a time.',
+  accent: 'songs',
+  opens: { kind: 'area', topic: 'songs' },
+} as const
+
+// In the mock's order, which is the number each card carries.
 export const CATEGORIES: readonly Category[] = [
   {
-    id: 'songs',
-    label: 'Songs',
-    icon: Music,
-    description: 'Pick a piece or bring your own, and learn it a hand at a time.',
+    id: 'piano-foundations',
+    label: 'Piano Foundations',
+    icon: KeyboardMusic,
+    description: 'Learn the keyboard, notes, and how to play your first melodies.',
     accent: 'songs',
-    opens: { kind: 'area', topic: 'songs' },
-    sections: [],
-  },
-  {
-    id: 'lessons',
-    label: 'Lessons',
-    icon: BookOpen,
-    description: 'From the first note on: reading music, technique, theory and expression.',
-    accent: 'arpeggios',
-    // In the order they are taught, which is the number each card carries.
     sections: [
       {
-        id: 'piano-foundations',
-        label: 'Piano Foundations',
-        icon: KeyboardMusic,
-        description: 'Learn the keyboard, notes, and how to play your first melodies.',
+        id: 'getting-started',
+        label: 'Getting Started',
+        icon: Flag,
+        description:
+          'The keyboard, the notes and the scales: the ground everything else stands on.',
         accent: 'songs',
         opens: { kind: 'panel', panel: 'fundamentals' },
-      },
-      {
-        id: 'music-notation-and-reading',
-        label: 'Music Notation & Reading',
-        icon: BookOpen,
-        description: 'Master the staff, clefs, note values and sight-reading.',
-        accent: 'arpeggios',
-      },
-      {
-        id: 'rhythm-and-timing',
-        label: 'Rhythm & Timing',
-        icon: MetronomeIcon,
-        description: 'Develop your sense of rhythm, beat and tempo.',
-        accent: 'exercises',
-      },
-      {
-        id: 'scales-intervals-and-keys',
-        label: 'Scales, Intervals & Keys',
-        icon: Music,
-        description: 'Explore intervals, scales, modes and key signatures.',
-        accent: 'rose',
-      },
-      {
-        id: 'chords-and-harmony',
-        label: 'Chords & Harmony',
-        icon: Layers,
-        description: 'Learn chords, inversions, progressions and harmony.',
-        accent: 'scales',
-      },
-      {
-        id: 'piano-technique',
-        label: 'Piano Technique',
-        icon: Hand,
-        description: 'Build your fingering, coordination and pedal skills.',
-        accent: 'progressions',
-      },
-      {
-        id: 'musical-expression',
-        label: 'Musical Expression',
-        icon: AudioLines,
-        description: 'Play with dynamics, articulation and phrasing.',
-        accent: 'arpeggios',
-      },
-      {
-        id: 'musical-structure-and-styles',
-        label: 'Musical Structure & Styles',
-        icon: Music4,
-        description: 'Discover song forms, genres and great composers.',
-        accent: 'teal',
-      },
-      {
-        id: 'practice-and-repertoire',
-        label: 'Practice & Repertoire',
-        icon: GraduationCap,
-        description: 'Exercises, ear training, songs and track your progress.',
-        accent: 'pink',
       },
     ],
   },
   {
-    id: 'explore',
-    label: 'Explore',
-    icon: Compass,
-    description: 'Scales, chords, arpeggios and how they join up, in every key.',
-    accent: 'scales',
+    id: 'music-notation-and-reading',
+    label: 'Music Notation & Reading',
+    icon: BookOpen,
+    description: 'Master the staff, clefs, note values and sight-reading.',
+    accent: 'arpeggios',
+    sections: [],
+  },
+  {
+    id: 'rhythm-and-timing',
+    label: 'Rhythm & Timing',
+    icon: MetronomeIcon,
+    description: 'Develop your sense of rhythm, beat and tempo.',
+    accent: 'exercises',
+    sections: [],
+  },
+  {
+    id: 'scales-intervals-and-keys',
+    label: 'Scales, Intervals & Keys',
+    icon: Music,
+    description: 'Explore intervals, scales, modes and key signatures.',
+    accent: 'rose',
     sections: [
       {
         id: 'scales',
@@ -192,6 +172,22 @@ export const CATEGORIES: readonly Category[] = [
         accent: 'scales',
         opens: { kind: 'area', topic: 'scales' },
       },
+      {
+        id: 'intervals',
+        label: 'Intervals',
+        icon: Ruler,
+        description: 'The distance between two notes, by name, on the keys and by ear.',
+        accent: 'rose',
+      },
+    ],
+  },
+  {
+    id: 'chords-and-harmony',
+    label: 'Chords & Harmony',
+    icon: Layers,
+    description: 'Learn chords, inversions, progressions and harmony.',
+    accent: 'scales',
+    sections: [
       {
         id: 'chords',
         label: 'Chords',
@@ -223,30 +219,15 @@ export const CATEGORIES: readonly Category[] = [
         accent: 'exercises',
         opens: { kind: 'area', topic: 'progressions', progression: 'cadences' },
       },
-      {
-        id: 'intervals',
-        label: 'Intervals',
-        icon: Ruler,
-        description: 'The distance between two notes, by name, on the keys and by ear.',
-        accent: 'scales',
-      },
     ],
   },
   {
-    id: 'practice',
-    label: 'Practice',
-    icon: Target,
-    description: 'What to play today: routines, fingering, sight-reading and rhythm.',
-    accent: 'exercises',
+    id: 'piano-technique',
+    label: 'Piano Technique',
+    icon: Hand,
+    description: 'Build your fingering, coordination and pedal skills.',
+    accent: 'progressions',
     sections: [
-      {
-        id: 'daily-practice',
-        label: 'Daily Practice',
-        icon: CalendarCheck,
-        description: 'Blocked, expanding and accelerating scales, the Grand Form, and more.',
-        accent: 'exercises',
-        opens: { kind: 'area', topic: 'exercises' },
-      },
       {
         id: 'fingering-exercises',
         label: 'Fingering Exercises',
@@ -256,29 +237,68 @@ export const CATEGORIES: readonly Category[] = [
         accent: 'scales',
         opens: { kind: 'area', topic: 'fingering' },
       },
+    ],
+  },
+  {
+    id: 'musical-expression',
+    label: 'Musical Expression',
+    icon: AudioLines,
+    description: 'Play with dynamics, articulation and phrasing.',
+    accent: 'arpeggios',
+    sections: [],
+  },
+  {
+    id: 'musical-structure-and-styles',
+    label: 'Musical Structure & Styles',
+    icon: Music4,
+    description: 'Discover song forms, genres and great composers.',
+    accent: 'teal',
+    sections: [],
+  },
+  {
+    id: 'practice-and-repertoire',
+    label: 'Practice & Repertoire',
+    icon: GraduationCap,
+    description: 'Exercises, ear training, songs and track your progress.',
+    accent: 'pink',
+    sections: [
       {
-        id: 'sight-reading',
-        label: 'Sight-Reading',
-        icon: Eye,
-        description: 'Music you have not seen before, a line at a time.',
-        accent: 'arpeggios',
+        id: 'daily-practice',
+        label: 'Daily Practice',
+        icon: CalendarCheck,
+        description: 'Blocked, expanding and accelerating scales, the Grand Form, and more.',
+        accent: 'exercises',
+        opens: { kind: 'area', topic: 'exercises' },
       },
-      {
-        id: 'rhythm',
-        label: 'Rhythm',
-        icon: Drum,
-        description: 'Counting, subdividing and keeping time.',
-        accent: 'songs',
-      },
+      SONGS,
     ],
   },
 ]
 
 /**
- * At the top with the categories, and not among them: on no card and in no
- * menu, and reached from the bar along the bottom. Neither is built yet.
+ * The bar along the bottom: the dashboard, and then these. None is on a card.
+ * Songs is the area; the other four are not built yet, and what the categories
+ * of the same names used to hold is under the nine.
  */
-export const TO_COME: readonly Category[] = [
+export const HOME = { id: 'home', label: 'Home', icon: House } as const
+export const DESTINATIONS: readonly Category[] = [
+  {
+    id: 'lessons',
+    label: 'Lessons',
+    icon: BookOpen,
+    description: 'From the first note on: reading music, technique, theory and expression.',
+    accent: 'arpeggios',
+    sections: [],
+  },
+  { ...SONGS, sections: [] },
+  {
+    id: 'practice',
+    label: 'Practice',
+    icon: Target,
+    description: 'What to play today: routines, fingering, sight-reading and rhythm.',
+    accent: 'exercises',
+    sections: [],
+  },
   {
     id: 'progress',
     label: 'Progress',
@@ -298,23 +318,14 @@ export const TO_COME: readonly Category[] = [
 ]
 
 export const findCategory = (id: string | null | undefined): Category | null =>
-  [...CATEGORIES, ...TO_COME].find((category) => category.id === id) ?? null
+  [...CATEGORIES, ...DESTINATIONS].find((category) => category.id === id) ?? null
+
+export const findSection = (category: Category, id: string | null | undefined): Section | null =>
+  category.sections.find((section) => section.id === id) ?? null
 
 /** Whether there is anything at a place yet: something it opens, or sections of its own. */
 export const isBuilt = (place: Category | Section): boolean =>
   Boolean(place.opens) || ('sections' in place && place.sections.length > 0)
-
-/**
- * The bar along the bottom: the dashboard, and five of the places at the top.
- * Explore is not one of them, and is reached from the dashboard.
- */
-export const HOME = { id: 'home', label: 'Home', icon: House } as const
-export const DESTINATIONS: readonly Category[] = (
-  ['lessons', 'songs', 'practice', 'progress', 'search'] as const
-).map((id) => findCategory(id)!)
-
-export const findSection = (category: Category, id: string | null | undefined): Section | null =>
-  category.sections.find((section) => section.id === id) ?? null
 
 /** Whether a place opens this area — on this type of progression, where it names one. */
 const leadsTo = (place: Place, topic: LearningTopic, progression: ProgressionType) =>
@@ -329,9 +340,8 @@ const leadsTo = (place: Place, topic: LearningTopic, progression: ProgressionTyp
 export function placeOf(
   topic: LearningTopic,
   progression: ProgressionType,
-): { category: Category; section: Section | null } | null {
+): { category: Category; section: Section } | null {
   for (const category of CATEGORIES) {
-    if (leadsTo(category, topic, progression)) return { category, section: null }
     const section = category.sections.find((entry) => leadsTo(entry, topic, progression))
     if (section) return { category, section }
   }

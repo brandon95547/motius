@@ -3,8 +3,9 @@ import { pageActions, usePageStore } from '@/state/page-store'
 import { DESTINATIONS, HOME } from '@/features/areas/areas'
 
 /**
- * The places at the top of the app, in one row along the bottom: the
- * dashboard, then Lessons, Songs, Practice, Progress and Search.
+ * The places at the top of the app that are not cards on the dashboard, in one
+ * row along the bottom: the dashboard itself, then Lessons, Songs, Practice,
+ * Progress and Search.
  *
  * On the dashboard and the pages under it, and not in an area: there the
  * bottom of the screen is the keyboard's, and the way out is the menu's.
@@ -18,8 +19,8 @@ import { DESTINATIONS, HOME } from '@/features/areas/areas'
 export function BottomNav() {
   const page = usePageStore((state) => state.page)
   const category = usePageStore((state) => state.category)
-  // A page under the dashboard that has no place of its own here — Explore —
-  // is under Home, which is where it was opened from.
+  // The nine categories have no place of their own here: each is a page under
+  // the dashboard, so Home is where you are on any of them.
   const here =
     page !== 'dashboard' && DESTINATIONS.some((place) => place.id === category) ? category : HOME.id
 

@@ -22,11 +22,12 @@ import { useSongStore } from './song-store'
  * know about it.
  *
  * Between the dashboard and the areas there are two kinds of page. A category
- * — `#/explore` — lists its sections, or, where it is not built yet, says so:
- * `#/progress`. A section that is not built yet has a page that says so, under
- * its category: `#/practice/sight-reading`. A section that is built has no
- * page of its own; it opens the area it is for, at the address that area has
- * always had.
+ * — `#/chords-and-harmony` — lists its sections, or, where it is not built
+ * yet, says so: `#/rhythm-and-timing`, `#/progress`. A section that is not
+ * built yet has a page that says so, under its category:
+ * `#/chords-and-harmony/progressions`. A section that is built has no page of
+ * its own; it opens the area it is for, at the address that area has always
+ * had.
  *
  * An area with types of its own carries the type as a second step —
  * `#/progressions/cadences` — for the same reason: a reload should land on the
@@ -66,7 +67,7 @@ type Place = AreaPlace | IndexPlace
 /** The place a hash names, if it names one. */
 function placeIn(hash: string): Place | null {
   const [name, second] = hash.replace(/^#\/?/, '').split('/')
-  // An area first: Songs is an area and a category, and its address is the area's.
+  // An area first: Songs is an area and a place in the bar, and its address is the area's.
   const area = AVAILABLE_TOPICS.find((topic) => topic === name)
   if (area) {
     return {
@@ -76,7 +77,7 @@ function placeIn(hash: string): Place | null {
     }
   }
   const category = findCategory(name)
-  // A category that is itself a place has no page: its address is its area's.
+  // A place that is itself an area has no page: its address is its area's.
   if (!category || category.opens) return null
   const section = findSection(category, second)
   // A section that is built is not a page: its address is its area's. Named
