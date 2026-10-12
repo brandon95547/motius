@@ -1,6 +1,6 @@
 import { act, cleanup, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { DEFAULT_SCALE_SPEC, type ScaleSpec } from '@sonara/shared'
+import { DEFAULT_SCALE_SPEC, type ScaleSpec } from '@motius/shared'
 import { ScaleScore } from '@/features/staff/ScaleScore'
 import { litNotes, type Watched } from '@/features/staff/score-parts'
 import { useKeyboardStore } from '@/state/keyboard-store'

@@ -11,7 +11,7 @@ import {
   type Instrument,
   type SetSongCategoryInput,
   type UpdateDeviceConfigInput,
-} from '@sonara/shared'
+} from '@motius/shared'
 
 /**
  * The API client.
@@ -117,8 +117,8 @@ async function request<T>(
       0,
       timedOut ? 'timeout' : 'network_error',
       timedOut
-        ? 'The Sonara server accepted the connection but did not answer. Is the API still running?'
-        : 'Could not reach the Sonara server.',
+        ? 'The Motius server accepted the connection but did not answer. Is the API still running?'
+        : 'Could not reach the Motius server.',
       error,
     )
   } finally {

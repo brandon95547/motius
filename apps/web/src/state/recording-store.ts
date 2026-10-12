@@ -6,7 +6,7 @@ import {
   type PedalSpan,
   type PerformanceEvent,
   type RecordedNote,
-} from '@sonara/shared'
+} from '@motius/shared'
 
 /**
  * Recording what gets played, and nothing else about it.

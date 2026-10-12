@@ -1,6 +1,6 @@
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { buildScaleExercise, DEFAULT_SCALE_SPEC, type ScaleSpec } from '@sonara/shared'
+import { buildScaleExercise, DEFAULT_SCALE_SPEC, type ScaleSpec } from '@motius/shared'
 import { beamsIn } from '@/features/staff/beams'
 import { ScaleScore, scaleSteps } from '@/features/staff/ScaleScore'
 import { measureScore, place } from '@/features/staff/score'

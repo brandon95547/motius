@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import Database from 'better-sqlite3'
 import type { FastifyInstance } from 'fastify'
-import { songCategoryChoiceSchema } from '@sonara/shared'
+import { songCategoryChoiceSchema } from '@motius/shared'
 import { MIGRATIONS, migrate } from '../src/db/migrations.js'
 import { createTestApp } from './helpers.js'
 

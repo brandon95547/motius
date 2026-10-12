@@ -12,7 +12,7 @@ import {
   type KeyCount,
   type UpdateDeviceConfigInput,
   type VelocityCurve,
-} from '@sonara/shared'
+} from '@motius/shared'
 import { api } from '@/lib/api'
 import { Button } from '@/ui/Button'
 import { Drawer } from '@/ui/Drawer'
@@ -228,7 +228,7 @@ function DeviceForm({
 
       <Field
         label="Keyboard size"
-        hint="Sets the range Sonara expects from this controller. Change it if the detected size is wrong."
+        hint="Sets the range Motius expects from this controller. Change it if the detected size is wrong."
       >
         <Select
           value={keyCount}

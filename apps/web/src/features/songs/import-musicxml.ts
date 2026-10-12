@@ -27,7 +27,7 @@ import {
   type SongRest,
   type Spelling,
   type WrittenNote,
-} from '@sonara/shared'
+} from '@motius/shared'
 
 /**
  * Reads MusicXML into a song.

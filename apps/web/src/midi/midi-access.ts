@@ -48,7 +48,7 @@ export async function requestMidiAccess(): Promise<
 
   try {
     // `sysex: false` keeps the permission prompt to the mild version. Nothing
-    // Sonara does needs system-exclusive messages, and asking for them turns a
+    // Motius does needs system-exclusive messages, and asking for them turns a
     // one-click prompt into a scary one.
     const access = await navigator.requestMIDIAccess({ sysex: false })
     return { ok: true, access }
@@ -79,6 +79,6 @@ export const MIDI_UNAVAILABLE_COPY: Record<
   'insecure-context': {
     title: 'MIDI needs a secure connection',
     detail:
-      'Browsers only allow MIDI on https or on localhost. Open Sonara over https, or on the machine it is running on.',
+      'Browsers only allow MIDI on https or on localhost. Open Motius over https, or on the machine it is running on.',
   },
 }

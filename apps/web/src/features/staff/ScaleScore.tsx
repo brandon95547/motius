@@ -9,7 +9,7 @@ import {
   type SongStep,
   type Spelling,
   type WrittenNote,
-} from '@sonara/shared'
+} from '@motius/shared'
 import { useLearningStore } from '@/state/learning-store'
 import { measureScore, type ScoreSource } from './score'
 import { FlowView } from './FlowView'

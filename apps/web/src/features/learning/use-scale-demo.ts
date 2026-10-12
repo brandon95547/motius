@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { stepBeats, type ExerciseStep } from '@sonara/shared'
+import { stepBeats, type ExerciseStep } from '@motius/shared'
 import { useAudio } from '@/audio/AudioProvider'
 import { keyboardActions } from '@/state/keyboard-store'
 import { learningActions, useLearningStore } from '@/state/learning-store'

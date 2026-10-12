@@ -14,7 +14,7 @@ import {
   type KeyMode,
   type KeyTriads,
   type Routine,
-} from '@sonara/shared'
+} from '@motius/shared'
 import { Drawer } from '@/ui/Drawer'
 import { Divider } from '@/ui/Display'
 import { useLearningStore, type LearningTopic } from '@/state/learning-store'

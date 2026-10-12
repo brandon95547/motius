@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { noteFrequency, type Instrument } from '@sonara/shared'
+import { noteFrequency, type Instrument } from '@motius/shared'
 import { SynthEngine } from '@/audio/synth-engine'
 import { FakeAudioContext, type FakeOscillator } from './fake-audio-context'
 

@@ -1,5 +1,5 @@
 import { cn } from '@/lib/cn'
-import type { Hand } from '@sonara/shared'
+import type { Hand } from '@motius/shared'
 
 /**
  * A hand with its fingers lit.

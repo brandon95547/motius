@@ -69,7 +69,7 @@ describe('fingering a song the file did not finger', () => {
     expect(after.notes[0]).toMatchObject({ finger: 2, fingerGiven: true })
     expect(after.notes.every((n) => n.finger !== undefined)).toBe(true)
     expect(after.notes.slice(1).some((n) => n.fingerGiven)).toBe(false)
-    // Neither the score's nor Sonara's alone, and it says so.
+    // Neither the score's nor Motius's alone, and it says so.
     expect(after.fingeringSource).toBe('mixed')
     // The file still held what it held.
     expect(after.provides).toEqual(edited.provides)
@@ -90,7 +90,7 @@ describe('fingering a song the file did not finger', () => {
     expect(twice.notes.filter((n) => n.fingerGiven).map((n) => n.note)).toEqual([67])
     expect(twice.notes[4]!.finger).toBe(1)
     expect(twice.fingeringSource).toBe('mixed')
-    // A song Sonara fingered entirely has nothing of the score's to keep.
+    // A song Motius fingered entirely has nothing of the score's to keep.
     const derived = fingerSong(fingerSong(song(scale)))
     expect(derived.notes.some((n) => n.fingerGiven)).toBe(false)
     expect(derived.fingeringSource).toBe('derived')

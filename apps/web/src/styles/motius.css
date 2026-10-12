@@ -1,5 +1,5 @@
 /* ============================================================================
-   SONARA — COMPONENT TIER
+   MOTIUS — COMPONENT TIER
    ----------------------------------------------------------------------------
    Tier 3 of the UI Bible's token model: per-component values that reference the
    semantic tier and never reach past it to a primitive.
@@ -249,7 +249,7 @@
 /* ---- Color themes -----------------------------------------------------------
    One hue runs through everything that is lit: the stage, the keys being
    played, the buttons that start things. A theme is that hue changed, and
-   nothing else — so each is the accent's own tokens and the few of Sonara's
+   nothing else — so each is the accent's own tokens and the few of Motius's
    that carry the hue, given again. Peaceful is the violet the tokens above
    already are, and has no block of its own.
 
@@ -578,7 +578,7 @@
    ships without the first.
    ========================================================================= */
 
-.sonara-slider {
+.motius-slider {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
@@ -587,7 +587,7 @@
   cursor: pointer;
 }
 
-.sonara-slider::-webkit-slider-runnable-track {
+.motius-slider::-webkit-slider-runnable-track {
   height: 4px;
   border-radius: var(--radius-pill);
   /* Two boundaries rather than one, so a bipolar control (transpose, pan) can
@@ -601,7 +601,7 @@
     var(--ds-field) var(--slider-to, 0%)
   );
 }
-.sonara-slider::-moz-range-track {
+.motius-slider::-moz-range-track {
   height: 4px;
   border-radius: var(--radius-pill);
   /* Two boundaries rather than one, so a bipolar control (transpose, pan) can
@@ -616,7 +616,7 @@
   );
 }
 
-.sonara-slider::-webkit-slider-thumb {
+.motius-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   height: 16px;
@@ -628,7 +628,7 @@
   box-shadow: var(--ds-shadow-1);
   transition: transform var(--duration-fast) var(--ease-standard);
 }
-.sonara-slider::-moz-range-thumb {
+.motius-slider::-moz-range-thumb {
   height: 16px;
   width: 16px;
   border-radius: var(--radius-pill);
@@ -637,17 +637,17 @@
   box-shadow: var(--ds-shadow-1);
 }
 
-.sonara-slider:active::-webkit-slider-thumb {
+.motius-slider:active::-webkit-slider-thumb {
   transform: scale(1.15);
 }
-.sonara-slider:focus-visible {
+.motius-slider:focus-visible {
   outline: none;
 }
-.sonara-slider:focus-visible::-webkit-slider-thumb {
+.motius-slider:focus-visible::-webkit-slider-thumb {
   outline: 2px solid var(--ds-focus-ring);
   outline-offset: 2px;
 }
-.sonara-slider:focus-visible::-moz-range-thumb {
+.motius-slider:focus-visible::-moz-range-thumb {
   outline: 2px solid var(--ds-focus-ring);
   outline-offset: 2px;
 }

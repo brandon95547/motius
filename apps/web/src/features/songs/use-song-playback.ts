@@ -7,7 +7,7 @@ import {
   scoreWindows,
   type Song,
   type SongNote,
-} from '@sonara/shared'
+} from '@motius/shared'
 import { useAudio } from '@/audio/AudioProvider'
 import { hitDrum } from '@/audio/drum-kit'
 import { keyboardActions } from '@/state/keyboard-store'

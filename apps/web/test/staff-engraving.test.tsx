@@ -1,6 +1,6 @@
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { writtenValue } from '@sonara/shared'
+import { writtenValue } from '@motius/shared'
 import { Chord, chordExtent, type DrawnNote } from '@/features/staff/StaffNotes'
 import { STEP, yOn } from '@/features/staff/staff-frame'
 
@@ -26,7 +26,7 @@ afterEach(cleanup)
  *
  * These were guesses once, and both guesses were wrong in the direction that
  * hides a collision: the numeral is taller than it looks and the sharp is
- * narrower. If sonara.css changes a font size, these have to change with it.
+ * narrower. If motius.css changes a font size, these have to change with it.
  *
  * The sharp is its ink, from `measureText`, and the most of it that any face
  * in `--font-music` draws. It used to be the box `getBBox` reports, which is

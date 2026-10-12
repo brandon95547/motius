@@ -13,7 +13,7 @@ import {
   type Staff,
   type StaffPlacement,
   type WrittenValue,
-} from '@sonara/shared'
+} from '@motius/shared'
 import { carried, OnStaff, shiftOf, STEP, useRows, useSpread, yOn } from './staff-frame'
 import type { StemOverride, StepStems } from './beams'
 

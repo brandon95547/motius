@@ -1,6 +1,6 @@
 import { ListMusic, Pause, Play, SkipBack, SkipForward } from 'lucide-react'
 import * as React from 'react'
-import { fingerSong, skipBars, type Song } from '@sonara/shared'
+import { fingerSong, skipBars, type Song } from '@motius/shared'
 import { cn } from '@/lib/cn'
 import { Button } from '@/ui/Button'
 import { Field, SegmentedControl, Switch } from '@/ui/Controls'
@@ -132,8 +132,8 @@ export function SongOptions() {
                   song.fingeringSource === 'score'
                     ? 'See-through hands over the keyboard, playing the fingering the score gives.'
                     : song.fingeringSource === 'mixed'
-                      ? 'See-through hands over the keyboard, playing the fingering the score gives and, between its marks, the one Sonara suggests.'
-                      : 'See-through hands over the keyboard, playing the fingering Sonara suggests.'
+                      ? 'See-through hands over the keyboard, playing the fingering the score gives and, between its marks, the one Motius suggests.'
+                      : 'See-through hands over the keyboard, playing the fingering Motius suggests.'
                 }
                 checked={hands}
                 onChange={setHands}

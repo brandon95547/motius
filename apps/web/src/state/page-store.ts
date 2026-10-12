@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { create } from 'zustand'
-import { findProgressionType, type ProgressionType } from '@sonara/shared'
+import { findProgressionType, type ProgressionType } from '@motius/shared'
 import {
   findCategory,
   findSection,

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { gridMeasures, type Hand, type Song } from '@sonara/shared'
+import { gridMeasures, type Hand, type Song } from '@motius/shared'
 
 /**
  * The songs a player has imported, the built-in ones they have opened, and how
@@ -26,7 +26,7 @@ export type SongMode = 'explore' | 'learn'
 /**
  * How the score is laid out.
  *
- * `flow` runs one endless system past a fixed playhead — Sonara's guided
+ * `flow` runs one endless system past a fixed playhead — Motius's guided
  * reading, where the music moves and your place in it does not. `sheet` prints
  * it as lines and stacks them, holding still while you read across, which is
  * what someone who can already read needs and what a learner does not.
@@ -128,7 +128,7 @@ interface SongState {
   setWrongNotes: (notes: readonly number[]) => void
 }
 
-const STORAGE_KEY = 'sonara.songs.v1'
+const STORAGE_KEY = 'motius.songs.v1'
 /**
  * Kept, unlike the playback settings.
  *
@@ -138,7 +138,7 @@ const STORAGE_KEY = 'sonara.songs.v1'
  * fact about the person reading, and asking them again every session would be
  * asking them whether they can still read music.
  */
-const VIEW_KEY = 'sonara.staff-view.v1'
+const VIEW_KEY = 'motius.staff-view.v1'
 
 /** Nothing in progress. */
 const IDLE = { stepIndex: 0, learning: false } as const
@@ -240,7 +240,7 @@ function save(library: readonly Song[]) {
  */
 export type FingeringDensity = 'all' | 'hints' | 'off'
 
-const FINGERING_KEY = 'sonara.songs.fingering'
+const FINGERING_KEY = 'motius.songs.fingering'
 
 function loadFingering(): FingeringDensity {
   try {
@@ -251,7 +251,7 @@ function loadFingering(): FingeringDensity {
   }
 }
 
-const HANDS_KEY = 'sonara.songs.hands'
+const HANDS_KEY = 'motius.songs.hands'
 
 function loadHands(): boolean {
   try {

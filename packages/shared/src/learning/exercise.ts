@@ -3,7 +3,7 @@ import type { Hand } from '../music/fingering.js'
 /**
  * The generic exercise model.
  *
- * Everything Sonara can teach reduces to the same thing: an ordered list of
+ * Everything Motius can teach reduces to the same thing: an ordered list of
  * steps, where a step is a set of notes that have to sound before the next one
  * is due. A scale is a sequence of one-note steps; a chord is one step of three
  * or four notes; an arpeggio is a scale-shaped sequence over chord tones; a

@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
 import { AlertTriangle } from 'lucide-react'
-import type { Instrument } from '@sonara/shared'
+import type { Instrument } from '@motius/shared'
 import { api, ApiClientError } from '@/lib/api'
 import { AudioProvider, useAudio } from '@/audio/AudioProvider'
 import { MidiProvider } from '@/midi/MidiProvider'
@@ -40,7 +40,7 @@ const queryClient = new QueryClient({
   },
 })
 
-const LAST_INSTRUMENT_KEY = 'sonara:instrument'
+const LAST_INSTRUMENT_KEY = 'motius:instrument'
 
 export default function App() {
   return (
@@ -189,7 +189,7 @@ function CatalogueError({ error, onRetry }: { error: unknown; onRetry: () => voi
       </div>
       <p className="text-body-sm text-[var(--ds-fg-secondary)]">{message}</p>
       <p className="text-caption text-[var(--ds-fg-muted)]">
-        Check that the Sonara API is running — <code className="font-mono">npm run dev</code> starts
+        Check that the Motius API is running — <code className="font-mono">npm run dev</code> starts
         both halves.
       </p>
       <Button size="sm" variant="outlined" onClick={onRetry}>

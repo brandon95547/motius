@@ -10,7 +10,7 @@ import {
   validatorCompiler,
   type ZodTypeProvider,
 } from 'fastify-type-provider-zod'
-import { API_PREFIX } from '@sonara/shared'
+import { API_PREFIX } from '@motius/shared'
 import type { Config } from './config.js'
 import { AppError } from './errors.js'
 import { dbPlugin } from './plugins/db.js'
@@ -21,7 +21,7 @@ import { songRoutes } from './routes/songs.js'
 
 declare module 'fastify' {
   interface FastifyInstance {
-    sonaraVersion: string
+    motiusVersion: string
   }
 }
 
@@ -61,7 +61,7 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
   app.setValidatorCompiler(validatorCompiler)
   app.setSerializerCompiler(serializerCompiler)
 
-  app.decorate('sonaraVersion', config.version)
+  app.decorate('motiusVersion', config.version)
 
   /**
    * Error handling is installed BEFORE any route is registered.
@@ -144,10 +144,10 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
   await app.register(swagger, {
     openapi: {
       info: {
-        title: 'Sonara API',
+        title: 'Motius API',
         version: config.version,
         description:
-          'Backend for Sonara — the piano catalog, the MIDI device profile and configuration store, and the categories of the built-in songs.',
+          'Backend for Motius — the piano catalog, the MIDI device profile and configuration store, and the categories of the built-in songs.',
       },
       servers: [{ url: API_PREFIX }],
       tags: [

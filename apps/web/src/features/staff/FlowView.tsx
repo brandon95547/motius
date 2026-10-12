@@ -50,7 +50,7 @@ import { beamsIn, type StepStems } from './beams'
 /**
  * The music as one endless system, running past a fixed clef.
  *
- * Sonara's guided reading: the music moves and your place in it does not, which
+ * Motius's guided reading: the music moves and your place in it does not, which
  * is the same bargain the keyboard makes when it follows what you play. It suits
  * a learner, who is watching one chord arrive at a time and wants the next few
  * in front of them — and it suits nobody who can already read a song, which is

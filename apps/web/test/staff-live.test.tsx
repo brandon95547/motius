@@ -1,7 +1,7 @@
 import { act, cleanup, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as React from 'react'
-import { buildSong, songSteps, type SongNote } from '@sonara/shared'
+import { buildSong, songSteps, type SongNote } from '@motius/shared'
 import { useKeyboardStore } from '@/state/keyboard-store'
 
 /**

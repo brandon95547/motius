@@ -1,8 +1,8 @@
-import type { FingeringSystemId, Song, SongGenre, SongMood } from '@sonara/shared'
+import type { FingeringSystemId, Song, SongGenre, SongMood } from '@motius/shared'
 import { readSongBytes } from './read-song'
 
 /**
- * The songs that come with Sonara: the same for everyone, and there before
+ * The songs that come with Motius: the same for everyone, and there before
  * anything has been imported.
  *
  * Each is a score in `public/songs`, named for its id, and is read through the

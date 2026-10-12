@@ -1,6 +1,6 @@
 # Scope: PDF sheet music import
 
-Turning a PDF of a score into something Sonara can teach from. Written after
+Turning a PDF of a score into something Motius can teach from. Written after
 probing what is actually installable rather than what the packages claim.
 
 ## Correction to an earlier claim
@@ -54,12 +54,12 @@ Two things fall out of that shape:
 
 ## Setup — following `phansora-api/Makefile`
 
-Sonara has no Makefile today; it is pure npm workspaces. Python needs one, and
+Motius has no Makefile today; it is pure npm workspaces. Python needs one, and
 the conventions are already set next door, so this copies them rather than
 inventing a second style:
 
 ```make
-# Sonara — developer tasks
+# Motius — developer tasks
 #
 # SYSTEM DEPENDENCIES (not installable by pip):
 #   poppler-utils — rasterizes a PDF into the PNGs oemer reads.

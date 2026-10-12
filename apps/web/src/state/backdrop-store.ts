@@ -17,7 +17,7 @@ export type Backdrop = (typeof BACKDROPS)[number]['id']
 /** What is chosen: one of the films, or nothing. */
 export type BackdropChoice = Backdrop | 'none'
 
-const STORAGE_KEY = 'sonara.backdrop'
+const STORAGE_KEY = 'motius.backdrop'
 
 export const isBackdropChoice = (value: unknown): value is BackdropChoice =>
   value === 'none' || BACKDROPS.some((backdrop) => backdrop.id === value)

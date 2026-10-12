@@ -15,7 +15,7 @@ import {
   type SongStep,
   type Staff,
   type WrittenValue,
-} from '@sonara/shared'
+} from '@motius/shared'
 import {
   CLEF_CHANGE_WIDTH,
   HALF_HEIGHT,

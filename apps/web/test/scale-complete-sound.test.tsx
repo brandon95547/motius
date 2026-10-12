@@ -1,6 +1,6 @@
 import { act, cleanup, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { DEFAULT_SCALE_SPEC } from '@sonara/shared'
+import { DEFAULT_SCALE_SPEC } from '@motius/shared'
 
 /**
  * A finished run is answered with a sound, once, on the note that finishes it.

@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { SCALE_GROUPS, SCALE_TYPES } from '@sonara/shared'
+import { SCALE_GROUPS, SCALE_TYPES } from '@motius/shared'
 import { ScaleOptions } from '@/features/learning/ScaleControls'
 import { ScaleTheoryDialog } from '@/features/learning/ScaleTheoryDialog'
 import { useLearningStore } from '@/state/learning-store'

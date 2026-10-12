@@ -6,7 +6,7 @@ import {
   staffNoteName,
   writtenValue,
   type Spelling,
-} from '@sonara/shared'
+} from '@motius/shared'
 import { useKeyboardStore } from '@/state/keyboard-store'
 import { useLearningStore } from '@/state/learning-store'
 import { useElementSize } from '@/lib/hooks'

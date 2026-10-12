@@ -1,6 +1,6 @@
 import { act, cleanup, render, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { buildSong, type SongNote } from '@sonara/shared'
+import { buildSong, type SongNote } from '@motius/shared'
 import { useLearningStore } from '@/state/learning-store'
 import { useSongStore } from '@/state/song-store'
 import { useKeyboardStore } from '@/state/keyboard-store'

@@ -18,7 +18,7 @@ import {
   Upload,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
-import logoUrl from '@/assets/sonara-logo.svg'
+import logoUrl from '@/assets/motius-logo.svg'
 import { ActionMenu, type MenuAction } from '@/ui/Menu'
 import { useMidi } from '@/midi/MidiProvider'
 import { useLearningStore } from '@/state/learning-store'
@@ -129,8 +129,8 @@ export function TopBar() {
 function Brand({ keep, deep = false }: { keep: boolean; deep?: boolean }) {
   return (
     <div className={cn('top-bar__brand', !keep && 'bar-mid')}>
-      <img className="top-bar__logo" src={logoUrl} alt="" title="Sonara" />
-      <span className={cn('top-bar__name', !keep && 'bar-full', deep && 'bar-sm')}>Sonara</span>
+      <img className="top-bar__logo" src={logoUrl} alt="" title="Motius" />
+      <span className={cn('top-bar__name', !keep && 'bar-full', deep && 'bar-sm')}>Motius</span>
     </div>
   )
 }

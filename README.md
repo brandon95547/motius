@@ -1,4 +1,4 @@
-# Sonara — Next Level Piano Mastery
+# Motius — Next Level Piano Mastery
 
 A virtual piano for the browser. Pick an instrument, play it with a mouse, a
 touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
@@ -215,7 +215,7 @@ MIDI has nowhere to record which finger plays a note — the format has no field
 for it — and a published score marks only the fingers that are in doubt: where
 the hand is put down, where it moves, where the obvious choice is the wrong one.
 The rest is left to a player who knows how a hand lies and how a scale is
-fingered. A learner does not yet, so Sonara works the rest out, and **every
+fingered. A learner does not yet, so Motius works the rest out, and **every
 note of every song has a finger**: all eighty-two of the songs that come with
 it, and whatever is imported after them.
 
@@ -265,7 +265,7 @@ Two things it used to refuse and no longer does.
 
 **You can always tell which you are looking at.** A note says whether its
 finger is the score's, and a song is labeled _Fingered score_ where an editor
-fingered all of it, _Suggested_ where Sonara did, and _Score and suggested_ for
+fingered all of it, _Suggested_ where Motius did, and _Score and suggested_ for
 the usual case between. The staff prints the fingers a reader could not have
 worked out — a new position, a leap, a change of shape — and always the ones
 the score itself printed; Settings ▸ Staff ▸ Fingering prints all of them, or
@@ -324,14 +324,14 @@ That only shows what is listening. To see the processes behind the stack as
 well — including a watcher that is still alive after its server was killed:
 
 ```bash
-pgrep -fl "sonara/node_modules/.bin/(concurrently|tsx|vite)"
+pgrep -fl "motius/node_modules/.bin/(concurrently|tsx|vite)"
 ```
 
 To stop it, press Ctrl-C in the terminal where `npm run dev` is running. If
 that terminal cannot be found:
 
 ```bash
-pkill -f "sonara/node_modules/.bin/(concurrently|tsx|vite)"
+pkill -f "motius/node_modules/.bin/(concurrently|tsx|vite)"
 ```
 
 **Do not `kill` the pid that `lsof` reports on 5175.** That is only the server
@@ -383,7 +383,7 @@ apps/web          React + Vite + Tailwind v4. The keyboard, the audio
                   engines, and the Web MIDI integration
 ```
 
-`@sonara/shared` is the contract. Both sides import the same zod schemas, so a
+`@motius/shared` is the contract. Both sides import the same zod schemas, so a
 response the server can emit and the client cannot parse is a build error
 rather than a runtime one.
 
@@ -397,7 +397,7 @@ verbatim copy of its token layer — three tiers, primitive → semantic →
 component, and a component that reaches past the semantic tier is a bug. Fix
 values upstream and re-copy rather than editing them here.
 
-Sonara's own additions live in `sonara.css`, in the component tier. The
+Motius's own additions live in `motius.css`, in the component tier. The
 keyboard is the one deliberate exception to reasoning from the elevation ramp:
 a piano key is a depiction of a physical object, and a "white key" assigned
 `--ds-surface-raised` because that is where it sits in the hierarchy is a piano
@@ -436,7 +436,7 @@ identical pedal behavior and an engine swap mid-pedal cannot strand a note.
 
 An audio engine with nothing to play is put to sleep. A running `AudioContext`
 renders silence at full price — about a twentieth of a processor core for the
-two Sonara keeps, for as long as the tab is open — so each one is suspended a
+two Motius keeps, for as long as the tab is open — so each one is suspended a
 minute after its last sound, or five seconds after if the page is hidden, and
 woken by the next note, click or touch (`audio/quiet.ts`). Waking takes about
 fifteen milliseconds. A key held down, or held by the pedal, keeps it awake for
@@ -444,7 +444,7 @@ as long as it is held.
 
 ### The learning system
 
-Everything Sonara can teach reduces to the same thing: an ordered list of steps,
+Everything Motius can teach reduces to the same thing: an ordered list of steps,
 where a step is a set of notes that has to sound before the next one is due. A
 scale is a sequence of one-note steps; a chord is one step of three notes; a
 progression is a sequence of chord-shaped steps.
@@ -477,7 +477,7 @@ whichever of the two enharmonics needs fewer accidentals — which is how pitch
 class 1 comes out as D♭ _major_ and C♯ _minor_.
 
 **Fingering is a recommendation, never a reading.** MIDI reports which note was
-played and how hard. It does not report which finger played it, and Sonara does
+played and how hard. It does not report which finger played it, and Motius does
 not pretend otherwise — the cards say so.
 
 Two sources answer two different questions, and which one applies decides what
@@ -770,7 +770,7 @@ SQLite, migrated by `user_version` so the schema version travels inside the file
 Migrations are append-only and each one runs in its own transaction.
 
 WAL mode means the newest writes live in the `-wal` file, not the main one:
-`cp sonara.sqlite` silently loses them. Back up with
+`cp motius.sqlite` silently loses them. Back up with
 `VACUUM INTO 'backup.sqlite'` instead.
 
 ## Browser support

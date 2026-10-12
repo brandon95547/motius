@@ -34,7 +34,7 @@ const chrome = spawn(
     '--password-store=basic',
     '--hide-scrollbars',
     `--remote-debugging-port=${PORT}`,
-    `--user-data-dir=/tmp/sonara-verify-audio-${PORT}`,
+    `--user-data-dir=/tmp/motius-verify-audio-${PORT}`,
     'about:blank',
   ],
   { stdio: 'ignore', detached: true },

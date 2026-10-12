@@ -35,7 +35,7 @@ const left = (notes: SongNote[]) =>
 /**
  * When a hand has gone from a key that is still sounding.
  *
- * The first Gymnopédie, as its score has it and as Sonara fingers it: a bass
+ * The first Gymnopédie, as its score has it and as Motius fingers it: a bass
  * note written to last the bar, and a beat in, a chord for the same hand far
  * above it.
  */

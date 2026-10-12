@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { noteName } from '@sonara/shared'
+import { noteName } from '@motius/shared'
 import { StatusDot } from '@/ui/Display'
 import { useKeyboardStore } from '@/state/keyboard-store'
 import { useLearningStore } from '@/state/learning-store'

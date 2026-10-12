@@ -1,4 +1,4 @@
-import { drumVoice, type DrumVoice } from '@sonara/shared'
+import { drumVoice, type DrumVoice } from '@motius/shared'
 import { sleepWhenQuiet, type Quiet } from './quiet'
 
 /**

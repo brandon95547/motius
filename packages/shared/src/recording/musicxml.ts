@@ -301,7 +301,7 @@ export function writeMusicXml(
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">',
     '<score-partwise version="4.0">',
-    `<work><work-title>${escape(options.title ?? 'Sonara recording')}</work-title></work>`,
+    `<work><work-title>${escape(options.title ?? 'Motius recording')}</work-title></work>`,
     '<part-list><score-part id="P1"><part-name>Piano</part-name></score-part></part-list>',
     '<part id="P1">',
     ...body,

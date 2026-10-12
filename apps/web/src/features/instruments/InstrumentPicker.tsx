@@ -1,5 +1,5 @@
 import { Check, Loader2, Piano, Zap, WifiOff } from 'lucide-react'
-import type { Instrument } from '@sonara/shared'
+import type { Instrument } from '@motius/shared'
 import { Card } from '@/ui/Surface'
 import { Chip } from '@/ui/Display'
 import { cn } from '@/lib/cn'

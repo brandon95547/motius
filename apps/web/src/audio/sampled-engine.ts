@@ -1,4 +1,4 @@
-import type { Instrument } from '@sonara/shared'
+import type { Instrument } from '@motius/shared'
 import { decibelsToGain, type AudioEngine } from './types'
 
 /**

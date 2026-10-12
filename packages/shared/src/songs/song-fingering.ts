@@ -483,7 +483,7 @@ export interface FingerSongOptions {
  *
  * A note says so itself once a song has been through here. Before that, a song
  * read from a file has only the fingers the file held, and one fingered by an
- * older Sonara has only the ones Sonara worked out — never both, because a
+ * older Motius has only the ones Motius worked out — never both, because a
  * score with any fingering in it used to be left alone.
  */
 function givenIn(song: Song): Set<SongNote> {

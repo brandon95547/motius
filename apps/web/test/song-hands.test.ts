@@ -1,14 +1,14 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { songSteps, type Song, type SongNote } from '@sonara/shared'
+import { songSteps, type Song, type SongNote } from '@motius/shared'
 import { readSongBytes } from '@/features/songs/read-song'
 import { alignLayers, layersOf, measureScore, regionsOf } from '@/features/staff/score'
 
 /**
  * Whose notes they are, in the pieces where it is hardest to say.
  *
- * Sonara teaches the piano, and a hand taught wrong is learned wrong. A score
+ * Motius teaches the piano, and a hand taught wrong is learned wrong. A score
  * says which hand in few ways and none of them is the staff: a right hand runs
  * onto the lower staff and is still the right hand, and one voice can be shared
  * between two hands. So a note keeps the hand of the line of music it belongs

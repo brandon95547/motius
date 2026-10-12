@@ -42,7 +42,7 @@ import {
   type Routine,
   type ScaleDirection,
   type ScaleHands,
-} from '@sonara/shared'
+} from '@motius/shared'
 import { Field, SegmentedControl, Select } from '@/ui/Controls'
 import { Divider } from '@/ui/Display'
 import { useLearningStore } from '@/state/learning-store'

@@ -11,7 +11,7 @@ import {
   MIDI_NOTE_MIN,
   type Device,
   type DeviceConfig,
-} from '@sonara/shared'
+} from '@motius/shared'
 import { api } from '@/lib/api'
 import { useAudio } from '@/audio/AudioProvider'
 import { keyboardActions } from '@/state/keyboard-store'

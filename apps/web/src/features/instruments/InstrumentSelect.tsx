@@ -1,5 +1,5 @@
 import { Loader2, Piano } from 'lucide-react'
-import type { Instrument } from '@sonara/shared'
+import type { Instrument } from '@motius/shared'
 import { Select } from '@/ui/Controls'
 import { useAudio } from '@/audio/AudioProvider'
 import { cn } from '@/lib/cn'

@@ -1,6 +1,6 @@
 import { act, cleanup, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { DEFAULT_SCALE_SPEC, staffFor } from '@sonara/shared'
+import { DEFAULT_SCALE_SPEC, staffFor } from '@motius/shared'
 import { useLearningStore } from '@/state/learning-store'
 import { useKeyboardStore } from '@/state/keyboard-store'
 import { STAFF_BANDS, STAFF_START } from '@/features/staff/staff-frame'

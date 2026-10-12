@@ -5,7 +5,7 @@ import {
   DEFAULT_SCALE_SPEC,
   tempo,
   PROGRESSION_TYPES,
-} from '@sonara/shared'
+} from '@motius/shared'
 import { useLearningStore } from '@/state/learning-store'
 
 /**
@@ -338,7 +338,7 @@ describe('the fingering system', () => {
 
     expect(notes()).toEqual(before.notes)
     expect(store().session).toBe(before.session)
-    expect(window.localStorage.getItem('sonara.fingering.system')).toBe('traditional')
+    expect(window.localStorage.getItem('motius.fingering.system')).toBe('traditional')
   })
 })
 

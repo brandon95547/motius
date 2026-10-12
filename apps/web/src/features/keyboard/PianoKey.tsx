@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { noteName, pitchClass } from '@sonara/shared'
+import { noteName, pitchClass } from '@motius/shared'
 import { useKeyboardStore } from '@/state/keyboard-store'
 import { useLearningStore, type KeyLabels } from '@/state/learning-store'
 import type { KeyGeometry } from './keyboard-layout'

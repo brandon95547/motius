@@ -7,7 +7,7 @@ import {
   isFingeringSystemId,
   noteName,
   type Instrument,
-} from '@sonara/shared'
+} from '@motius/shared'
 import { Drawer } from '@/ui/Drawer'
 import { Button, IconButton } from '@/ui/Button'
 import { Field, SegmentedControl, Select, Slider, Switch } from '@/ui/Controls'

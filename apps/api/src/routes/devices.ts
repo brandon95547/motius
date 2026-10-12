@@ -6,7 +6,7 @@ import {
   deviceSchema,
   registerDeviceSchema,
   updateDeviceConfigSchema,
-} from '@sonara/shared'
+} from '@motius/shared'
 import { AppError } from '../errors.js'
 
 const deviceIdParams = z.object({ id: z.string().min(1).max(200) })

@@ -10,7 +10,7 @@ import {
   type SongCategoryChoice,
   type SongGenre,
   type SongMood,
-} from '@sonara/shared'
+} from '@motius/shared'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/cn'
 import { Button, IconButton } from '@/ui/Button'
@@ -24,7 +24,7 @@ import { shortKey, songKey, sortKeys } from './song-keys'
 import { fold } from './song-search'
 
 /**
- * Choosing a song: the ones that come with Sonara, by genre and by mood, and
+ * Choosing a song: the ones that come with Motius, by genre and by mood, and
  * the player's own, with the way to import more.
  *
  * A dialog, and the first thing the Songs area shows, because the area has
@@ -530,13 +530,13 @@ export function SongPicker({ open, onClose }: { open: boolean; onClose: () => vo
             {moveFailed && (
               <Notice
                 title={`Could not change ${moveFailed.title}`}
-                detail="The server did not take the change, so the song is as it was. Check that the Sonara API is running and make the change again."
+                detail="The server did not take the change, so the song is as it was. Check that the Motius API is running and make the change again."
               />
             )}
             {editing && (
               <p className="text-body-sm text-[var(--ds-fg-muted)]">
                 Choose a genre and one or more moods for any song. A change is saved as it is made,
-                for everyone who uses this Sonara.
+                for everyone who uses this Motius.
               </p>
             )}
 
@@ -855,7 +855,7 @@ function ImportError({ result }: { result: Extract<ImportResult, { failure: Impo
     },
     unknown: {
       title: 'Not a file we could read',
-      detail: 'Sonara reads MusicXML, MuseScore and MIDI files.',
+      detail: 'Motius reads MusicXML, MuseScore and MIDI files.',
     },
   }[result.failure]
 

@@ -5,7 +5,7 @@ import {
   scoreMsAt,
   type SongNote,
   type SongStep,
-} from '@sonara/shared'
+} from '@motius/shared'
 import { useSongStore, useCurrentSong } from '@/state/song-store'
 import { barMarksOf, useMeasuredScore } from './score'
 import { FlowView } from './FlowView'

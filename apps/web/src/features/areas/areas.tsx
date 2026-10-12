@@ -20,7 +20,7 @@ import {
   Waves,
   type LucideIcon,
 } from 'lucide-react'
-import type { ProgressionType } from '@sonara/shared'
+import type { ProgressionType } from '@motius/shared'
 import type { LearningTopic } from '@/state/learning-store'
 
 /**

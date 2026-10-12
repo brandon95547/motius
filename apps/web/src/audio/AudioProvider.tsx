@@ -1,5 +1,5 @@
 import * as React from 'react'
-import type { Instrument } from '@sonara/shared'
+import type { Instrument } from '@motius/shared'
 import { SynthEngine } from './synth-engine'
 import { SampledEngine } from './sampled-engine'
 import { sleepWhenQuiet, type Quiet } from './quiet'

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { writeMidiFile, writeMusicXml, type RecordedNote } from '@sonara/shared'
+import { writeMidiFile, writeMusicXml, type RecordedNote } from '@motius/shared'
 import { importMidi } from '@/features/songs/import-midi'
 import { importMusicXml } from '@/features/songs/import-musicxml'
 

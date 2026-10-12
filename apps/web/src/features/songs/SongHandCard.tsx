@@ -1,5 +1,5 @@
 import { Info } from 'lucide-react'
-import { fingeringSystem, keyName } from '@sonara/shared'
+import { fingeringSystem, keyName } from '@motius/shared'
 import { Card } from '@/ui/Surface'
 import { Chip } from '@/ui/Display'
 import { HandDiagram } from '@/features/learning/HandDiagram'
@@ -14,14 +14,14 @@ const FINGER_NAMES = ['', 'Thumb', 'Index', 'Middle', 'Ring', 'Little'] as const
  * MusicXML has a place for it; MIDI has none, so a MIDI import never has it and
  * no amount of parsing will change that.
  *
- * Where the file says nothing, Sonara works out what it can — but a suggested
+ * Where the file says nothing, Motius works out what it can — but a suggested
  * finger and one an editor wrote have to be tellable apart, or the suggestion
  * borrows an authority it does not have. So the card always names which it is
  * showing, and the two are never drawn the same way.
  *
  * The same goes for the hand. A score does not always say which hand takes a
  * note — one written on the other hand's staff, or on a middle staff of three
- * — and what Sonara makes of it is a reading. Taught as though the page said
+ * — and what Motius makes of it is a reading. Taught as though the page said
  * it, a wrong reading is a wrong hand learned, so the card says "suggested"
  * of the hand too, in the word it already uses for a finger it worked out.
  */

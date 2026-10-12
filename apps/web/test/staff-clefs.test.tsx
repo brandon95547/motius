@@ -1,6 +1,6 @@
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { keySignature, songSteps } from '@sonara/shared'
+import { keySignature, songSteps } from '@motius/shared'
 import { importMusicXml } from '@/features/songs/import-musicxml'
 import { clefsAt, measureScore, place } from '@/features/staff/score'
 import { Step } from '@/features/staff/score-parts'
@@ -13,7 +13,7 @@ afterEach(cleanup)
  * A staff in another clef.
  *
  * A right hand that goes down into the bass is written in the bass clef while
- * it is there: Liszt's Nuages gris opens with both staves in it. Sonara drew
+ * it is there: Liszt's Nuages gris opens with both staves in it. Motius drew
  * every right-hand note on a treble staff whatever the page said, and that
  * opening hung four ledger lines under the staff. The clef is now the score's.
  */

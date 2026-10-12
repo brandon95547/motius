@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import type { Song } from '@sonara/shared'
+import type { Song } from '@motius/shared'
 import { readMscz, readMxl } from '@/features/songs/archive'
 import { importMuseScore } from '@/features/songs/import-musescore'
 import { readSong } from '@/features/songs/read-song'

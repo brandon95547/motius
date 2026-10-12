@@ -1,6 +1,6 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { collectionSchema, instrumentSchema } from '@sonara/shared'
+import { collectionSchema, instrumentSchema } from '@motius/shared'
 import { INSTRUMENTS, DEFAULT_INSTRUMENT_ID, findInstrument } from '../data/instruments.js'
 import { AppError } from '../errors.js'
 

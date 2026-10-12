@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { songSteps } from '@sonara/shared'
+import { songSteps } from '@motius/shared'
 import { importMusicXml } from '@/features/songs/import-musicxml'
 import { beamsIn } from '@/features/staff/beams'
 import { measureScore, place } from '@/features/staff/score'
@@ -12,7 +12,7 @@ import { staffOf } from '@/features/staff/StaffNotes'
  * The right hand of the Moonlight Sonata's first movement runs down into the
  * bass, and the page keeps it off the ledger lines by writing those notes on
  * the lower staff, beamed to the rest of their triplet on the upper one. They
- * are still the right hand's: the file keeps them in its voice. Sonara read
+ * are still the right hand's: the file keeps them in its voice. Motius read
  * the hand from the staff, so it gave them to the left hand, and broke every
  * such beam in two.
  */

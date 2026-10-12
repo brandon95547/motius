@@ -56,14 +56,14 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
 
 try {
   await app.listen({ port: config.port, host: config.host })
-  app.log.info(`Sonara API ready — docs at http://localhost:${config.port}/docs`)
+  app.log.info(`Motius API ready — docs at http://localhost:${config.port}/docs`)
 } catch (error) {
   if ((error as NodeJS.ErrnoException)?.code === 'EADDRINUSE') {
     // Worth naming outright. The usual causes are a second `npm run dev` and a
     // previous process that has not let go of the port yet, and neither is
     // obvious from a bare stack trace.
     app.log.error(
-      `port ${config.port} is already in use — another Sonara API is running, or the previous one has not exited yet`,
+      `port ${config.port} is already in use — another Motius API is running, or the previous one has not exited yet`,
     )
   } else {
     app.log.error({ err: error }, 'failed to start')

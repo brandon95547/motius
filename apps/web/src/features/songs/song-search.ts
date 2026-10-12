@@ -1,4 +1,4 @@
-import type { Song } from '@sonara/shared'
+import type { Song } from '@motius/shared'
 import { SONG_CATALOG, catalogSongId, type CatalogSong } from './catalog'
 
 /**

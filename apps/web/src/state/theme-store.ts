@@ -11,7 +11,7 @@ import { create } from 'zustand'
  *
  * Kept on the document rather than in React, as `data-color-theme` on the root
  * element, because it is the stylesheet that acts on it: the themes are a few
- * token values each, in `sonara.css`. And set as this module loads rather than
+ * token values each, in `motius.css`. And set as this module loads rather than
  * in an effect, so a page that reloads in red is never violet for a frame.
  */
 export const COLOR_THEMES = [
@@ -22,7 +22,7 @@ export const COLOR_THEMES = [
 
 export type ColorTheme = (typeof COLOR_THEMES)[number]['id']
 
-const STORAGE_KEY = 'sonara.color-theme'
+const STORAGE_KEY = 'motius.color-theme'
 /** The theme the app was first drawn in, and the one the tokens describe unaided. */
 const DEFAULT_THEME: ColorTheme = 'peaceful'
 

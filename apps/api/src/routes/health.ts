@@ -1,5 +1,5 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
-import { healthSchema } from '@sonara/shared'
+import { healthSchema } from '@motius/shared'
 import { z } from 'zod'
 
 export const healthRoutes: FastifyPluginAsyncZod = async (app) => {
@@ -25,7 +25,7 @@ export const healthRoutes: FastifyPluginAsyncZod = async (app) => {
 
       const body = {
         status: databaseOk ? ('ok' as const) : ('degraded' as const),
-        version: app.sonaraVersion,
+        version: app.motiusVersion,
         uptimeSeconds: Math.round(process.uptime()),
       }
       return reply.code(databaseOk ? 200 : 503).send(body)

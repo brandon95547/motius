@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { clampVelocity, WRONG_NOTE_FLASH_MS } from '@sonara/shared'
+import { clampVelocity, WRONG_NOTE_FLASH_MS } from '@motius/shared'
 import { useAudio } from '@/audio/AudioProvider'
 import { keyboardActions, useKeyboardStore } from '@/state/keyboard-store'
 import { learningActions, useLearningStore, type KeyRole } from '@/state/learning-store'
@@ -312,7 +312,7 @@ export function PianoKeyboard({ window: keyWindow, className }: PianoKeyboardPro
  * aligned at any width with nothing to keep in sync.
  *
  * These are recommendations. MIDI reports the note and the velocity; it does
- * not report which finger played it, and Sonara does not pretend otherwise.
+ * not report which finger played it, and Motius does not pretend otherwise.
  */
 function FingerBadges({ layout }: { layout: KeyboardLayout }) {
   // The same switch every key makes. Reading only the scale annotations left

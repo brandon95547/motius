@@ -1,6 +1,6 @@
 import { act, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { buildSong, fingerSong, type Song, type SongNote } from '@sonara/shared'
+import { buildSong, fingerSong, type Song, type SongNote } from '@motius/shared'
 import { AudioProvider } from '@/audio/AudioProvider'
 import { SongEngine } from '@/features/songs/SongControls'
 import { useLearningStore } from '@/state/learning-store'
@@ -94,7 +94,7 @@ describe('the open song and the fingering system', () => {
   })
 
   it('fills the gaps in a song kept from before every note was fingered', () => {
-    // As an older Sonara left it: some notes fingered, some not, and nothing
+    // As an older Motius left it: some notes fingered, some not, and nothing
     // to say which system did it.
     const old: Song = {
       ...piece(G_MAJOR.map((pitch, i) => note(pitch, i, i < 5 ? { finger: 5 - i } : {}))),
@@ -105,7 +105,7 @@ describe('the open song and the fingering system', () => {
     mount()
     expect(seen!.notes.every((n) => n.finger !== undefined)).toBe(true)
     expect(seen!.fingeredBy).toBe('traditional')
-    // Sonara's own earlier guesses are not mistaken for the score's.
+    // Motius's own earlier guesses are not mistaken for the score's.
     expect(seen!.notes.some((n) => n.fingerGiven)).toBe(false)
     // And it is kept that way, not worked out again on every visit.
     expect(useSongStore.getState().library[0]!.fingeredBy).toBe('traditional')

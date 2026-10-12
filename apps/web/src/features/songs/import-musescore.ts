@@ -20,7 +20,7 @@ import {
   type SongMeasure,
   type SongNote,
   type WrittenNote,
-} from '@sonara/shared'
+} from '@motius/shared'
 
 /**
  * Reads MuseScore's own `.mscx` into a song.

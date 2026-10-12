@@ -1,5 +1,5 @@
 import { ArrowRight } from 'lucide-react'
-import { DEFAULT_SCALE_SPEC, type CadenceSpec } from '@sonara/shared'
+import { DEFAULT_SCALE_SPEC, type CadenceSpec } from '@motius/shared'
 import { Drawer } from '@/ui/Drawer'
 import { Button } from '@/ui/Button'
 import { useLearningStore, type LearningTopic } from '@/state/learning-store'

@@ -25,7 +25,7 @@ export const LEARNING_MODE_LABELS: Record<LearningMode, string> = {
 export const LEARNING_MODE_DESCRIPTIONS: Record<LearningMode, string> = {
   explore: 'Every note of the scale is lit. Play freely and listen to how it sits.',
   learn: 'One note at a time, with the recommended finger. Wrong notes flash and do not advance.',
-  practice: 'The guidance goes away. Play it through while Sonara keeps score.',
+  practice: 'The guidance goes away. Play it through while Motius keeps score.',
 }
 
 export type SessionStatus = 'idle' | 'running' | 'complete'

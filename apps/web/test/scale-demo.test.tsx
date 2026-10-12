@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { DEFAULT_SCALE_SPEC } from '@sonara/shared'
+import { DEFAULT_SCALE_SPEC } from '@motius/shared'
 import { useLearningStore } from '@/state/learning-store'
 import { useKeyboardStore } from '@/state/keyboard-store'
 

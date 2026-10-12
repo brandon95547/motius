@@ -1,10 +1,10 @@
-import { noteFrequency, velocityToGain, type Instrument } from '@sonara/shared'
+import { noteFrequency, velocityToGain, type Instrument } from '@motius/shared'
 import { decibelsToGain, type AudioEngine } from './types'
 
 /**
  * The built-in engine: additive synthesis, no network, no licence.
  *
- * It plays two roles. It is the `Sonara Studio` instrument in its own right,
+ * It plays two roles. It is the `Motius Studio` instrument in its own right,
  * and it is what every sampled instrument falls back to when its samples
  * cannot be fetched — which is why each catalogue entry carries a voicing.
  * A player on a train keeps a playable piano instead of a silent app.

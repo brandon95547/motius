@@ -39,7 +39,7 @@ import {
   type ScaleMotion,
   type ScaleSpec,
   type ScaleTexture,
-} from '@sonara/shared'
+} from '@motius/shared'
 import { cn } from '@/lib/cn'
 import { Combobox, Field, SegmentedControl, Select, Switch } from '@/ui/Controls'
 import { Divider } from '@/ui/Display'

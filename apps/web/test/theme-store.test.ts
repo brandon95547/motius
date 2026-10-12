@@ -44,7 +44,7 @@ describe('the color theme', () => {
 
   it('is the theme the page comes back in', async () => {
     theme().setTheme('powerful')
-    expect(localStorage.getItem('sonara.color-theme')).toBe('powerful')
+    expect(localStorage.getItem('motius.color-theme')).toBe('powerful')
 
     // A reload: the module read fresh, the page not yet marked.
     delete root.dataset.colorTheme
@@ -69,14 +69,14 @@ describe('the color theme', () => {
     const fills: Record<string, string | undefined> = {
       // Peaceful is the tokens as they are: the dark theme's own accent.
       peaceful: accentIn(styles('tokens.css'), ":root,\n[data-theme='dark']"),
-      powerful: accentIn(styles('sonara.css'), ":root[data-color-theme='powerful'] {"),
-      'dark-concert': accentIn(styles('sonara.css'), ":root[data-color-theme='dark-concert'] {"),
+      powerful: accentIn(styles('motius.css'), ":root[data-color-theme='powerful'] {"),
+      'dark-concert': accentIn(styles('motius.css'), ":root[data-color-theme='dark-concert'] {"),
     }
     for (const option of COLOR_THEMES) expect(option.swatch).toBe(fills[option.id])
   })
 
   it('falls back to Peaceful for a stored value it does not know', async () => {
-    localStorage.setItem('sonara.color-theme', 'sepia')
+    localStorage.setItem('motius.color-theme', 'sepia')
     vi.resetModules()
     const reloaded = await import('@/state/theme-store')
     expect(reloaded.useThemeStore.getState().theme).toBe('peaceful')

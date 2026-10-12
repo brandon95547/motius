@@ -1,4 +1,4 @@
-import { circleOfFifths, type KeyMode } from '@sonara/shared'
+import { circleOfFifths, type KeyMode } from '@motius/shared'
 import { cn } from '@/lib/cn'
 
 /**

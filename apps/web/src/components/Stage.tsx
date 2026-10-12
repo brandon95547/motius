@@ -1,5 +1,5 @@
 import { RotateCcw } from 'lucide-react'
-import { accuracy } from '@sonara/shared'
+import { accuracy } from '@motius/shared'
 import { cn } from '@/lib/cn'
 import { useAudio } from '@/audio/AudioProvider'
 import { EngineChip } from '@/audio/EngineChip'

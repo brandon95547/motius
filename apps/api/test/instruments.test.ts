@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { FastifyInstance } from 'fastify'
-import { instrumentSchema } from '@sonara/shared'
+import { instrumentSchema } from '@motius/shared'
 import { createTestApp } from './helpers.js'
 
 describe('instruments', () => {

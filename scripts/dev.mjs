@@ -16,7 +16,7 @@
  * half.
  *
  * So this identifies what is already there before deciding. A port answering
- * as Sonara is reused, and said so out loud; a port held by something else is
+ * as Motius is reused, and said so out loud; a port held by something else is
  * refused with the reason. `npm run dev` becomes idempotent: run it as often
  * as you like and you end up with exactly one stack.
  *
@@ -70,7 +70,7 @@ const halves = [
     port: WEB_PORT,
     task: 'npm:dev:web',
     colour: 'cyan',
-    identify: () => identify(`http://127.0.0.1:${WEB_PORT}/`, (body) => /Sonara/.test(body)),
+    identify: () => identify(`http://127.0.0.1:${WEB_PORT}/`, (body) => /Motius/.test(body)),
   },
 ]
 
@@ -87,8 +87,8 @@ for (const half of halves) {
     continue
   }
   process.stderr.write(
-    `\n  Port ${half.port} is in use, but whatever is on it is not Sonara's ${half.name}.\n\n` +
-      `  It may be another project, or a Sonara ${half.name} that has stopped\n` +
+    `\n  Port ${half.port} is in use, but whatever is on it is not Motius's ${half.name}.\n\n` +
+      `  It may be another project, or a Motius ${half.name} that has stopped\n` +
       `  answering. Find it and free the port:\n` +
       `    lsof -nP -iTCP:${half.port} -sTCP:LISTEN\n\n`,
   )
@@ -100,7 +100,7 @@ for (const half of reused) {
 }
 
 if (toStart.length === 0) {
-  process.stdout.write(`\n  Sonara is already running - http://localhost:${WEB_PORT}\n\n`)
+  process.stdout.write(`\n  Motius is already running - http://localhost:${WEB_PORT}\n\n`)
   process.exit(0)
 }
 

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { STANDARD_RANGES } from '@sonara/shared'
+import { STANDARD_RANGES } from '@motius/shared'
 import {
   DEFAULT_SPAN,
   shiftWindow,

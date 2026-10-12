@@ -8,7 +8,7 @@ import { fingeringSystem, type FingeringSystemId, type ScaleForm } from './finge
  *
  * A MIDI keyboard reports which note was played and how hard. It does not, and
  * cannot, report which finger played it. Everything here is therefore a
- * *recommendation* — what a teacher would suggest — and the UI says so. Sonara
+ * *recommendation* — what a teacher would suggest — and the UI says so. Motius
  * never claims to know what your hands did.
  *
  * ## Where the numbers come from

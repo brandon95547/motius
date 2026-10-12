@@ -1,4 +1,4 @@
-import type { Instrument, SynthVoicing } from '@sonara/shared'
+import type { Instrument, SynthVoicing } from '@motius/shared'
 
 /**
  * The piano catalogue.
@@ -142,8 +142,8 @@ export const INSTRUMENTS: readonly Instrument[] = [
     range: { low: 33, high: 96 },
   },
   {
-    id: 'sonara-studio',
-    name: 'Sonara Studio',
+    id: 'motius-studio',
+    name: 'Motius Studio',
     description: 'Synthesized in the browser. No download, works offline, plays instantly.',
     family: 'acoustic',
     character: ['clean', 'instant'],

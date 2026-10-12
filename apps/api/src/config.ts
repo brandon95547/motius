@@ -18,7 +18,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(5175),
   HOST: z.string().min(1).default('0.0.0.0'),
-  DATABASE_PATH: z.string().min(1).default('./data/sonara.sqlite'),
+  DATABASE_PATH: z.string().min(1).default('./data/motius.sqlite'),
   CORS_ORIGINS: z.string().default('http://localhost:5174,http://127.0.0.1:5174'),
   LOG_LEVEL: z.enum(['silent', 'fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 })

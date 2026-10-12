@@ -12,7 +12,7 @@ import {
   type KeyCount,
   type ProfileMatch,
   type UpdateDeviceConfigInput,
-} from '@sonara/shared'
+} from '@motius/shared'
 
 interface ProfileRow {
   id: string

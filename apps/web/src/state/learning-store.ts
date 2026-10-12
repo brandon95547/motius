@@ -37,12 +37,12 @@ import {
   type RoutineSpec,
   type ScaleSpec,
   type SessionState,
-} from '@sonara/shared'
+} from '@motius/shared'
 
 /**
  * The learning session, and the keyboard annotations that come out of it.
  *
- * The engine itself lives in `@sonara/shared` as a pure reducer; this store is
+ * The engine itself lives in `@motius/shared` as a pure reducer; this store is
  * the thin React-facing shell around it. Everything derived — which keys light
  * up, in what role, with which finger — is computed here, once per change, into
  * a plain map keyed by MIDI note.
@@ -252,7 +252,7 @@ function buildExercise(
   }
 }
 
-const FINGERING_SYSTEM_KEY = 'sonara.fingering.system'
+const FINGERING_SYSTEM_KEY = 'motius.fingering.system'
 
 function loadFingeringSystem(): FingeringSystemId {
   try {

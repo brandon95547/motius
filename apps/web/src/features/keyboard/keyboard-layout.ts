@@ -9,7 +9,7 @@ import {
   STANDARD_RANGES,
   whiteKeyIndex,
   type KeyCount,
-} from '@sonara/shared'
+} from '@motius/shared'
 
 /**
  * Keyboard geometry.

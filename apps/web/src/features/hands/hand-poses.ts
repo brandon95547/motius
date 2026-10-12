@@ -1,4 +1,4 @@
-import { isBlackKey, keyReleases, type Hand, type Song, type SongNote } from '@sonara/shared'
+import { isBlackKey, keyReleases, type Hand, type Song, type SongNote } from '@motius/shared'
 
 /**
  * Where a hand is, from the fingering of a song.

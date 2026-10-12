@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildSong, songSteps, type SongNote } from '@sonara/shared'
+import { buildSong, songSteps, type SongNote } from '@motius/shared'
 import { useSongStore } from '@/state/song-store'
 import {
   barLinesIn,

@@ -4,7 +4,7 @@
  * one command rather than an afternoon in an image editor:
  *
  *   public/favicon.svg        → public/favicon.ico (16, 32 and 48px)
- *   src/assets/sonara-logo.svg → public/apple-touch-icon.png (180px)
+ *   src/assets/motius-logo.svg → public/apple-touch-icon.png (180px)
  *
  * favicon.svg is drawn by hand for tab size and is not generated: a logo
  * scaled down to 16px loses whatever is under a pixel, and which parts those
@@ -39,7 +39,7 @@ const chrome = spawn(
     '--password-store=basic',
     '--hide-scrollbars',
     `--remote-debugging-port=${PORT}`,
-    `--user-data-dir=/tmp/sonara-icons-${PORT}`,
+    `--user-data-dir=/tmp/motius-icons-${PORT}`,
     'about:blank',
   ],
   { stdio: 'ignore', detached: true },
@@ -105,7 +105,7 @@ try {
   }
 
   const favicon = readFileSync(`${WEB}public/favicon.svg`, 'utf8')
-  const logo = readFileSync(`${WEB}src/assets/sonara-logo.svg`, 'utf8')
+  const logo = readFileSync(`${WEB}src/assets/motius-logo.svg`, 'utf8')
 
   const sizes = [16, 32, 48]
   const pngs = []

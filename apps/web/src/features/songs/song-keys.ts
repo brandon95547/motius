@@ -1,4 +1,4 @@
-import { keyName, type Song } from '@sonara/shared'
+import { keyName, type Song } from '@motius/shared'
 
 /**
  * The keys songs are in, as the chooser offers them to be narrowed by.

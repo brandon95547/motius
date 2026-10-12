@@ -1,4 +1,4 @@
-import type { Instrument } from '@sonara/shared'
+import type { Instrument } from '@motius/shared'
 
 /**
  * What the rest of the app needs from a sound source.

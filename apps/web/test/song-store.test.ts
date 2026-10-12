@@ -11,7 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
  * never mention.
  */
 
-const KEY = 'sonara.songs.v1'
+const KEY = 'motius.songs.v1'
 
 /** Exactly the shape stored before roles and parts were added. */
 const legacy = {

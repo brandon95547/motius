@@ -578,7 +578,7 @@ export function Slider({
         onPointerUp={() => onCommit?.(value)}
         onKeyUp={() => onCommit?.(value)}
         onBlur={() => onCommit?.(value)}
-        className="sonara-slider"
+        className="motius-slider"
         // The filled portion of the track is painted from these custom
         // properties rather than from a second element, so the thumb stays a
         // real native control with real keyboard and assistive-tech behaviour.

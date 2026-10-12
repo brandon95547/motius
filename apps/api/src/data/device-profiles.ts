@@ -1,4 +1,4 @@
-import { STANDARD_RANGES, type DeviceProfile } from '@sonara/shared'
+import { STANDARD_RANGES, type DeviceProfile } from '@motius/shared'
 
 /**
  * Built-in MIDI controller profiles.

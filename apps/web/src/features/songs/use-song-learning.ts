@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { playedSteps, songSteps, type Song, type SongStep } from '@sonara/shared'
+import { playedSteps, songSteps, type Song, type SongStep } from '@motius/shared'
 import { useLearningStore, type KeyAnnotation } from '@/state/learning-store'
 import { useKeyboardStore } from '@/state/keyboard-store'
 import { useSongStore } from '@/state/song-store'

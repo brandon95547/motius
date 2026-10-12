@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { songSteps } from '@sonara/shared'
+import { songSteps } from '@motius/shared'
 import { importMusicXml } from '@/features/songs/import-musicxml'
 import { barLinesIn, barRestsIn, measureScore, place } from '@/features/staff/score'
 

@@ -10,7 +10,7 @@ import {
   type SongGenre,
   type SongMood,
   type SongNote,
-} from '@sonara/shared'
+} from '@motius/shared'
 import { SONG_CATALOG } from '@/features/songs/catalog'
 import { SongPicker, showMySongs } from '@/features/songs/SongPicker'
 import { shortKey, songKey, sortKeys } from '@/features/songs/song-keys'

@@ -9,7 +9,7 @@ import {
   type DetectedKey,
   type Song,
   type SongNote,
-} from '@sonara/shared'
+} from '@motius/shared'
 import { measureScore } from '@/features/staff/score'
 import { Chord, staffOf } from '@/features/staff/StaffNotes'
 import { GrandStaff } from '@/features/staff/GrandStaff'

@@ -75,11 +75,11 @@ describe('the background video', () => {
   it('goes when it is turned off, and is remembered when it is on', () => {
     useBackdropStore.getState().setBackdrop('fireplace')
     const { rerender } = render(<StageBackdrop />)
-    expect(localStorage.getItem('sonara.backdrop')).toBe('fireplace')
+    expect(localStorage.getItem('motius.backdrop')).toBe('fireplace')
 
     useBackdropStore.getState().setBackdrop('none')
     rerender(<StageBackdrop />)
     expect(film()).toBeNull()
-    expect(localStorage.getItem('sonara.backdrop')).toBe('none')
+    expect(localStorage.getItem('motius.backdrop')).toBe('none')
   })
 })

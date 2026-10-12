@@ -1,6 +1,6 @@
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { songSteps, writtenValue } from '@sonara/shared'
+import { songSteps, writtenValue } from '@motius/shared'
 import { importMusicXml } from '@/features/songs/import-musicxml'
 import { frameOf, measureScore, spreadOf } from '@/features/staff/score'
 import { BarLines } from '@/features/staff/score-parts'

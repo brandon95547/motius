@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { PIANO_HIGHEST_NOTE, PIANO_LOWEST_NOTE } from '@sonara/shared'
+import { PIANO_HIGHEST_NOTE, PIANO_LOWEST_NOTE } from '@motius/shared'
 import { AUTO_SPAN, useViewStore } from '@/state/view-store'
 
 /**

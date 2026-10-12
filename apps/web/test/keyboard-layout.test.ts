@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { KEY_COUNTS, isBlackKey, pitchClass, STANDARD_RANGES } from '@sonara/shared'
+import { KEY_COUNTS, isBlackKey, pitchClass, STANDARD_RANGES } from '@motius/shared'
 import {
   buildLayout,
   canShift,

@@ -1,6 +1,6 @@
 import { act, cleanup, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { buildSong, type SongNote } from '@sonara/shared'
+import { buildSong, type SongNote } from '@motius/shared'
 import { HandsOverlay } from '@/features/hands/HandsOverlay'
 import { buildLayout, keyCenterPercent } from '@/features/keyboard/keyboard-layout'
 import { useKeyboardStore } from '@/state/keyboard-store'

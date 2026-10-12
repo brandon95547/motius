@@ -1,6 +1,6 @@
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { songSteps, type Song } from '@sonara/shared'
+import { songSteps, type Song } from '@motius/shared'
 import { importMusicXml } from '@/features/songs/import-musicxml'
 import {
   alignLayers,
@@ -33,7 +33,7 @@ afterEach(cleanup)
  *
  * Two staves hold most piano music and not all of it. The end of
  * Rachmaninoff's Prelude in C-sharp minor is printed on four, two to a hand:
- * the chords on one and the bell notes under them on another. Sonara read such
+ * the chords on one and the bell notes under them on another. Motius read such
  * a page and put every note of a hand on that hand's one staff, chords and bell
  * notes through each other. A score now keeps the staves it was written on.
  */

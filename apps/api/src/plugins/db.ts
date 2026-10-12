@@ -37,5 +37,5 @@ export const dbPlugin = fp<DbPluginOptions>(
       app.log.info({ scope: 'db' }, 'database closed')
     })
   },
-  { name: 'sonara-db' },
+  { name: 'motius-db' },
 )

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { keyName, spellingName } from '@sonara/shared'
+import { keyName, spellingName } from '@motius/shared'
 import { importMidi } from '@/features/songs/import-midi'
 import { importMuseScore } from '@/features/songs/import-musescore'
 import { importMusicXml } from '@/features/songs/import-musicxml'

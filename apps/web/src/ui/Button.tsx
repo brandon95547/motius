@@ -11,7 +11,7 @@ import { cn } from '@/lib/cn'
 
    And its rule about weight: ONE filled button per view. `--filled` answers
    "what did you bring me here to do?", and two answers is the same as none.
-   In Sonara that button is "Connect a keyboard" until a keyboard is connected.
+   In Motius that button is "Connect a keyboard" until a keyboard is connected.
    ======================================================================== */
 
 export type ButtonVariant = 'filled' | 'tonal' | 'outlined' | 'text' | 'danger-outline'
@@ -26,7 +26,7 @@ const base = [
   'disabled:pointer-events-none disabled:opacity-45 disabled:saturate-50',
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ds-focus-ring)]',
   // A real 44x44 pointer target on coarse pointers without inflating the box.
-  // The mechanism lives in sonara.css, where its three failure modes are
+  // The mechanism lives in motius.css, where its three failure modes are
   // written down next to it.
   'touch-target',
 ].join(' ')

@@ -15,7 +15,7 @@ import {
   type Hand,
   type LearningMode,
   type SessionState,
-} from '@sonara/shared'
+} from '@motius/shared'
 import { Card } from '@/ui/Surface'
 import { Chip, Divider } from '@/ui/Display'
 import { Button, IconButton } from '@/ui/Button'
@@ -622,7 +622,7 @@ function PracticeControlsCard() {
 
       <Divider />
 
-      {/* A target to aim at, not a metronome. Sonara measures what you actually
+      {/* A target to aim at, not a metronome. Motius measures what you actually
           played and shows it next to this number; it does not click at you. */}
       <Switch
         label="Auto tempo"

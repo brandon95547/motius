@@ -1,4 +1,4 @@
-import { MIDDLE_LINE, stemDirection } from '@sonara/shared'
+import { MIDDLE_LINE, stemDirection } from '@motius/shared'
 import { STEP, yOn } from './staff-frame'
 import { placementOf, STEM_STEPS, stemXFor } from './StaffNotes'
 import { BEAM_LINES, staffOfLine, voiceOn, type BeamLine, type Placed } from './score'

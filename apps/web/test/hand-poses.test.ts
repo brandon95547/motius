@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildSong, type SongNote } from '@sonara/shared'
+import { buildSong, type SongNote } from '@motius/shared'
 import { frameAt, handPose, handTimeline, shapeAt } from '@/features/hands/hand-poses'
 import { buildLayout, keyCenterPercent } from '@/features/keyboard/keyboard-layout'
 

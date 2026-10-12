@@ -1,4 +1,4 @@
-import { fingerSong, type FingeringSystemId, type Song } from '@sonara/shared'
+import { fingerSong, type FingeringSystemId, type Song } from '@motius/shared'
 import { isZip, readMscz, readMxl } from './archive'
 import { importMidi } from './import-midi'
 import { importMuseScore } from './import-musescore'

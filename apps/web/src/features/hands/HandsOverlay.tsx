@@ -6,7 +6,7 @@ import {
   songSteps,
   type Hand,
   type Song,
-} from '@sonara/shared'
+} from '@motius/shared'
 import { useElementSize } from '@/lib/hooks'
 import { keyCenterPercent, type KeyboardLayout } from '@/features/keyboard/keyboard-layout'
 import { useKeyboardStore } from '@/state/keyboard-store'

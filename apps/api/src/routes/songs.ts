@@ -9,7 +9,7 @@ import {
   songMoodSchema,
   type SongCategoryChoice,
   type SongMood,
-} from '@sonara/shared'
+} from '@motius/shared'
 
 /**
  * Which genre of the song chooser each built-in song is in, and which moods it

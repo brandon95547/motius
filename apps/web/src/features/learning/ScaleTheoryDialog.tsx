@@ -12,7 +12,7 @@ import {
   tetrachordNotes,
   type Hand,
   type KeyMode,
-} from '@sonara/shared'
+} from '@motius/shared'
 import { Drawer } from '@/ui/Drawer'
 import { Divider } from '@/ui/Display'
 import { useLearningStore } from '@/state/learning-store'

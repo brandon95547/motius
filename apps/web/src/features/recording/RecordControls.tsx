@@ -1,5 +1,5 @@
 import { Circle, Download, History, Square, Trash2 } from 'lucide-react'
-import { keyFromTonic, performanceLength, writeMidiFile, writeMusicXml } from '@sonara/shared'
+import { keyFromTonic, performanceLength, writeMidiFile, writeMusicXml } from '@motius/shared'
 import { cn } from '@/lib/cn'
 import { Button } from '@/ui/Button'
 import { Drawer } from '@/ui/Drawer'
@@ -119,7 +119,7 @@ export function RecordingReview() {
   const discard = useRecordingStore((state) => state.discard)
   const close = useRecordingStore((state) => state.close)
   const bpm = useLearningStore((state) => state.targetBpm)
-  const title = useLearningStore((state) => state.exercise?.title ?? 'Sonara recording')
+  const title = useLearningStore((state) => state.exercise?.title ?? 'Motius recording')
   /*
    * The key to write the export in.
    *

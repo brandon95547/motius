@@ -1,4 +1,4 @@
-import { barIndexAt, playDuration, scoreMsAt } from '@sonara/shared'
+import { barIndexAt, playDuration, scoreMsAt } from '@motius/shared'
 import { useCurrentSong, useSongStore } from '@/state/song-store'
 import { RunMeter } from '@/features/learning/RunMeter'
 
@@ -57,7 +57,7 @@ export function SongProgress() {
     <div className="song-progress">
       <input
         type="range"
-        className="sonara-slider song-progress__range"
+        className="motius-slider song-progress__range"
         min={0}
         max={1000}
         step={1}

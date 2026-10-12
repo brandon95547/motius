@@ -209,7 +209,7 @@ export interface ChordSymbol {
   readonly startMs: number
   readonly startQ: number
   readonly text: string
-  /** Whether the file wrote it, or Sonara read it off the notes. */
+  /** Whether the file wrote it, or Motius read it off the notes. */
   readonly source: 'score' | 'derived'
 }
 
@@ -286,7 +286,7 @@ export interface Song {
   /**
    * Where that fingering came from.
    *
-   * `score` means somebody wrote it in the file. `derived` means Sonara worked
+   * `score` means somebody wrote it in the file. `derived` means Motius worked
    * it out, which is a weaker claim and has to be shown as one — a suggested
    * finger drawn as though the score asked for it is worse than no finger.
    * `mixed` is the usual case for a published score: it marks the fingers that

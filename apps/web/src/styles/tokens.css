@@ -4,7 +4,7 @@
    Copied verbatim from the UI Bible (ui.skylanex.com), which is the interface
    standard for every platform we ship. Do not edit values here: fix them
    upstream and re-copy, or the two drift and the next product inherits the
-   drift. Sonara's own additions live in `sonara.css`, in the component tier.
+   drift. Motius's own additions live in `motius.css`, in the component tier.
    This file is in .prettierignore so a re-copy stays a clean diff.
    ----------------------------------------------------------------------------
    Three tiers, in strict order. Never skip a tier.

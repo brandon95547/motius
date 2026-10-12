@@ -15,7 +15,7 @@ import {
   type Song,
   type SongMeasure,
   type SongNote,
-} from '@sonara/shared'
+} from '@motius/shared'
 
 /**
  * Reads a Standard MIDI File into a song.
