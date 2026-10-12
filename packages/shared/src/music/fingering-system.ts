@@ -1,5 +1,6 @@
 import type { ChordKind, KeyMode } from './chords.js'
 import type { Hand } from './fingering.js'
+import { NATURAL } from './fingering-natural.js'
 import { TRADITIONAL } from './fingering-traditional.js'
 
 /**
@@ -15,7 +16,7 @@ import { TRADITIONAL } from './fingering-traditional.js'
  * in the table below. Nothing about a scale, a key or an exercise changes.
  */
 
-export const FINGERING_SYSTEM_IDS = ['traditional'] as const
+export const FINGERING_SYSTEM_IDS = ['traditional', 'natural'] as const
 export type FingeringSystemId = (typeof FINGERING_SYSTEM_IDS)[number]
 
 export const DEFAULT_FINGERING_SYSTEM: FingeringSystemId = 'traditional'
@@ -154,6 +155,7 @@ export interface FingeringSystem {
 
 export const FINGERING_SYSTEMS: Readonly<Record<FingeringSystemId, FingeringSystem>> = {
   traditional: TRADITIONAL,
+  natural: NATURAL,
 }
 
 export function isFingeringSystemId(value: unknown): value is FingeringSystemId {

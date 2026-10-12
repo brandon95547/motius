@@ -301,8 +301,8 @@ describe('keys and their enharmonic twins', () => {
 })
 
 describe('fingering systems', () => {
-  it('has one, and it is the default', () => {
-    expect(FINGERING_SYSTEM_IDS).toEqual(['traditional'])
+  it('has the traditional one for its default, listed first', () => {
+    expect(FINGERING_SYSTEM_IDS[0]).toBe('traditional')
     expect(DEFAULT_FINGERING_SYSTEM).toBe('traditional')
     expect(fingeringSystem().name).toBe('Traditional / Orthodox')
     // Anything unrecognised — a setting saved by a later version — is the default.

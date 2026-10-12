@@ -57,7 +57,7 @@ import { normalisePitchClass, parsePitch } from './pitch.js'
  * the middle of a run, plus whatever the page does differently on its lowest
  * and its highest notes.
  */
-interface RunEnds {
+export interface RunEnds {
   /** The lowest notes of the run, from the bottom up, where the page differs. */
   readonly bottom?: string
   /** The highest notes of the run, ending on the top note, where it differs. */
@@ -70,7 +70,7 @@ interface RunEnds {
   readonly close?: string
 }
 
-interface HandRun extends RunEnds {
+export interface HandRun extends RunEnds {
   /** One finger per degree, tonic first — the body of the run. */
   readonly cycle: string
 }
@@ -90,7 +90,7 @@ interface HandRun extends RunEnds {
  * - `sixth` — "separated by a sixth". The right hand is as above; the left
  *   runs from the third degree, a sixth below.
  */
-interface KeyPage {
+export interface KeyPage {
   readonly right: HandRun
   readonly left: HandRun
   readonly contrary?: { readonly right?: HandRun; readonly left?: HandRun }
@@ -99,7 +99,7 @@ interface KeyPage {
 }
 
 /** Printed keys, by the tonic as the page names it. */
-type Pages = Readonly<Record<string, KeyPage>>
+export type Pages = Readonly<Record<string, KeyPage>>
 
 /** The white-key shape: the little finger ends the right hand and opens the left. */
 const RIGHT: HandRun = { cycle: '1231234', top: '5' }
@@ -239,7 +239,14 @@ const MELODIC_MINOR_DESCENDING: Pages = {
   'B♭': { right: { cycle: '4123123', bottom: '2' }, left: { cycle: '2132143' } },
 }
 
-const PAGES: Readonly<Record<string, { pages: Pages; mode: 'major' | 'minor' }>> = {
+/** A system's printed scales: for each kind of scale, its keys and which mode they are. */
+export type ScalePages = Readonly<Record<string, { pages: Pages; mode: 'major' | 'minor' }>>
+
+/**
+ * The book's pages. Exported for a system that is this one with some of its
+ * pages turned: it says which, and is asked for the rest here.
+ */
+export const TRADITIONAL_PAGES: ScalePages = {
   major: { pages: MAJOR, mode: 'major' },
   'harmonic-minor': { pages: HARMONIC_MINOR, mode: 'minor' },
   'melodic-minor': { pages: MELODIC_MINOR_ASCENDING, mode: 'minor' },
@@ -259,7 +266,7 @@ const PAGES: Readonly<Record<string, { pages: Pages; mode: 'major' | 'minor' }>>
  * (Enharmonic G♭ Major)" and "D♭ Major (Enharmonic C♯ Major)". The rest follow
  * the same reasoning.
  */
-const PLAYED_FROM: Readonly<Record<'major' | 'minor', Readonly<Record<string, string>>>> = {
+export const PLAYED_FROM: Readonly<Record<'major' | 'minor', Readonly<Record<string, string>>>> = {
   major: { 'G♭': 'F♯', 'C♯': 'D♭', 'C♭': 'B' },
   minor: { 'E♭': 'D♯', 'A♭': 'G♯', 'A♯': 'B♭' },
 }
@@ -359,7 +366,14 @@ function chromatic(notes: readonly number[], hand: Hand): number[] {
   return fingers
 }
 
-function scale(query: ScaleFingeringQuery) {
+/**
+ * A system's answer for a scale, read off its pages.
+ *
+ * The same reading whoever's pages they are: the run from the tonic as the
+ * page prints it, laid out over the octaves asked for, and the chromatic scale
+ * by its rule.
+ */
+export const scaleFromPages = (printedPages: ScalePages) => (query: ScaleFingeringQuery) => {
   const form = query.form ?? 'similar'
   const startDegree = query.startDegree ?? 0
 
@@ -368,7 +382,7 @@ function scale(query: ScaleFingeringQuery) {
     return query.notes.length > 0 ? { fingers: chromatic(query.notes, query.hand) } : null
   }
 
-  const printed = PAGES[query.scaleTypeId]
+  const printed = printedPages[query.scaleTypeId]
   if (!printed) return null
 
   // `Bb` and `B♭` are one name written two ways; D♯ and E♭ are two names.
@@ -399,6 +413,8 @@ function scale(query: ScaleFingeringQuery) {
   const cycle = digits(page[query.hand].cycle)
   return { ...layOut(cycle, ends, query.octaves, startDegree), cycle }
 }
+
+const scale = scaleFromPages(TRADITIONAL_PAGES)
 
 /**
  * Chords, solid and broken.

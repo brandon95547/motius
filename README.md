@@ -54,9 +54,12 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
   thirds (major keys), or in octaves, staccato or legato; and a major or minor
   scale that comes back down can close with I – IV – V – I, the way the book
   ends each one.
-- **Fingering from the book.** The recommended fingers for major, minor and
-  chromatic scales are the ones printed in The Brown Scale Book, under a
-  Fingering system setting built to take more than one.
+- **Fingering from the book, and a choice of book.** The recommended fingers
+  for major, minor and chromatic scales are the ones printed in The Brown Scale
+  Book — the traditional fingering, and the default. Settings ▸ Fingering
+  switches to the **Natural** system, after Penelope Roskell, which puts the
+  long fingers on the black keys: the same in most keys, and a different left
+  hand in G, D, A and F major and in a number of the minors.
 - **Play it to hear it.** A demo button walks the scale at the tempo you have
   set, driving the same finger and target guidance Learn uses.
 - **Chords and arpeggios.** Two more areas, built on the same engine: each
@@ -392,9 +395,9 @@ not pretend otherwise — the cards say so.
 Two sources answer two different questions, and which one applies decides what
 the answer is labeled.
 
-_A fingering system_ answers for the scales its source prints. There is one,
-**Traditional / Orthodox**, chosen under Settings ▸ Fingering, and it is a
-transcription of the fingering printed in _Scales, Chords and Arpeggios for
+_A fingering system_ answers for the scales its source prints. There are two,
+chosen under Settings ▸ Fingering. **Traditional / Orthodox** is the default,
+and it is a transcription of the fingering printed in _Scales, Chords and Arpeggios for
 Piano — The Brown Scale Book_ (Frederick Harris): every major key, every minor
 key in its harmonic and melodic forms, and the chromatic scale; each key's
 chords, which the book fingers alike in every key; each key's arpeggios, which
@@ -424,6 +427,35 @@ The notes of a scale live in `music/scales.ts` and know nothing about fingers.
 A system is asked, separately, which fingers it puts on them
 (`music/fingering-system.ts`), so adding one is a new file and a line in a
 table, and no scale definition changes.
+
+**Natural / Topographical** is the second (`music/fingering-natural.ts`),
+transcribed from the charts of Penelope Roskell's _The Art of Piano Fingering:
+A New Approach to Scales and Arpeggios_ (LCM Publications, 1996). The
+traditional fingerings are C major's carried to every key; this school starts
+from the keyboard instead — the black keys are shorter and higher and the three
+middle fingers are the long ones, so the finger the thumb passes under goes on
+a black key wherever the scale has one to give it. Jon Verbalis's _Natural
+Fingering_ (Oxford, 2012) argues the same and says it shorter: fourth on black,
+thumb on white.
+
+It is the traditional pages with some of them turned, and it names the ones it
+turns:
+
+- **Major scales:** the left hand of G, D, A and F, each with its 4th finger on
+  the key's one convenient black key. Every other major is the tradition's.
+- **Minor scales:** the right hand of A, C and D harmonic minor and of the
+  sharp minors' openings; the left hand of A, C and G harmonic and of C, D, F
+  and G melodic. A melodic minor comes down as its relative major is fingered,
+  so some hands descend on different fingers from the ones they climbed on.
+- **Arpeggios of the triad:** one finger for each note of the chord, kept in
+  every inversion and at any number of octaves, with the thumb on the third or
+  the fifth where the tradition puts it on a white tonic.
+
+It keeps the traditional fingering wherever Roskell's chart does, including
+against its own rule, and it asks the traditional system for what is not
+transcribed yet: the chords, the octaves and the cadences, which she fingers as
+the tradition does, and the double thirds and seventh-chord arpeggios, which
+she does not.
 
 _Worked out_ covers everything else — the modes, the pentatonics, blues, whole
 tone, and the hundred-odd scales of `music/scale-library.ts`. For scales with
