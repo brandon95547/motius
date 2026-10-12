@@ -1,6 +1,8 @@
+import * as React from 'react'
 import {
   AudioWaveform,
   BookOpen,
+  ChevronRight,
   Circle,
   CircleOff,
   Film,
@@ -8,7 +10,6 @@ import {
   Gauge,
   Hand,
   LayoutGrid,
-  Lock,
   MoreVertical,
   Palette,
   Piano,
@@ -27,7 +28,7 @@ import { useRecordingStore } from '@/state/recording-store'
 import { useCurrentSong } from '@/state/song-store'
 import { BACKDROPS, useBackdropStore } from '@/state/backdrop-store'
 import { COLOR_THEMES, useThemeStore } from '@/state/theme-store'
-import { AREAS, COMING_NEXT } from '@/features/areas/areas'
+import { CATEGORIES, findCategory, findSection, placeOf } from '@/features/areas/areas'
 import { OptionsButton } from '@/components/OptionsDrawer'
 import { LastTakeButton, RecordButton } from '@/features/recording/RecordControls'
 import {
@@ -72,7 +73,8 @@ export function TopBar() {
   return (
     <header className="top-bar">
       <div className="top-bar__row">
-        <Brand keep={area === null} />
+        <Brand keep={area === null} deep={page === 'category' || page === 'section'} />
+        {area === null && <PageTitle />}
         {area && <OptionsButton />}
         {area === 'songs' && <NowPlaying />}
 
@@ -119,14 +121,59 @@ export function TopBar() {
 /**
  * The name, which gives way as the bar narrows: the word first, then the mark.
  * The tab already says where you are, and the controls cannot. The dashboard
- * has no controls to make room for, so there it stays whole.
+ * has no controls to make room for, so there it stays whole. A page under the
+ * dashboard has the way down to it to show, and on a phone the word gives its
+ * room to that: `Practice › Sight-Reading` matters more there than a name the
+ * mark already stands for.
  */
-function Brand({ keep }: { keep: boolean }) {
+function Brand({ keep, deep = false }: { keep: boolean; deep?: boolean }) {
   return (
     <div className={cn('top-bar__brand', !keep && 'bar-mid')}>
       <img className="top-bar__logo" src={logoUrl} alt="" title="Sonara" />
-      <span className={cn('top-bar__name', !keep && 'bar-full')}>Sonara</span>
+      <span className={cn('top-bar__name', !keep && 'bar-full', deep && 'bar-sm')}>Sonara</span>
     </div>
+  )
+}
+
+/**
+ * Where you are, on the pages that lead to the areas: the dashboard's name, or
+ * the way down to the page that is up — Dashboard, Practice, Sight-Reading —
+ * each step but the last a way back to it.
+ *
+ * It is the page's heading. Those pages have none of their own: the bar is the
+ * one place a page's name is on every page, and a second, larger one under it
+ * was the same word twice over a grid of cards that were the point.
+ */
+function PageTitle() {
+  const categoryId = usePageStore((state) => state.category)
+  const sectionId = usePageStore((state) => state.section)
+  const category = findCategory(categoryId)
+  const section = category && findSection(category, sectionId)
+  const trail = [
+    { label: 'Dashboard', open: pageActions.openDashboard },
+    ...(category
+      ? [{ label: category.label, open: () => pageActions.openCategory(category) }]
+      : []),
+    ...(category && section ? [{ label: section.label, open: () => {} }] : []),
+  ]
+
+  return (
+    <nav className="top-bar__trail" aria-label="You are here">
+      {trail.map((step, index) =>
+        index === trail.length - 1 ? (
+          <h1 key={step.label} className="top-bar__title" aria-current="page">
+            {step.label}
+          </h1>
+        ) : (
+          <React.Fragment key={step.label}>
+            <button type="button" className="top-bar__crumb" onClick={step.open}>
+              {step.label}
+            </button>
+            <ChevronRight size={16} className="top-bar__crumb-mark" aria-hidden />
+          </React.Fragment>
+        ),
+      )}
+    </nav>
   )
 }
 
@@ -218,6 +265,13 @@ function BackdropMenu({ className }: { className?: string }) {
 
 function Utilities({ area }: { area: string | null }) {
   const recording = useRecordingStore((state) => state.status)
+  // Which of the four categories you are in: the one whose page is up, or the
+  // one the open area is filed under.
+  const page = usePageStore((state) => state.page)
+  const pageCategory = usePageStore((state) => state.category)
+  const topic = useLearningStore((state) => state.topic)
+  const progression = useLearningStore((state) => state.progressionType)
+  const here = page === 'area' ? placeOf(topic, progression)?.category.id : pageCategory
   const live = recording === 'recording' || recording === 'counting'
   const progressLabel = area === 'songs' ? 'Hand position' : 'Progress'
   const ProgressIcon = area === 'songs' ? Hand : Gauge
@@ -266,19 +320,18 @@ function Utilities({ area }: { area: string | null }) {
       id: 'dashboard',
       label: 'Dashboard',
       icon: <LayoutGrid size={16} />,
-      checked: area === null,
+      checked: page === 'dashboard',
       onSelect: pageActions.openDashboard,
     },
-    ...AREAS.map((entry, index): MenuAction => ({
-      id: entry.topic,
+    // The four categories, as the dashboard has them. What is inside one is
+    // on its page: a menu that listed all sixteen would be the dashboard again.
+    ...CATEGORIES.map((entry, index): MenuAction => ({
+      id: entry.id,
       label: entry.label,
       icon: <entry.icon size={16} />,
-      checked: area === entry.topic,
-      disabled: !entry.available,
-      title: entry.available ? undefined : COMING_NEXT,
-      trail: entry.available ? undefined : <Lock size={13} />,
+      checked: here === entry.id,
       separated: index === 0,
-      onSelect: () => pageActions.openArea(entry.topic),
+      onSelect: () => pageActions.openCategory(entry),
     })),
     ...folded,
     {

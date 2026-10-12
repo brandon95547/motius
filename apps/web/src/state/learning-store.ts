@@ -3,11 +3,13 @@ import {
   buildArpeggioExercise,
   buildChordExercise,
   buildCadenceExercise,
+  buildFingeringExercise,
   buildRoutineExercise,
   buildScaleExercise,
   DEFAULT_ARPEGGIO_SPEC,
   DEFAULT_CHORD_SPEC,
   DEFAULT_CADENCE_SPEC,
+  DEFAULT_FINGERING_DRILL_SPEC,
   DEFAULT_PROGRESSION_TYPE,
   DEFAULT_ROUTINE_SPEC,
   DEFAULT_FINGERING_SYSTEM,
@@ -26,6 +28,7 @@ import {
   type ArpeggioSpec,
   type ChordSpec,
   type Exercise,
+  type FingeringDrillSpec,
   type FingeringSystemId,
   type LearningMode,
   type NoteRange,
@@ -58,6 +61,7 @@ export const LEARNING_TOPICS = [
   'arpeggios',
   'progressions',
   'exercises',
+  'fingering',
 ] as const
 export type LearningTopic = (typeof LEARNING_TOPICS)[number]
 
@@ -67,7 +71,8 @@ export const LEARNING_TOPIC_LABELS: Record<LearningTopic, string> = {
   chords: 'Chords',
   arpeggios: 'Arpeggios',
   progressions: 'Progressions',
-  exercises: 'Exercises',
+  exercises: 'Daily Practice',
+  fingering: 'Fingering Exercises',
 }
 
 /**
@@ -84,6 +89,7 @@ interface Specs {
   /** Progressions has a spec for each of its types; Cadences is the first. */
   cadenceSpec: CadenceSpec
   routineSpec: RoutineSpec
+  fingeringSpec: FingeringDrillSpec
 }
 type SpecKey = keyof Specs
 
@@ -127,6 +133,7 @@ interface LearningState {
   progressionType: ProgressionType
   cadenceSpec: CadenceSpec
   routineSpec: RoutineSpec
+  fingeringSpec: FingeringDrillSpec
   exercise: Exercise | null
   session: SessionState
   annotations: Readonly<Record<number, KeyAnnotation>>
@@ -192,6 +199,7 @@ interface LearningState {
   setProgressionType: (type: ProgressionType) => void
   updateCadenceSpec: (patch: Partial<CadenceSpec>) => void
   updateRoutineSpec: (patch: Partial<RoutineSpec>) => void
+  updateFingeringSpec: (patch: Partial<FingeringDrillSpec>) => void
   start: () => void
   reset: () => void
   setDemoStep: (index: number | null) => void
@@ -237,6 +245,8 @@ function buildExercise(
       }
     case 'exercises':
       return buildRoutineExercise(specs.routineSpec, options)
+    case 'fingering':
+      return buildFingeringExercise(specs.fingeringSpec, options)
     default:
       return null
   }
@@ -407,6 +417,7 @@ export const useLearningStore = create<LearningState>((set, get) => {
         arpeggioSpec: state.arpeggioSpec,
         cadenceSpec: state.cadenceSpec,
         routineSpec: state.routineSpec,
+        fingeringSpec: state.fingeringSpec,
         [key]: next,
       } as Specs
       const chosen = { ...specs, progressionType: state.progressionType }
@@ -422,6 +433,7 @@ export const useLearningStore = create<LearningState>((set, get) => {
     progressionType: DEFAULT_PROGRESSION_TYPE,
     cadenceSpec: DEFAULT_CADENCE_SPEC,
     routineSpec: DEFAULT_ROUTINE_SPEC,
+    fingeringSpec: DEFAULT_FINGERING_DRILL_SPEC,
     exercise: initialExercise,
     session: IDLE_SESSION,
     annotations: buildAnnotations(initialExercise, 'learn', IDLE_SESSION),
@@ -462,6 +474,7 @@ export const useLearningStore = create<LearningState>((set, get) => {
       ),
     updateCadenceSpec: (patch) => respec('cadenceSpec', patch),
     updateRoutineSpec: (patch) => respec('routineSpec', patch),
+    updateFingeringSpec: (patch) => respec('fingeringSpec', patch),
 
     start: () =>
       set((state) => {

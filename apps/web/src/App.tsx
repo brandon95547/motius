@@ -128,7 +128,7 @@ function Shell() {
     <div className="app-shell">
       <TopBar />
 
-      {page === 'dashboard' ? (
+      {page !== 'area' ? (
         <Dashboard />
       ) : (
         <div className="workspace">

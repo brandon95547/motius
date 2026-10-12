@@ -11,6 +11,10 @@ import {
   CHORD_STYLES,
   chordStylesFor,
   chordPositionName,
+  FINGERING_DRILL_DESCRIPTIONS,
+  FINGERING_DRILL_LABELS,
+  FINGERING_DRILLS,
+  fingeringDrillHands,
   findScaleType,
   KEY_MODE_LABELS,
   KEY_MODES,
@@ -32,6 +36,7 @@ import {
   type CadenceSpec,
   type ChordForm,
   type ChordStyle,
+  type FingeringDrill,
   type KeyMode,
   type ProgressionType,
   type Routine,
@@ -42,7 +47,7 @@ import { Field, SegmentedControl, Select } from '@/ui/Controls'
 import { Divider } from '@/ui/Display'
 import { useLearningStore } from '@/state/learning-store'
 import { pageActions } from '@/state/page-store'
-import { THEORY_TITLES } from '@/features/theory/KeyTheoryDrawer'
+import { theoryTitle } from '@/features/theory/KeyTheoryDrawer'
 import { DIRECTION_SHORT, OptionGroup, TheoryLink } from './ScaleControls'
 
 /**
@@ -55,7 +60,7 @@ import { DIRECTION_SHORT, OptionGroup, TheoryLink } from './ScaleControls'
  * choices need a sentence say it under the field, for the choice that is made.
  */
 
-type Area = 'chords' | 'arpeggios' | 'progressions' | 'exercises'
+type Area = 'chords' | 'arpeggios' | 'progressions' | 'exercises' | 'fingering'
 
 /** The area's settings and the action that changes them, whichever area it is. */
 function useKey(area: Area) {
@@ -65,15 +70,18 @@ function useKey(area: Area) {
   // so far; the next adds its own here, chosen by the type the area is on.
   const cadence = useLearningStore((state) => state.cadenceSpec)
   const routine = useLearningStore((state) => state.routineSpec)
+  const fingering = useLearningStore((state) => state.fingeringSpec)
   const updateChord = useLearningStore((state) => state.updateChordSpec)
   const updateArpeggio = useLearningStore((state) => state.updateArpeggioSpec)
   const updateCadence = useLearningStore((state) => state.updateCadenceSpec)
   const updateRoutine = useLearningStore((state) => state.updateRoutineSpec)
+  const updateFingering = useLearningStore((state) => state.updateFingeringSpec)
   const spec = {
     chords: chord,
     arpeggios: arpeggio,
     progressions: cadence,
     exercises: routine,
+    fingering,
   }[area]
   // The fields the areas share. Each action takes its own area's patch; a key,
   // a mode and a hand are part of all of them.
@@ -82,6 +90,7 @@ function useKey(area: Area) {
     arpeggios: updateArpeggio,
     progressions: updateCadence,
     exercises: updateRoutine,
+    fingering: updateFingering,
   }[area] as (patch: {
     rootPitchClass?: number
     tonic?: string
@@ -209,11 +218,12 @@ function HandsField({ area }: { area: Area }) {
 /** The way to the theory of what the area has on the keys, once it has something. */
 function AreaTheoryLink() {
   const kind = useLearningStore((state) => state.exercise?.kind)
+  const topic = useLearningStore((state) => state.topic)
   if (!kind) return null
   return (
     <>
       <Divider />
-      <TheoryLink>{THEORY_TITLES[kind]}</TheoryLink>
+      <TheoryLink>{theoryTitle(topic, kind)}</TheoryLink>
     </>
   )
 }
@@ -532,6 +542,59 @@ export function ExerciseOptions() {
             </p>
           </Field>
         )}
+      </OptionGroup>
+      <AreaTheoryLink />
+    </>
+  )
+}
+
+/** The options of the Fingering Exercises area. */
+export function FingeringOptions() {
+  const spec = useLearningStore((state) => state.fingeringSpec)
+  const update = useLearningStore((state) => state.updateFingeringSpec)
+  const drillId = React.useId()
+  // The exercises that drill a crossing are one hand at a time: the hands
+  // pass the thumb at different places in the same scale.
+  const hands = fingeringDrillHands(spec.drill)
+  const hand = hands.includes(spec.hand) ? spec.hand : hands[0]!
+
+  return (
+    <>
+      <OptionGroup>
+        <Field label="Exercise" htmlFor={drillId} hint={FINGERING_DRILL_DESCRIPTIONS[spec.drill]}>
+          <Select
+            id={drillId}
+            size="sm"
+            value={spec.drill}
+            onChange={(event) => update({ drill: event.target.value as FingeringDrill })}
+            options={FINGERING_DRILLS.map((drill) => ({
+              value: drill,
+              label: FINGERING_DRILL_LABELS[drill],
+            }))}
+          />
+        </Field>
+      </OptionGroup>
+      <Divider />
+      <OptionGroup>
+        <KeyFields area="fingering" />
+      </OptionGroup>
+      <Divider />
+      <OptionGroup>
+        <Field
+          label="Hands"
+          hint={
+            hands.length < 3
+              ? 'One hand at a time: each passes the thumb in its own place.'
+              : undefined
+          }
+        >
+          <SegmentedControl<ScaleHands>
+            label="Hands"
+            value={hand}
+            onChange={(next) => update({ hand: next })}
+            options={HAND_OPTIONS.filter((option) => hands.includes(option.value))}
+          />
+        </Field>
       </OptionGroup>
       <AreaTheoryLink />
     </>

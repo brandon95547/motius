@@ -120,6 +120,61 @@ describe('moving between the dashboard and the areas', () => {
     await waitFor(() => expect(usePageStore.getState().page).toBe('area'))
     expect(useLearningStore.getState().topic).toBe('exercises')
   })
+
+  it('opens the fingering exercises by their address', async () => {
+    renderHook(() => usePageSync())
+    globalThis.location.hash = '#/fingering'
+    await waitFor(() => expect(usePageStore.getState().page).toBe('area'))
+    expect(useLearningStore.getState().topic).toBe('fingering')
+    expect(useLearningStore.getState().exercise?.title).toBe('C Major Five-Finger Position')
+  })
+})
+
+describe('the pages between the dashboard and the areas', () => {
+  it('opens a category by its address, and one of its unbuilt sections under it', async () => {
+    renderHook(() => usePageSync())
+    globalThis.location.hash = '#/practice'
+    await waitFor(() => expect(usePageStore.getState().page).toBe('category'))
+    expect(usePageStore.getState().category).toBe('practice')
+
+    globalThis.location.hash = '#/practice/sight-reading'
+    await waitFor(() => expect(usePageStore.getState().page).toBe('section'))
+    expect(usePageStore.getState()).toMatchObject({
+      category: 'practice',
+      section: 'sight-reading',
+    })
+  })
+
+  it('takes a built section’s name under its category as the category: its address is its area’s', async () => {
+    renderHook(() => usePageSync())
+    globalThis.location.hash = '#/explore/scales'
+    await waitFor(() => expect(usePageStore.getState().page).toBe('category'))
+    expect(usePageStore.getState()).toMatchObject({ category: 'explore', section: null })
+
+    // And a name that is no section of it at all.
+    globalThis.location.hash = '#/explore/nonsense'
+    await waitFor(() => expect(globalThis.location.hash).toBe('#/explore/nonsense'))
+    expect(usePageStore.getState()).toMatchObject({ page: 'category', section: null })
+  })
+
+  it('keeps Songs an area: the category that is one has no page of its own', async () => {
+    renderHook(() => usePageSync())
+    globalThis.location.hash = '#/songs'
+    await waitFor(() => expect(usePageStore.getState().page).toBe('area'))
+    expect(usePageStore.getState().category).toBeNull()
+  })
+
+  it('stops a song that is playing when you leave for a category’s page, as for the dashboard', async () => {
+    renderHook(() => usePageSync())
+    pageActions.openArea('songs')
+    await waitFor(() => expect(usePageStore.getState().page).toBe('area'))
+    useSongStore.getState().setPlaying(true)
+
+    globalThis.location.hash = '#/lessons'
+    await waitFor(() => expect(usePageStore.getState().page).toBe('category'))
+    expect(useSongStore.getState().playing).toBe(false)
+    expect(usePanelStore.getState().panel).toBeNull()
+  })
 })
 
 describe('the run meter', () => {

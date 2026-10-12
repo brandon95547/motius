@@ -134,14 +134,14 @@ const PREFERRED_RIGHT = 58.5
 const mod7 = (degree: number) => ((degree % 7) + 7) % 7
 
 /** One note of one hand: its key, its name, its finger. */
-interface Played {
+export interface Played {
   readonly note: number
   readonly name: string
   readonly finger: number
 }
 
 /** One moment of a routine: what each hand plays, and for how long. */
-interface Moment {
+export interface Moment {
   readonly left?: readonly Played[]
   readonly right?: readonly Played[]
   readonly beats: number
@@ -158,7 +158,7 @@ interface Moment {
 const HAND_WORDS: Record<Hand, string> = { left: 'Left', right: 'Right' }
 
 /** Turns a routine's moments into steps: low hand first, each finger with its hand. */
-function stepsFrom(moments: readonly Moment[]): ExerciseStep[] {
+export function stepsFrom(moments: readonly Moment[]): ExerciseStep[] {
   const previous: Partial<Record<Hand, Played>> = {}
   const hands = (['left', 'right'] as const).filter((hand) =>
     moments.some((moment) => moment[hand] !== undefined),
@@ -176,8 +176,13 @@ function stepsFrom(moments: readonly Moment[]): ExerciseStep[] {
       for (const played of mine) {
         // A crossing is one finger passing another: a single line, moving by
         // step. A hand holding a cluster or a chord shifts whole.
+        // And between two notes: the same key struck again with another
+        // finger is a change of finger, not a thumb going under anything.
         const cue =
-          mine.length === 1 && last && Math.abs(played.note - last.note) <= 3
+          mine.length === 1 &&
+          last &&
+          played.note !== last.note &&
+          Math.abs(played.note - last.note) <= 3
             ? movementCue(last.finger, played.finger, hand, played.note > last.note)
             : undefined
         if (cue) crossings.push(hands.length > 1 ? `${HAND_WORDS[hand]}: ${cue}` : cue)

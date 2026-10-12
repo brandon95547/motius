@@ -11,6 +11,7 @@ import {
   ArpeggioOptions,
   ChordOptions,
   ExerciseOptions,
+  FingeringOptions,
   ProgressionOptions,
 } from '@/features/learning/ChordControls'
 import { SongMetronomeToggle, SongOptions, SongTempoControl } from '@/features/songs/SongControls'
@@ -25,6 +26,7 @@ const TITLES: Record<LearningTopic, string> = {
   arpeggios: 'Arpeggio Options',
   progressions: 'Progression Options',
   exercises: 'Exercise Options',
+  fingering: 'Exercise Options',
   songs: 'Song Options',
 }
 
@@ -179,6 +181,8 @@ export function OptionsDrawer() {
           <ProgressionOptions />
         ) : topic === 'exercises' ? (
           <ExerciseOptions />
+        ) : topic === 'fingering' ? (
+          <FingeringOptions />
         ) : (
           <SongOptions />
         )}

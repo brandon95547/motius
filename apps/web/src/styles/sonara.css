@@ -235,8 +235,6 @@
   );
   --shadow-dash-card: 0 22px 44px -22px rgb(0 0 0 / 0.85);
   --shadow-dash-card-hover: 0 28px 52px -22px rgb(0 0 0 / 0.9);
-  --shadow-dash-title: 0 2px 16px rgb(0 0 0 / 0.6);
-  --shadow-dash-lede: 0 1px 10px rgb(0 0 0 / 0.8);
 
   /* --- The areas -----------------------------------------------------------
      One accent each, on the dashboard card's icon, rule and arrow ring. */
@@ -1484,6 +1482,65 @@
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.28);
 }
 
+/* Where you are, on the dashboard and the pages under it: the page's name, and
+   before it the pages it is under, each a way back. It is the page's heading,
+   in the bar's own voice — the size of the brand beside it, a weight lighter.
+   It gives way before anything else on the bar: the steps back fold first, and
+   then the name is cut short. */
+.top-bar__trail {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-left: 12px;
+  padding-left: 16px;
+  border-left: 1px solid var(--c-bar-line);
+}
+.top-bar__title {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--c-bar-fg);
+}
+.top-bar__crumb {
+  flex: none;
+  min-height: 32px;
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--c-bar-fg-muted);
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+.top-bar__crumb:hover {
+  color: var(--c-bar-fg);
+}
+.top-bar__crumb:focus-visible {
+  outline: 2px solid var(--ds-focus-ring);
+  outline-offset: 4px;
+  border-radius: var(--radius-sm);
+}
+.top-bar__crumb-mark {
+  flex: none;
+  color: var(--c-bar-fg-muted);
+}
+@media (pointer: coarse) {
+  .top-bar__crumb {
+    min-height: 44px;
+  }
+}
+/* Too narrow for the whole way down: the page's own name, and the step above
+   it as the way back. */
+@media (max-width: 39.999rem) {
+  .top-bar__crumb:not(:nth-last-of-type(1)),
+  .top-bar__crumb:not(:nth-last-of-type(1)) + .top-bar__crumb-mark {
+    display: none;
+  }
+}
+
 /* The song that is open, after the options button. It shrinks before anything
    else on the bar does, and is cut short with an ellipsis when it has to. */
 .top-bar__now {
@@ -2284,9 +2341,9 @@
     var(--c-dash-room);
   color: var(--c-dash-ink);
 }
-/* Narrower than this the heading lands on the light columns at the picture's
-   left edge, and the grey caption under it all but vanishes there. So the
-   left of the room is shaded. */
+/* Narrower than this the first card lands on the light columns at the
+   picture's left edge, and its outline all but vanishes there. So the left of
+   the room is shaded. */
 @media (max-width: 79.999rem) {
   .dashboard {
     background:
@@ -2305,77 +2362,48 @@
   max-width: 60rem;
   margin-inline: auto;
 }
-.dashboard__header {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.dashboard__title {
-  font-family: var(--font-display);
-  font-size: clamp(2rem, 3.2vw, 2.5rem);
-  font-weight: 500;
-  line-height: 1.1;
-  letter-spacing: -0.005em;
-  text-shadow: var(--shadow-dash-title);
-}
-.dashboard__lede {
-  text-shadow: var(--shadow-dash-lede);
-  font-size: 0.875rem;
-  font-weight: 500;
-  letter-spacing: 0.38em;
-  text-transform: uppercase;
-  color: var(--c-dash-quiet);
-}
-/* The way in for someone who does not know which area yet. A link in the
-   header's own voice — it is an aside to the heading, not a seventh card. */
-.dashboard__start {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  align-self: flex-start;
-  min-height: 32px;
-  color: var(--c-dash-quiet);
-  font-size: 0.875rem;
-  font-weight: 500;
-  text-shadow: var(--shadow-dash-lede);
-  transition: color var(--duration-fast) var(--ease-standard);
-}
-.dashboard__start:hover {
-  color: #fff;
-}
-.dashboard__start:focus-visible {
-  outline: 2px solid var(--ds-focus-ring);
-  outline-offset: 4px;
-  border-radius: var(--radius-sm);
-}
-@media (pointer: coarse) {
-  .dashboard__start {
-    min-height: 44px;
-  }
+/* Four places are four across, which three cards' width does not hold. */
+.dashboard__inner:has(> .area-grid--four) {
+  max-width: 76rem;
 }
 .area-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
   gap: 16px;
 }
+/* Four of anything: one column, then two by two, then a row. Left to fill by
+   itself the grid makes three and one, and the one looks like an afterthought. */
+.area-grid--four {
+  grid-template-columns: 1fr;
+}
+@media (min-width: 36rem) {
+  .area-grid--four {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 72rem) {
+  .area-grid--four {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
 
-/* Each area's accent. */
-.area-card[data-area='songs'] {
+/* A card's accent: one of the six there are. */
+.area-card[data-accent='songs'] {
   --accent: var(--c-area-songs);
 }
-.area-card[data-area='scales'] {
+.area-card[data-accent='scales'] {
   --accent: var(--c-area-scales);
 }
-.area-card[data-area='chords'] {
+.area-card[data-accent='chords'] {
   --accent: var(--c-area-chords);
 }
-.area-card[data-area='arpeggios'] {
+.area-card[data-accent='arpeggios'] {
   --accent: var(--c-area-arpeggios);
 }
-.area-card[data-area='progressions'] {
+.area-card[data-accent='progressions'] {
   --accent: var(--c-area-progressions);
 }
-.area-card[data-area='exercises'] {
+.area-card[data-accent='exercises'] {
   --accent: var(--c-area-exercises);
 }
 
@@ -2484,14 +2512,82 @@ button.area-card:focus-visible {
 button.area-card:hover .area-card__go {
   background-color: color-mix(in srgb, var(--accent) 18%, transparent);
 }
-/* Not open yet: the same card, so the shape of the app is visible, with a
-   grey ring where the accent ring would be and nothing that lifts. */
-.area-card[data-locked='true'] {
-  cursor: not-allowed;
+/* What a card holds, where it holds several things: their names, in the quiet
+   ink, so the four categories say what is behind them before they are opened. */
+.area-card__inside {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 14px;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--c-dash-quiet);
 }
-.area-card[data-locked='true'] .area-card__go {
+/* Each with a point of the card's accent before it: a separator that still
+   reads as one when the list wraps, where a dot between names is left hanging
+   at the end of a line. */
+.area-card__inside > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+.area-card__inside > span::before {
+  content: '';
+  flex: none;
+  width: 4px;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background-color: var(--accent);
+}
+/* Not built yet: the same card, so the shape of the app is visible, with a
+   grey ring where the accent ring would be. It still opens — onto the page
+   that says what is coming. */
+.area-card[data-coming='true'] .area-card__go {
   border-color: var(--c-dash-locked-ring);
   color: var(--c-dash-locked-arrow);
+}
+
+/* The page of a section with nothing in it yet: one card, the size of the
+   others, in the middle of where they would be. */
+.placeholder {
+  width: min(100%, 26rem);
+  margin-inline: auto;
+}
+.placeholder__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--c-dash-quiet);
+}
+.placeholder__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  margin-top: 18px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--c-dash-body);
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+.placeholder__back:hover {
+  color: var(--c-dash-ink);
+}
+.placeholder__back:focus-visible {
+  outline: 2px solid var(--ds-focus-ring);
+  outline-offset: 4px;
+  border-radius: var(--radius-sm);
+}
+@media (pointer: coarse) {
+  .placeholder__back {
+    min-height: 44px;
+  }
 }
 
 /* ---- The stage ----------------------------------------------------------- */

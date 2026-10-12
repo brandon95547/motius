@@ -8,6 +8,30 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
 
 ## What it does today
 
+### Finding your way
+
+The dashboard has four categories, and each of the last three a page of its
+sections:
+
+- **Songs** — the song library, and the one category that is itself a place.
+- **Lessons** — Getting Started, Reading Sheet Music, Piano Technique, Music
+  Theory, Musical Expression.
+- **Explore** — Scales, Chords, Arpeggios, Progressions, Cadences, Intervals.
+- **Practice** — Daily Practice, Fingering Exercises, Sight-Reading, Rhythm.
+
+Where you are is said in the bar across the top — `Dashboard › Practice` — and
+each step of it is a way back. A section that is built opens what it is for:
+Scales, Chords and Arpeggios their areas, Cadences the cadences, Daily Practice
+the routines, Fingering Exercises the exercises below, Getting Started the
+fundamentals. A section that is not built yet (Reading Sheet Music, Piano
+Technique, Music Theory, Musical Expression, Progressions, Intervals,
+Sight-Reading, Rhythm) has a page of its own that says so, at the address it
+will keep — `#/practice/sight-reading` — so what is built there later is built
+in a place that already exists.
+
+The whole of it is one table (`features/areas/areas.tsx`), from which the
+dashboard, those pages and the menu are all drawn.
+
 ### The instrument
 
 - **A virtual keyboard on center stage**, responsive from 320px to a 4K monitor.
@@ -70,6 +94,34 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
 - **"Understand this scale"** explains the one you have selected: how it is
   built from its tetrachords, its degrees, its relative key, and the fingering
   principle behind the hand you are being shown.
+
+### Fingering exercises
+
+A fingering is a hand position and the ways of leaving it. A piece asks for
+all of those at once and in passing, which is the worst way to meet any of them
+for the first time, so each has an exercise that is nothing else — in any key,
+major or minor, with the staff, the keys, Learn and Practice and the tempo that
+every other area has (Practice ▸ Fingering Exercises).
+
+- **Five-Finger Position** — five fingers on five keys, up and back: the
+  position everything else leaves.
+- **Passing the Thumb** — back and forth over each place _this key's scale_
+  passes the thumb: under the 3rd finger after E and under the 4th after B, in
+  C major. One hand at a time, because the hands cross in different places.
+- **Passing the Thumb in an Arpeggio** — the same across a chord, where the
+  thumb has a third or a fourth to travel.
+- **Broken Chords** — I, IV and V taken as shapes and played a finger at a
+  time.
+- **Changing Fingers on a Repeated Note** — each note three times, 3 2 1.
+- **Finger Independence** — one figure carried up the scale and back, every
+  finger playing in every bar. The figure is the first of Hanon's.
+
+The crossings and the chord shapes are taken from the fingering system chosen
+under Settings ▸ Fingering, so what is drilled here is what the scales area
+teaches and what a song is fingered with, and changes when the system does:
+the left hand passes over its thumb on D and G in G major traditionally, and on
+B and E under the Natural system. "Understand this exercise" says what each one
+trains and how to practise it. (`learning/fingering-exercise.ts`.)
 
 ### Songs
 

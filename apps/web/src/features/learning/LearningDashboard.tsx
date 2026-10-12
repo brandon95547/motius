@@ -24,7 +24,7 @@ import { cn } from '@/lib/cn'
 import { useLearningStore } from '@/state/learning-store'
 import { HandDiagram } from './HandDiagram'
 import { panelActions } from '@/state/panel-store'
-import { THEORY_TITLES } from '@/features/theory/KeyTheoryDrawer'
+import { theoryTitle } from '@/features/theory/KeyTheoryDrawer'
 
 /**
  * Everything about the run in progress, for the Progress panel.
@@ -124,6 +124,7 @@ export function SessionPanelContent() {
  */
 function MaterialCard({ exercise }: { exercise: Exercise }) {
   const system = fingeringSystem(useLearningStore((state) => state.fingeringSystem))
+  const topic = useLearningStore((state) => state.topic)
   return (
     <Card variant="elevated" className="flex flex-col gap-4">
       <div className="flex items-start gap-3">
@@ -137,7 +138,7 @@ function MaterialCard({ exercise }: { exercise: Exercise }) {
           size="sm"
           variant="text"
           className="-mr-1 shrink-0"
-          label={THEORY_TITLES[exercise.kind]}
+          label={theoryTitle(topic, exercise.kind)}
           icon={<Info />}
           onClick={() => panelActions.open('theory')}
         />

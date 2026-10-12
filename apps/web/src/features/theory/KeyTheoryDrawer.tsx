@@ -1,6 +1,8 @@
 import * as React from 'react'
 import {
   CADENCE_VOICINGS,
+  FINGERING_DRILL_LABELS,
+  fingeringSystem,
   KEY_MODE_LABELS,
   keyChord,
   keyTriads,
@@ -8,6 +10,7 @@ import {
   routineHasMode,
   type CadenceChord,
   type Exercise,
+  type FingeringDrill,
   type KeyMode,
   type KeyTriads,
   type Routine,
@@ -41,6 +44,13 @@ export const THEORY_TITLES: Record<Exercise['kind'], string> = {
   exercise: 'Understand this routine',
 }
 
+/**
+ * What the panel is called for an area. Its kind of exercise says, except
+ * where two areas share a kind: a fingering exercise is not a routine.
+ */
+export const theoryTitle = (topic: LearningTopic, kind: Exercise['kind']) =>
+  topic === 'fingering' ? 'Understand this exercise' : THEORY_TITLES[kind]
+
 const mod7 = (degree: number) => ((degree % 7) + 7) % 7
 
 /** The area's key and the action that changes it, whichever area it is. */
@@ -53,6 +63,7 @@ function useAreaKey(topic: KeyTopic) {
         // Whichever type of progression is open; Cadences is the only one.
         progressions: state.cadenceSpec,
         exercises: state.routineSpec,
+        fingering: state.fingeringSpec,
       })[topic],
   )
   const update = useLearningStore(
@@ -62,6 +73,7 @@ function useAreaKey(topic: KeyTopic) {
         arpeggios: state.updateArpeggioSpec,
         progressions: state.updateCadenceSpec,
         exercises: state.updateRoutineSpec,
+        fingering: state.updateFingeringSpec,
       })[topic],
   ) as (patch: { rootPitchClass: number; mode: KeyMode; tonic: undefined }) => void
   return { spec, update }
@@ -78,6 +90,8 @@ export function KeyTheoryDrawer({
 }) {
   const exercise = useLearningStore((state) => state.exercise)
   const routine = useLearningStore((state) => state.routineSpec.routine)
+  const drill = useLearningStore((state) => state.fingeringSpec.drill)
+  const system = useLearningStore((state) => state.fingeringSystem)
   const { spec, update } = useAreaKey(topic)
   const key = React.useMemo(
     () => keyTriads(spec.rootPitchClass, spec.mode, spec.tonic),
@@ -92,7 +106,7 @@ export function KeyTheoryDrawer({
     <Drawer
       open={open}
       onClose={onClose}
-      title={THEORY_TITLES[exercise.kind]}
+      title={theoryTitle(topic, exercise.kind)}
       description={exercise.title}
     >
       <div className="flex flex-col gap-6">
@@ -101,6 +115,9 @@ export function KeyTheoryDrawer({
         {topic === 'progressions' && <CadenceTheory triads={key} />}
         {topic === 'exercises' && (
           <RoutineTheory triads={key} routine={routine} exercise={exercise} />
+        )}
+        {topic === 'fingering' && (
+          <FingeringTheory drill={drill} system={fingeringSystem(system).shortName} />
         )}
 
         <Divider />
@@ -366,6 +383,63 @@ function CadenceTheory({ triads }: { triads: KeyTriads }) {
         </Prose>
       </Section>
     </>
+  )
+}
+
+/** What each fingering exercise is for, and how to practise it. */
+const FINGERING_NOTES: Record<FingeringDrill, { trains: string; how: string }> = {
+  'five-finger': {
+    trains:
+      'The position every fingering starts from and comes back to: five fingers resting on five neighbouring keys, a finger to a key. Until the hand has to go further than that, nothing about fingering needs deciding.',
+    how: 'Keep the hand still and let the fingers do the walking. Nothing passes under or over anything here, so if the wrist is travelling the hand has left its position.',
+  },
+  'thumb-under': {
+    trains:
+      'The one movement a scale has that a five-finger position does not. A scale is two hand positions, one of three notes and one of four, and the thumb passing under the last finger of one is how the hand reaches the next. Going the other way that finger swings over the thumb.',
+    how: 'The thumb sets off as soon as it has played, and is waiting over its key before it is needed. Listen for the note it lands on: it wants to come out louder than its neighbours, and should not.',
+  },
+  'arpeggio-crossing': {
+    trains:
+      'The same passing of the thumb with further to go: a third or a fourth, where a scale asks for one step.',
+    how: 'The thumb cannot reach that far under a hand that stays where it is, so the hand travels with it. Let the forearm carry the hand sideways and the thumb arrive on its key, rather than stretch for it.',
+  },
+  'broken-chord': {
+    trains:
+      'Taking a chord as a shape. The hand finds all three keys at once and keeps the shape, and the fingers go down one at a time: every broken-chord accompaniment is this.',
+    how: 'Feel each shape before playing it. The three chords are placed so the hand hardly moves between them — one finger stays where it was, or goes to the key next door.',
+  },
+  'repeated-notes': {
+    trains:
+      'Changing finger on a note that is struck again. One finger repeating a key has to come all the way up before it can go down; three taking turns can each be ready before the last has left.',
+    how: 'Each finger is drawn off the key toward the palm as the next one arrives. The hand moves along by one key each time the thumb has played.',
+  },
+  independence: {
+    trains:
+      'Every finger playing in every bar, at the same weight: the ring and little fingers as clearly as the thumb.',
+    how: 'One figure, begun a note higher each time and then brought back down. No finger passes another. Listen for the notes that come out quieter or late, and slow down until none do.',
+  },
+}
+
+/** Which of the exercises take their fingers from the fingering system in use. */
+const FOLLOWS_SYSTEM: readonly FingeringDrill[] = [
+  'thumb-under',
+  'arpeggio-crossing',
+  'broken-chord',
+]
+
+function FingeringTheory({ drill, system }: { drill: FingeringDrill; system: string }) {
+  const notes = FINGERING_NOTES[drill]
+  return (
+    <Section title={FINGERING_DRILL_LABELS[drill]}>
+      <Prose>{notes.trains}</Prose>
+      <Prose>{notes.how}</Prose>
+      {FOLLOWS_SYSTEM.includes(drill) && (
+        <Prose quiet>
+          Fingered as the {system} system fingers this key, so it is the same fingering the scales
+          and the songs use. Change the system under Settings and the exercise changes with it.
+        </Prose>
+      )}
+    </Section>
   )
 }
 
