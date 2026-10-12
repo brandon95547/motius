@@ -179,15 +179,11 @@ describe('the pages between the dashboard and the areas', () => {
 
   it('opens a place that is not built by its address, as the page that says so', async () => {
     renderHook(() => usePageSync())
-    globalThis.location.hash = '#/musical-expression'
-    await waitFor(() => expect(usePageStore.getState().page).toBe('category'))
-    expect(usePageStore.getState()).toMatchObject({ category: 'musical-expression', path: [] })
-
-    // And the places the bar along the bottom leads to.
+    // The places the bar along the bottom leads to that have nothing in them yet.
     for (const place of ['lessons', 'progress', 'search']) {
       globalThis.location.hash = `#/${place}`
       await waitFor(() => expect(usePageStore.getState().category).toBe(place))
-      expect(usePageStore.getState().page).toBe('category')
+      expect(usePageStore.getState()).toMatchObject({ page: 'category', path: [] })
     }
   })
 

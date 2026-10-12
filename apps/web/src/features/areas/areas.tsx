@@ -2,21 +2,28 @@ import {
   ALargeSmall,
   Activity,
   AlignVerticalSpaceAround,
+  ArrowLeftRight,
   ArrowUpDown,
   AudioLines,
   Blocks,
   BookOpen,
+  Brain,
   CalendarCheck,
   ChartNoAxesColumn,
   ChartNoAxesColumnIncreasing,
   CircleDashed,
   CirclePlay,
+  ClipboardList,
   Compass,
   Contrast,
+  Disc3,
   Drum,
   Dumbbell,
+  Ear,
+  Ellipsis,
   Eye,
   FlipVertical2,
+  Footprints,
   Gauge,
   GraduationCap,
   Hand,
@@ -24,9 +31,14 @@ import {
   House,
   KeyRound,
   KeyboardMusic,
+  Landmark,
   Layers,
+  Layers2,
+  Library,
+  Lightbulb,
   ListMusic,
   ListPlus,
+  ListTree,
   MapPin,
   Milestone,
   Moon,
@@ -38,19 +50,24 @@ import {
   Pause,
   PenLine,
   Piano,
+  Pointer,
   Repeat,
+  Repeat2,
   RotateCw,
   Route,
   Rows4,
   Ruler,
   Search,
   Shapes,
+  Sparkles,
   Spline,
   Sun,
   Tally2,
   Tally4,
   Target,
   Triangle,
+  Trophy,
+  Volume2,
   Waves,
   Waypoints,
 } from 'lucide-react'
@@ -63,10 +80,9 @@ import { MetronomeIcon } from '@/ui/MetronomeIcon'
  *
  * The nine are the mock's (new dashboard.png, 2026-10-12), in its order and
  * its words, and they took the place of the four there were — Songs, Lessons,
- * Explore, Practice. A category is laid out from the outline written for it,
- * and holds that and nothing else. Until its outline is written it holds the
- * practice areas that were filed under it: the fingering exercises with Piano
- * Technique, the routines and the songs with Practice & Repertoire.
+ * Explore, Practice. Each of the nine is laid out from the outline written for
+ * it, and holds that and nothing else. The practice areas, which were filed
+ * under them before the outlines were written, are in the bar's Practice.
  *
  * The dashboard, the pages under it, the bar along the bottom and the menu are
  * all drawn from this one table, so they cannot disagree about what a place is
@@ -83,8 +99,9 @@ import { MetronomeIcon } from '@/ui/MetronomeIcon'
  * in it is. Every lesson is one of those so far.
  *
  * Five more places are at the top and on no card: the ones the bar along the
- * bottom leads to. Songs is the area. Lessons, Practice, Progress and Search
- * are not built, so each is a page that says so.
+ * bottom leads to. Songs is the area, and Practice has the other practice
+ * areas. Lessons, Progress and Search are not built, so each is a page that
+ * says so.
  */
 
 /**
@@ -202,7 +219,7 @@ const outlined = (
     }
   })
 
-/** Songs: an area, a place in the bar along the bottom, and a section of the ninth category. */
+/** Songs: an area, and a place in the bar along the bottom. */
 const SONGS = {
   id: 'songs',
   label: 'Songs',
@@ -891,17 +908,95 @@ export const CATEGORIES: readonly Category[] = [
     icon: Hand,
     description: 'Build your fingering, coordination and pedal skills.',
     accent: 'progressions',
-    sections: [
+    // The user's outline of 2026-10-12, in its order and its words.
+    sections: outlined({ icon: Hand, accent: 'progressions' }, [
       {
-        id: 'fingering-exercises',
-        label: 'Fingering Exercises',
-        icon: Hand,
+        label: 'Fingering',
+        icon: Pointer,
+        accent: 'songs',
         description:
-          'The movements fingering is made of: positions, crossings and changes of finger.',
-        accent: 'scales',
-        opens: { kind: 'area', topic: 'fingering' },
+          'Finger independence, crossing and thumb passing, and fingering for scales, chords and melodies.',
+        under: [
+          'Finger independence',
+          'Finger strength and control',
+          'Finger crossing',
+          'Thumb passing',
+          'Finger substitution',
+          'Alternative fingering',
+          'Fingering for scales',
+          'Fingering for chords',
+          'Fingering for arpeggios',
+          'Fingering for melodies',
+        ],
       },
-    ],
+      {
+        label: 'Hand Coordination',
+        icon: ArrowLeftRight,
+        accent: 'arpeggios',
+        description:
+          'Each hand alone and both together, independent rhythms and changing position.',
+        under: [
+          'Right-hand exercises',
+          'Left-hand exercises',
+          'Hands-separate playing',
+          'Hands-together playing',
+          'Independent rhythms',
+          'Melody and accompaniment coordination',
+          'Hand-position changes',
+          'Playing without looking at the hands',
+          'Melody sharing between hands',
+        ],
+      },
+      {
+        label: 'Technical Exercises',
+        icon: Dumbbell,
+        accent: 'exercises',
+        description: 'Five-finger, Hanon, chromatic, octave, chord and arpeggio exercises.',
+        under: [
+          'Five-finger exercises',
+          'Hanon exercises',
+          'Chromatic exercises',
+          'Octave exercises',
+          'Repeated-note exercises',
+          'Chord exercises',
+          'Inversion exercises',
+          'Arpeggio exercises',
+          'Speed and accuracy exercises',
+          'Finger independence drills',
+        ],
+      },
+      {
+        label: 'Pedal Technique',
+        icon: Footprints,
+        accent: 'rose',
+        description: 'The damper, soft and sostenuto pedals, pedal timing and changes.',
+        under: [
+          'Damper pedal',
+          'Soft pedal',
+          'Sostenuto pedal',
+          'Pedal timing',
+          'Overlapping pedal',
+          'Pedal changes',
+          'Pedal coordination',
+        ],
+      },
+      {
+        label: 'Ornaments & Special Techniques',
+        icon: Sparkles,
+        accent: 'scales',
+        description: 'Grace notes, trills, turns, mordents, tremolos and glissandos.',
+        under: [
+          'Grace notes',
+          'Trills',
+          'Turns',
+          'Mordents',
+          'Tremolos',
+          'Glissandos',
+          'Rolled chords',
+          'Octave passages',
+        ],
+      },
+    ]),
   },
   {
     id: 'musical-expression',
@@ -909,7 +1004,81 @@ export const CATEGORIES: readonly Category[] = [
     icon: AudioLines,
     description: 'Play with dynamics, articulation and phrasing.',
     accent: 'arpeggios',
-    sections: [],
+    // The user's outline of 2026-10-12, in its order and its words.
+    sections: outlined({ icon: AudioLines, accent: 'arpeggios' }, [
+      {
+        label: 'Dynamics',
+        icon: Volume2,
+        accent: 'songs',
+        description: 'Pianissimo to fortissimo, crescendo and diminuendo, contrast and balance.',
+        under: [
+          'Pianissimo (pp)',
+          'Piano (p)',
+          'Mezzo-piano (mp)',
+          'Mezzo-forte (mf)',
+          'Forte (f)',
+          'Fortissimo (ff)',
+          'Crescendo',
+          'Diminuendo',
+          'Dynamic contrast',
+          'Melody and accompaniment balance',
+        ],
+      },
+      {
+        label: 'Articulation',
+        icon: Ellipsis,
+        accent: 'arpeggios',
+        description: 'Legato, staccato, tenuto, marcato, accents and slurs, and touch control.',
+        under: [
+          'Legato',
+          'Staccato',
+          'Tenuto',
+          'Marcato',
+          'Accents',
+          'Slurs',
+          'Contrasting articulation',
+          'Touch control',
+        ],
+      },
+      {
+        label: 'Musical Phrasing',
+        icon: Spline,
+        accent: 'exercises',
+        description: 'Finding phrases, shaping melodies, breathing and lyrical playing.',
+        under: [
+          'Identifying phrases',
+          'Phrase beginnings and endings',
+          'Shaping melodies',
+          'Musical breathing',
+          'Lyrical playing',
+          'Phrase development',
+          'Expressive balance',
+        ],
+      },
+      {
+        label: 'Tempo & Interpretation',
+        icon: Gauge,
+        accent: 'rose',
+        description: 'Tempo markings and changes, rubato, fermatas and interpretation.',
+        under: [
+          {
+            label: 'Tempo markings',
+            description: 'Largo to Presto.',
+            under: ['Largo', 'Adagio', 'Andante', 'Moderato', 'Allegretto', 'Allegro', 'Presto'],
+          },
+          {
+            label: 'Tempo changes',
+            description: 'Accelerando, ritardando, rallentando and a tempo.',
+            under: ['Accelerando', 'Ritardando', 'Rallentando', 'A tempo'],
+          },
+          'Rubato',
+          'Fermatas',
+          'Expressive timing',
+          'Character markings',
+          'Musical interpretation',
+        ],
+      },
+    ]),
   },
   {
     id: 'musical-structure-and-styles',
@@ -917,7 +1086,146 @@ export const CATEGORIES: readonly Category[] = [
     icon: Music4,
     description: 'Discover song forms, genres and great composers.',
     accent: 'teal',
-    sections: [],
+    // The user's outline of 2026-10-12, in its order and its words.
+    sections: outlined({ icon: Music4, accent: 'teal' }, [
+      {
+        label: 'Musical Structure',
+        icon: ListTree,
+        accent: 'songs',
+        description: 'Motifs, melodies and phrases, verse and chorus, and the musical forms.',
+        under: [
+          'Motifs',
+          'Melodies',
+          'Phrases',
+          'Repetition and contrast',
+          'Musical sequences',
+          'Call and response',
+          'Introductions and endings',
+          'Verse and chorus',
+          'Bridges',
+          'Codas',
+          {
+            label: 'Musical forms',
+            description: 'Binary, ternary, AABA, rondo, theme and variations, and sonata form.',
+            under: [
+              'Binary (AB)',
+              'Ternary (ABA)',
+              'AABA',
+              'Rondo',
+              'Theme and variations',
+              'Sonata form',
+            ],
+          },
+          'Canons and fugues',
+        ],
+      },
+      {
+        label: 'Musical Textures',
+        icon: Layers2,
+        accent: 'arpeggios',
+        description: 'Monophony, homophony and polyphony, countermelodies and bass lines.',
+        under: [
+          'Monophony',
+          'Homophony',
+          'Polyphony',
+          'Melody and accompaniment',
+          'Harmonized melodies',
+          'Countermelodies',
+          'Bass lines',
+          'Two-part writing',
+        ],
+      },
+      {
+        label: 'Accompaniment Patterns',
+        icon: Repeat2,
+        accent: 'exercises',
+        description: 'Block and broken chords, bass patterns, stride and boogie-woogie.',
+        under: [
+          'Block-chord accompaniment',
+          'Broken-chord accompaniment',
+          'Arpeggiated accompaniment',
+          'Root–fifth bass',
+          'Alternating bass',
+          'Walking bass',
+          'Ostinato',
+          'Alberti bass',
+          'Stride piano',
+          'Boogie-woogie patterns',
+          'Rock and pop accompaniment',
+        ],
+      },
+      {
+        label: 'Arpeggios',
+        icon: Waves,
+        accent: 'rose',
+        description:
+          'Major, minor, diminished, augmented and seventh-chord arpeggios, ascending and descending.',
+        under: [
+          'Major arpeggios',
+          'Minor arpeggios',
+          'Diminished arpeggios',
+          'Augmented arpeggios',
+          'Seventh-chord arpeggios',
+          'Ascending arpeggios',
+          'Descending arpeggios',
+          'One- and two-octave arpeggios',
+          'Compound arpeggios',
+          'Two-handed arpeggios',
+        ],
+      },
+      {
+        label: 'Musical Styles',
+        icon: Disc3,
+        accent: 'scales',
+        description: 'Classical, blues and jazz, rock, pop, folk, Latin and film music.',
+        under: [
+          {
+            label: 'Classical',
+            description: 'Baroque, Classical period, Romantic and contemporary classical.',
+            under: ['Baroque', 'Classical period', 'Romantic', 'Contemporary classical'],
+          },
+          {
+            label: 'Blues',
+            description: 'Traditional blues and boogie-woogie.',
+            under: ['Traditional blues', 'Boogie-woogie'],
+          },
+          {
+            label: 'Jazz',
+            description: 'Ragtime, swing, bebop and contemporary jazz.',
+            under: ['Ragtime', 'Swing', 'Bebop', 'Contemporary jazz'],
+          },
+          'Rock',
+          'Pop',
+          'Country',
+          'Folk',
+          'Soul',
+          'Motown',
+          'Funk',
+          'Reggae',
+          'Waltz',
+          'Polka',
+          'Marches',
+          'Latin',
+          'Film and contemporary music',
+        ],
+      },
+      {
+        label: 'Music History & Composers',
+        icon: Landmark,
+        accent: 'teal',
+        description: 'The origins of the piano, its music through the periods, and its composers.',
+        under: [
+          'Origins of the piano',
+          'Evolution of piano music',
+          'Historical music periods',
+          'Major classical composers',
+          'Modern composers',
+          'Contemporary composers',
+          'Film and television composers',
+          'Musical influences and traditions',
+        ],
+      },
+    ]),
   },
   {
     id: 'practice-and-repertoire',
@@ -925,24 +1233,173 @@ export const CATEGORIES: readonly Category[] = [
     icon: GraduationCap,
     description: 'Exercises, ear training, songs and track your progress.',
     accent: 'pink',
-    sections: [
+    // The user's outline of 2026-10-12, in its order and its words.
+    sections: outlined({ icon: GraduationCap, accent: 'pink' }, [
       {
-        id: 'daily-practice',
-        label: 'Daily Practice',
-        icon: CalendarCheck,
-        description: 'Blocked, expanding and accelerating scales, the Grand Form, and more.',
-        accent: 'exercises',
-        opens: { kind: 'area', topic: 'exercises' },
+        label: 'Reading Practice',
+        icon: Eye,
+        accent: 'songs',
+        description:
+          'Note identification, clef drills, interval reading and sight-reading challenges.',
+        under: [
+          'Note identification',
+          'Treble clef drills',
+          'Bass clef drills',
+          'Grand staff reading',
+          'Interval reading',
+          'Sight-reading challenges',
+          'Pattern recognition',
+          'Reading unfamiliar pieces',
+        ],
       },
-      SONGS,
-    ],
+      {
+        label: 'Rhythm Practice',
+        icon: Drum,
+        accent: 'arpeggios',
+        description:
+          'Beat recognition, clapping and counting, metronome and syncopation exercises.',
+        under: [
+          'Beat recognition',
+          'Clapping and counting',
+          'Rhythm identification',
+          'Note-duration exercises',
+          'Metronome challenges',
+          'Syncopation exercises',
+          'Hand coordination rhythms',
+        ],
+      },
+      {
+        label: 'Technical Practice',
+        icon: Dumbbell,
+        accent: 'exercises',
+        description: 'Fingering, five-finger, scale, chord and arpeggio exercises, and etudes.',
+        under: [
+          'Fingering exercises',
+          'Five-finger drills',
+          'Scale exercises',
+          'Chord exercises',
+          'Inversion exercises',
+          'Arpeggio exercises',
+          'Hand coordination',
+          'Etudes',
+          'Speed and accuracy challenges',
+        ],
+      },
+      {
+        label: 'Theory Practice',
+        icon: Brain,
+        accent: 'rose',
+        description:
+          'Note writing, building scales and chords, and recognizing intervals and key signatures.',
+        under: [
+          'Note writing',
+          'Interval identification',
+          'Scale construction',
+          'Chord construction',
+          'Chord inversion exercises',
+          'Key signature recognition',
+          'Circle-of-fifths exercises',
+          'Harmony exercises',
+        ],
+      },
+      {
+        label: 'Ear Training',
+        icon: Ear,
+        accent: 'scales',
+        description:
+          'Recognizing pitch, intervals, chords and rhythm, dictation, and playing by ear.',
+        under: [
+          'Pitch recognition',
+          'High and low pitch recognition',
+          'Interval recognition',
+          'Major and minor recognition',
+          'Chord recognition',
+          'Rhythm recognition',
+          'Melodic dictation',
+          'Harmonic dictation',
+          'Playing melodies by ear',
+          'Listening and imitation',
+        ],
+      },
+      {
+        label: 'Practice Methods',
+        icon: ClipboardList,
+        accent: 'teal',
+        description: 'Routines, slow and hands-separate practice, the metronome, and memorization.',
+        under: [
+          'Practice routines',
+          'Short, consistent sessions',
+          'Hands-separate practice',
+          'Slow practice',
+          'Metronome practice',
+          'Gradual tempo increases',
+          'Section-based practice',
+          'Repetition and review',
+          'Memorization',
+          'Correcting difficult passages',
+          'Backing-track practice',
+        ],
+      },
+      {
+        label: 'Songs & Repertoire',
+        icon: Library,
+        accent: 'pink',
+        description: 'Beginner songs, classical, folk, popular, jazz and blues pieces, and duets.',
+        under: [
+          'Beginner songs',
+          'Classical pieces',
+          'Folk and traditional music',
+          'Popular music',
+          'Jazz and blues pieces',
+          'Original compositions',
+          'Duets',
+          'Ensemble arrangements',
+          'Play-along pieces',
+          'Performance repertoire',
+        ],
+      },
+      {
+        label: 'Creativity & Composition',
+        icon: Lightbulb,
+        accent: 'progressions',
+        description: 'Creating melodies, improvisation, playing by ear and writing songs.',
+        under: [
+          'Creating melodies',
+          'Improvisation',
+          'Chord-based improvisation',
+          'Playing by ear',
+          'Harmonizing melodies',
+          'Writing original songs',
+          'Song structure',
+          'Combining melodies with lyrics',
+          'Basic arranging',
+        ],
+      },
+      {
+        label: 'Progress & Assessment',
+        icon: Trophy,
+        accent: 'arpeggios',
+        description: 'Lesson completion, skill challenges, assessments and milestones.',
+        under: [
+          'Lesson completion',
+          'Skill challenges',
+          'Topic mastery',
+          'Accuracy assessments',
+          'Timing assessments',
+          'Speed assessments',
+          'Performance evaluations',
+          'Learning milestones',
+          'Beginner, intermediate, and advanced achievements',
+        ],
+      },
+    ]),
   },
 ]
 
 /**
  * The bar along the bottom: the dashboard, and then these. None is on a card.
- * Songs is the area, and Practice has the practice areas that no outline
- * names. The other three are not built yet.
+ * Songs is the area, and Practice has the other practice areas, which no
+ * outline names. The other three are not built yet.
  */
 export const HOME = { id: 'home', label: 'Home', icon: House } as const
 export const DESTINATIONS: readonly Category[] = [
@@ -959,11 +1416,11 @@ export const DESTINATIONS: readonly Category[] = [
     id: 'practice',
     label: 'Practice',
     icon: Target,
-    description: 'Scales, chords, arpeggios and cadences, in every key.',
+    description: 'Scales, chords, arpeggios, cadences, fingering exercises and daily routines.',
     accent: 'exercises',
-    // The practice areas that are in no outline. They were under Scales,
-    // Intervals & Keys and Chords & Harmony until those were laid out, and are
-    // here until the lessons that use them say where they belong.
+    // The practice areas, which are in no outline. Each was under one of the
+    // nine until that was laid out, and is here until the lessons that use it
+    // say where it belongs.
     sections: [
       {
         id: 'scales',
@@ -996,6 +1453,23 @@ export const DESTINATIONS: readonly Category[] = [
         description: 'The cadence of every key, in three positions: I – IV – I – V – I.',
         accent: 'exercises',
         opens: { kind: 'area', topic: 'progressions', progression: 'cadences' },
+      },
+      {
+        id: 'fingering-exercises',
+        label: 'Fingering Exercises',
+        icon: Hand,
+        description:
+          'The movements fingering is made of: positions, crossings and changes of finger.',
+        accent: 'scales',
+        opens: { kind: 'area', topic: 'fingering' },
+      },
+      {
+        id: 'daily-practice',
+        label: 'Daily Practice',
+        icon: CalendarCheck,
+        description: 'Blocked, expanding and accelerating scales, the Grand Form, and more.',
+        accent: 'exercises',
+        opens: { kind: 'area', topic: 'exercises' },
       },
     ],
   },
@@ -1048,9 +1522,9 @@ const leadsTo = (place: Place, topic: LearningTopic, progression: ProgressionTyp
   (place.opens.progression === undefined || place.opens.progression === progression)
 
 /**
- * Where an area is filed: the category or the place in the bar it is under,
- * and the section that opens it. Which is how the menu knows where you are
- * while an area is open.
+ * Where an area is filed: the place it is under, and the section that opens
+ * it. Which is how the menu knows where you are while an area is open. Songs is
+ * under nothing: it is a place in the bar itself.
  */
 export function placeOf(
   topic: LearningTopic,

@@ -11,7 +11,7 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
 ### Finding your way
 
 The dashboard has nine categories, each a numbered card, three to a row, in the
-order they are taught:
+order they are taught. Each is laid out from the outline written for it:
 
 1. **Piano Foundations** — Keyboard Layout, Understanding Pitch, Fingers & Hand
    Positions, Playing Your First Notes.
@@ -25,39 +25,42 @@ order they are taught:
 5. **Chords & Harmony** — Chord Foundations, Triads, Seventh & Extended Chords,
    Chord Inversions, Chord Voicings, Chord Progressions, Cadences, Harmonic
    Relationships, Chord Application.
-6. **Piano Technique** — Fingering Exercises.
-7. **Musical Expression**
-8. **Musical Structure & Styles**
-9. **Practice & Repertoire** — Daily Practice, Songs.
+6. **Piano Technique** — Fingering, Hand Coordination, Technical Exercises,
+   Pedal Technique, Ornaments & Special Techniques.
+7. **Musical Expression** — Dynamics, Articulation, Musical Phrasing, Tempo &
+   Interpretation.
+8. **Musical Structure & Styles** — Musical Structure, Musical Textures,
+   Accompaniment Patterns, Arpeggios, Musical Styles, Music History &
+   Composers.
+9. **Practice & Repertoire** — Reading Practice, Rhythm Practice, Technical
+   Practice, Theory Practice, Ear Training, Practice Methods, Songs &
+   Repertoire, Creativity & Composition, Progress & Assessment.
 
-A category with something in it opens a page of its sections, and a section
-may have sections of its own, as far down as the subject goes. The first five
-categories are laid out in full, from the outline written for each, and hold
-that and nothing else. In Piano
-Foundations, Keyboard Layout has White and black keys, Musical alphabet and
-Keyboard navigation, each a page of its lessons; Fingers & Hand Positions has
-Finger numbering, Starting positions and Hand movement; and Understanding Pitch
-and Playing Your First Notes are pages of lessons themselves. Where an outline
-has a lesson beside a topic — Time Signatures has Common time next to Simple
-meter — the page has both. Under the dashboard and those pages a bar along the bottom leads to
-the other places at the top of the app: Home (the dashboard), Lessons, Songs,
-Practice, Progress and Search. Practice has the practice areas that no outline
-names — Scales, Chords, Arpeggios, Cadences — until the lessons that use them
-say where they belong. The bar is not there in an area, where the bottom of the
-screen is the keyboard's and the menu is the way out.
+A category opens a page of its sections, and a section may have sections of its
+own, as far down as the subject goes. In Piano Foundations, Keyboard Layout has
+White and black keys, Musical alphabet and Keyboard navigation, each a page of
+its lessons; Fingers & Hand Positions has Finger numbering, Starting positions
+and Hand movement; and Understanding Pitch and Playing Your First Notes are
+pages of lessons themselves. Where an outline has a lesson beside a topic —
+Time Signatures has Common time next to Simple meter — the page has both.
+
+There are 534 lessons in the nine outlines, and none is written yet: each has a
+page of its own that says so, at the address it will keep —
+`#/piano-foundations/keyboard-layout/white-and-black-keys/two-black-key-groups`
+— so what is built there later is built in a place that already exists.
+
+Under the dashboard and those pages a bar along the bottom leads to the other
+places at the top of the app: Home (the dashboard), Lessons, Songs, Practice,
+Progress and Search. Songs is the song library. Practice has the other practice
+areas, which no outline names — Scales, Chords, Arpeggios, Cadences, Fingering
+Exercises, Daily Practice — until the lessons that use them say where they
+belong. Lessons, Progress and Search are not built, and say so. The bar is not
+there in an area, where the bottom of the screen is the keyboard's and the menu
+is the way out.
 
 Where you are is said in the bar across the top — `Dashboard › Piano
 Foundations › Keyboard Layout` — and each step of it is a way back; on a
-narrow bar the steps furthest up fold away first. A section that is built opens
-what it is for: Scales, Chords and Arpeggios their areas, Cadences the
-cadences, Daily Practice the routines, Fingering Exercises the exercises below,
-Songs the song library. A place that is not built yet (every lesson of the
-five outlined categories, 291 of them; two of the nine categories; and Lessons,
-Progress and Search in the bar) has a page of its own that says so, at the
-address it will keep —
-`#/piano-foundations/keyboard-layout/white-and-black-keys/two-black-key-groups`,
-`#/musical-expression`, `#/progress` — so what is built there later is built in
-a place that already exists.
+narrow bar the steps furthest up fold away first.
 
 The whole of it is one table (`features/areas/areas.tsx`), from which the
 dashboard, those pages, the bar along the bottom and the menu are all drawn.

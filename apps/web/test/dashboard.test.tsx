@@ -53,6 +53,16 @@ function Pages() {
   )
 }
 
+/** The practice areas, in the order they were moved to the bar's Practice. */
+const PRACTICE_AREAS = [
+  'Scales',
+  'Chords',
+  'Arpeggios',
+  'Cadences',
+  'Fingering Exercises',
+  'Daily Practice',
+]
+
 const NINE = [
   'Piano Foundations',
   'Music Notation & Reading',
@@ -127,13 +137,11 @@ describe('the dashboard', () => {
     expect(screen.getByRole('main').getAttribute('aria-label')).toBe('Dashboard')
   })
 
-  it('draws a category still to come like the others, and says so where the pointer rests', () => {
+  it('has every one of the nine laid out: each opens onto its sections', () => {
     render(<Pages />)
-    expect(card('Musical Expression').getAttribute('title')).toBe(
-      'Musical Expression — coming soon',
-    )
-    expect(card('Chords & Harmony').getAttribute('title')).toBe('Open Chords & Harmony')
-    // Nothing on the card itself sets one apart: no status, no other ring.
+    for (const name of NINE) expect(card(name).getAttribute('title')).toBe(`Open ${name}`)
+    for (const { sections } of CATEGORIES) expect(sections.length).toBeGreaterThan(0)
+    // Nothing on a card sets one apart: no status, no other ring.
     expect(document.querySelectorAll('.area-card__status, [data-coming]')).toHaveLength(0)
   })
 
@@ -166,33 +174,27 @@ describe('a category’s page', () => {
     await waitFor(() => expect(usePageStore.getState().page).toBe('dashboard'))
   })
 
-  it.each([
-    ['piano-technique', ['Fingering Exercises']],
-    ['practice-and-repertoire', ['Daily Practice', 'Songs']],
-    // The practice areas no outline names, in the bar's Practice until one does.
-    ['practice', ['Scales', 'Chords', 'Arpeggios', 'Cadences']],
-  ] as const)('%s holds the practice areas filed under it', async (id, sections) => {
-    await open(id)
-    expect(cards()).toEqual(sections)
-    for (const section of sections)
-      expect(card(section).getAttribute('title')).toBe(`Open ${section}`)
+  it('has the practice areas, which no outline names, in the bar’s Practice', async () => {
+    await open('practice')
+    expect(cards()).toEqual(PRACTICE_AREAS)
+    expect(numbers()).toEqual(['01', '02', '03', '04', '05', '06'])
+    for (const area of PRACTICE_AREAS) expect(card(area).getAttribute('title')).toBe(`Open ${area}`)
   })
 
   it.each([
-    ['practice', 'Scales', '#/scales', 'scales'],
-    ['practice', 'Chords', '#/chords', 'chords'],
-    ['practice', 'Arpeggios', '#/arpeggios', 'arpeggios'],
-    ['practice', 'Cadences', '#/progressions/cadences', 'progressions'],
-    ['piano-technique', 'Fingering Exercises', '#/fingering', 'fingering'],
-    ['practice-and-repertoire', 'Daily Practice', '#/exercises', 'exercises'],
-    ['practice-and-repertoire', 'Songs', '#/songs', 'songs'],
-  ] as const)('%s ▸ %s opens its area', async (id, section, hash, topic) => {
-    await open(id)
+    ['Scales', '#/scales', 'scales'],
+    ['Chords', '#/chords', 'chords'],
+    ['Arpeggios', '#/arpeggios', 'arpeggios'],
+    ['Cadences', '#/progressions/cadences', 'progressions'],
+    ['Fingering Exercises', '#/fingering', 'fingering'],
+    ['Daily Practice', '#/exercises', 'exercises'],
+  ] as const)('Practice ▸ %s opens its area', async (section, hash, topic) => {
+    await open('practice')
     fireEvent.click(card(section))
     await at(hash)
     expect(usePageStore.getState().page).toBe('area')
     expect(useLearningStore.getState().topic).toBe(topic)
-    if (topic !== 'songs') expect(useLearningStore.getState().exercise).not.toBeNull()
+    expect(useLearningStore.getState().exercise).not.toBeNull()
   })
 
   it('keeps an outlined category to its outline: the practice areas it held are not on it', async () => {
@@ -207,23 +209,6 @@ describe('a category’s page', () => {
     await at('#/chords-and-harmony/cadences')
     expect(usePageStore.getState().page).toBe('section')
     expect(cards()).toEqual(CHORDS.Cadences)
-  })
-
-  it.each([
-    ['musical-expression', 'Musical Expression'],
-    ['musical-structure-and-styles', 'Musical Structure & Styles'],
-  ] as const)('%s, with nothing in it yet, is a page that says so', async (id, label) => {
-    render(<Pages />)
-    fireEvent.click(card(label))
-    await at(`#/${id}`)
-    expect(usePageStore.getState()).toMatchObject({ page: 'category', category: id })
-
-    expect(trail()).toEqual(['Dashboard', label])
-    const page = within(screen.getByRole('main'))
-    expect(screen.getByRole('main').getAttribute('aria-label')).toBe(label)
-    expect(page.getByText('Coming soon')).toBeDefined()
-    fireEvent.click(page.getByRole('button', { name: 'Back to Dashboard' }))
-    await waitFor(() => expect(usePageStore.getState().page).toBe('dashboard'))
   })
 })
 
@@ -591,6 +576,299 @@ const CHORDS = {
   ],
 }
 
+/** Piano Technique. */
+const TECHNIQUE = {
+  Fingering: [
+    'Finger independence',
+    'Finger strength and control',
+    'Finger crossing',
+    'Thumb passing',
+    'Finger substitution',
+    'Alternative fingering',
+    'Fingering for scales',
+    'Fingering for chords',
+    'Fingering for arpeggios',
+    'Fingering for melodies',
+  ],
+  'Hand Coordination': [
+    'Right-hand exercises',
+    'Left-hand exercises',
+    'Hands-separate playing',
+    'Hands-together playing',
+    'Independent rhythms',
+    'Melody and accompaniment coordination',
+    'Hand-position changes',
+    'Playing without looking at the hands',
+    'Melody sharing between hands',
+  ],
+  'Technical Exercises': [
+    'Five-finger exercises',
+    'Hanon exercises',
+    'Chromatic exercises',
+    'Octave exercises',
+    'Repeated-note exercises',
+    'Chord exercises',
+    'Inversion exercises',
+    'Arpeggio exercises',
+    'Speed and accuracy exercises',
+    'Finger independence drills',
+  ],
+  'Pedal Technique': [
+    'Damper pedal',
+    'Soft pedal',
+    'Sostenuto pedal',
+    'Pedal timing',
+    'Overlapping pedal',
+    'Pedal changes',
+    'Pedal coordination',
+  ],
+  'Ornaments & Special Techniques': [
+    'Grace notes',
+    'Trills',
+    'Turns',
+    'Mordents',
+    'Tremolos',
+    'Glissandos',
+    'Rolled chords',
+    'Octave passages',
+  ],
+}
+
+/** Musical Expression. */
+const EXPRESSION = {
+  Dynamics: [
+    'Pianissimo (pp)',
+    'Piano (p)',
+    'Mezzo-piano (mp)',
+    'Mezzo-forte (mf)',
+    'Forte (f)',
+    'Fortissimo (ff)',
+    'Crescendo',
+    'Diminuendo',
+    'Dynamic contrast',
+    'Melody and accompaniment balance',
+  ],
+  Articulation: [
+    'Legato',
+    'Staccato',
+    'Tenuto',
+    'Marcato',
+    'Accents',
+    'Slurs',
+    'Contrasting articulation',
+    'Touch control',
+  ],
+  'Musical Phrasing': [
+    'Identifying phrases',
+    'Phrase beginnings and endings',
+    'Shaping melodies',
+    'Musical breathing',
+    'Lyrical playing',
+    'Phrase development',
+    'Expressive balance',
+  ],
+  'Tempo & Interpretation': {
+    'Tempo markings': ['Largo', 'Adagio', 'Andante', 'Moderato', 'Allegretto', 'Allegro', 'Presto'],
+    'Tempo changes': ['Accelerando', 'Ritardando', 'Rallentando', 'A tempo'],
+    Rubato: [],
+    Fermatas: [],
+    'Expressive timing': [],
+    'Character markings': [],
+    'Musical interpretation': [],
+  },
+}
+
+/** Musical Structure & Styles. */
+const STRUCTURE = {
+  'Musical Structure': {
+    Motifs: [],
+    Melodies: [],
+    Phrases: [],
+    'Repetition and contrast': [],
+    'Musical sequences': [],
+    'Call and response': [],
+    'Introductions and endings': [],
+    'Verse and chorus': [],
+    Bridges: [],
+    Codas: [],
+    'Musical forms': [
+      'Binary (AB)',
+      'Ternary (ABA)',
+      'AABA',
+      'Rondo',
+      'Theme and variations',
+      'Sonata form',
+    ],
+    'Canons and fugues': [],
+  },
+  'Musical Textures': [
+    'Monophony',
+    'Homophony',
+    'Polyphony',
+    'Melody and accompaniment',
+    'Harmonized melodies',
+    'Countermelodies',
+    'Bass lines',
+    'Two-part writing',
+  ],
+  'Accompaniment Patterns': [
+    'Block-chord accompaniment',
+    'Broken-chord accompaniment',
+    'Arpeggiated accompaniment',
+    'Root–fifth bass',
+    'Alternating bass',
+    'Walking bass',
+    'Ostinato',
+    'Alberti bass',
+    'Stride piano',
+    'Boogie-woogie patterns',
+    'Rock and pop accompaniment',
+  ],
+  Arpeggios: [
+    'Major arpeggios',
+    'Minor arpeggios',
+    'Diminished arpeggios',
+    'Augmented arpeggios',
+    'Seventh-chord arpeggios',
+    'Ascending arpeggios',
+    'Descending arpeggios',
+    'One- and two-octave arpeggios',
+    'Compound arpeggios',
+    'Two-handed arpeggios',
+  ],
+  'Musical Styles': {
+    Classical: ['Baroque', 'Classical period', 'Romantic', 'Contemporary classical'],
+    Blues: ['Traditional blues', 'Boogie-woogie'],
+    Jazz: ['Ragtime', 'Swing', 'Bebop', 'Contemporary jazz'],
+    Rock: [],
+    Pop: [],
+    Country: [],
+    Folk: [],
+    Soul: [],
+    Motown: [],
+    Funk: [],
+    Reggae: [],
+    Waltz: [],
+    Polka: [],
+    Marches: [],
+    Latin: [],
+    'Film and contemporary music': [],
+  },
+  'Music History & Composers': [
+    'Origins of the piano',
+    'Evolution of piano music',
+    'Historical music periods',
+    'Major classical composers',
+    'Modern composers',
+    'Contemporary composers',
+    'Film and television composers',
+    'Musical influences and traditions',
+  ],
+}
+
+/** Practice & Repertoire. */
+const REPERTOIRE = {
+  'Reading Practice': [
+    'Note identification',
+    'Treble clef drills',
+    'Bass clef drills',
+    'Grand staff reading',
+    'Interval reading',
+    'Sight-reading challenges',
+    'Pattern recognition',
+    'Reading unfamiliar pieces',
+  ],
+  'Rhythm Practice': [
+    'Beat recognition',
+    'Clapping and counting',
+    'Rhythm identification',
+    'Note-duration exercises',
+    'Metronome challenges',
+    'Syncopation exercises',
+    'Hand coordination rhythms',
+  ],
+  'Technical Practice': [
+    'Fingering exercises',
+    'Five-finger drills',
+    'Scale exercises',
+    'Chord exercises',
+    'Inversion exercises',
+    'Arpeggio exercises',
+    'Hand coordination',
+    'Etudes',
+    'Speed and accuracy challenges',
+  ],
+  'Theory Practice': [
+    'Note writing',
+    'Interval identification',
+    'Scale construction',
+    'Chord construction',
+    'Chord inversion exercises',
+    'Key signature recognition',
+    'Circle-of-fifths exercises',
+    'Harmony exercises',
+  ],
+  'Ear Training': [
+    'Pitch recognition',
+    'High and low pitch recognition',
+    'Interval recognition',
+    'Major and minor recognition',
+    'Chord recognition',
+    'Rhythm recognition',
+    'Melodic dictation',
+    'Harmonic dictation',
+    'Playing melodies by ear',
+    'Listening and imitation',
+  ],
+  'Practice Methods': [
+    'Practice routines',
+    'Short, consistent sessions',
+    'Hands-separate practice',
+    'Slow practice',
+    'Metronome practice',
+    'Gradual tempo increases',
+    'Section-based practice',
+    'Repetition and review',
+    'Memorization',
+    'Correcting difficult passages',
+    'Backing-track practice',
+  ],
+  'Songs & Repertoire': [
+    'Beginner songs',
+    'Classical pieces',
+    'Folk and traditional music',
+    'Popular music',
+    'Jazz and blues pieces',
+    'Original compositions',
+    'Duets',
+    'Ensemble arrangements',
+    'Play-along pieces',
+    'Performance repertoire',
+  ],
+  'Creativity & Composition': [
+    'Creating melodies',
+    'Improvisation',
+    'Chord-based improvisation',
+    'Playing by ear',
+    'Harmonizing melodies',
+    'Writing original songs',
+    'Song structure',
+    'Combining melodies with lyrics',
+    'Basic arranging',
+  ],
+  'Progress & Assessment': [
+    'Lesson completion',
+    'Skill challenges',
+    'Topic mastery',
+    'Accuracy assessments',
+    'Timing assessments',
+    'Speed assessments',
+    'Performance evaluations',
+    'Learning milestones',
+    'Beginner, intermediate, and advanced achievements',
+  ],
+}
+
 type Outline = readonly string[] | { readonly [label: string]: Outline }
 /** The names under a place, as far down as they go: a list at the bottom, a table above it. */
 const outlineOf = (sections: readonly Section[]): Outline =>
@@ -748,6 +1026,10 @@ describe('the categories outlined after it', () => {
     ['rhythm-and-timing', RHYTHM],
     ['scales-intervals-and-keys', SCALES_KEYS],
     ['chords-and-harmony', CHORDS],
+    ['piano-technique', TECHNIQUE],
+    ['musical-expression', EXPRESSION],
+    ['musical-structure-and-styles', STRUCTURE],
+    ['practice-and-repertoire', REPERTOIRE],
   ] as const)('%s is the outline it was given, in its order and its words', (id, outline) => {
     expect(outlineOf(category(id).sections)).toEqual(outline)
     expect(inOrder(category(id).sections)).toEqual(written(outline))
@@ -759,6 +1041,10 @@ describe('the categories outlined after it', () => {
     ['rhythm-and-timing', 53],
     ['scales-intervals-and-keys', 77],
     ['chords-and-harmony', 77],
+    ['piano-technique', 44],
+    ['musical-expression', 41],
+    ['musical-structure-and-styles', 77],
+    ['practice-and-repertoire', 81],
   ] as const)('%s has every one of its %i lessons still to come', (id, count) => {
     const leaves = (sections: readonly Section[]): Section[] =>
       sections.flatMap((section) =>
@@ -832,6 +1118,21 @@ describe('the categories outlined after it', () => {
     await at('#/chords-and-harmony/chord-foundations/what-is-a-chord')
   })
 
+  it('gives a lesson named with a comma or a mark in brackets an address of its own', async () => {
+    await open('#/practice-and-repertoire/practice-methods')
+    fireEvent.click(card('Short, consistent sessions'))
+    await at('#/practice-and-repertoire/practice-methods/short-consistent-sessions')
+    cleanup()
+
+    await open('#/musical-expression/dynamics')
+    fireEvent.click(card('Mezzo-forte (mf)'))
+    await at('#/musical-expression/dynamics/mezzo-forte-mf')
+    cleanup()
+
+    await open('#/musical-structure-and-styles/musical-styles/classical')
+    expect(cards()).toEqual(['Baroque', 'Classical period', 'Romantic', 'Contemporary classical'])
+  })
+
   it('keeps apart two lessons of the same name under different topics', async () => {
     await open('#/music-notation-and-reading/musical-staff/bass-clef/line-notes')
     expect(trail().slice(-2)).toEqual(['Bass clef', 'Line notes'])
@@ -896,7 +1197,7 @@ describe('the bar along the bottom', () => {
     await at('#/practice')
     expect(here()).toEqual(['Practice'])
     expect(trail()).toEqual(['Dashboard', 'Practice'])
-    expect(cards()).toEqual(['Scales', 'Chords', 'Arpeggios', 'Cadences'])
+    expect(cards()).toEqual(PRACTICE_AREAS)
   })
 
   it.each([
@@ -927,7 +1228,7 @@ describe('the bar along the bottom', () => {
 })
 
 describe('where an area is filed', () => {
-  it('finds every practice area a home: under one of the nine, or in the bar’s Practice', () => {
+  it('finds every practice area in the bar’s Practice, and Songs under nothing', () => {
     const filed = (topic: Parameters<typeof placeOf>[0]) => {
       const place = placeOf(topic, 'cadences')
       return [place?.category.label, place?.section.label]
@@ -936,9 +1237,10 @@ describe('where an area is filed', () => {
     expect(filed('chords')).toEqual(['Practice', 'Chords'])
     expect(filed('arpeggios')).toEqual(['Practice', 'Arpeggios'])
     expect(filed('progressions')).toEqual(['Practice', 'Cadences'])
-    expect(filed('fingering')).toEqual(['Piano Technique', 'Fingering Exercises'])
-    expect(filed('exercises')).toEqual(['Practice & Repertoire', 'Daily Practice'])
-    expect(filed('songs')).toEqual(['Practice & Repertoire', 'Songs'])
+    expect(filed('fingering')).toEqual(['Practice', 'Fingering Exercises'])
+    expect(filed('exercises')).toEqual(['Practice', 'Daily Practice'])
+    // Songs is a place in the bar itself, not a section of one.
+    expect(placeOf('songs', 'cadences')).toBeNull()
   })
 
   it('lists the dashboard, Songs, Practice and the nine categories in the menu, and marks where you are', async () => {
@@ -957,7 +1259,7 @@ describe('where an area is filed', () => {
       (place) =>
         menu.getByRole('menuitemradio', { name: place }).getAttribute('aria-checked') === 'true',
     )
-    expect(checked).toEqual(['Piano Technique'])
+    expect(checked).toEqual(['Practice'])
 
     fireEvent.click(menu.getByRole('menuitemradio', { name: 'Chords & Harmony' }))
     await at('#/chords-and-harmony')
