@@ -74,7 +74,7 @@ export class SampledEngine implements AudioEngine {
     // Imported here rather than at module scope so the smplr runtime is only
     // fetched once a sampled piano is actually chosen. The on-screen keyboard
     // and the built-in engine never wait on it.
-    const { SplendidGrandPiano, Soundfont } = await import('smplr')
+    const { Soundfont } = await import('smplr')
 
     const onLoadProgress = ({ loaded, total }: { loaded: number; total: number }) =>
       onProgress?.(total > 0 ? loaded / total : 0)
@@ -89,18 +89,15 @@ export class SampledEngine implements AudioEngine {
 
     // smplr's `volume` is on the MIDI 0-127 scale, not a linear gain, so it
     // stays at unity here and the trim node above owns level.
-    const player =
-      instrument.engine.kind === 'sampled-splendid'
-        ? SplendidGrandPiano(context, { destination: trim, volume: 127, onLoadProgress })
-        : Soundfont(context, {
-            instrument:
-              instrument.engine.kind === 'sampled-soundfont'
-                ? instrument.engine.program
-                : 'acoustic_grand_piano',
-            destination: trim,
-            volume: 127,
-            onLoadProgress,
-          })
+    const player = Soundfont(context, {
+      instrument:
+        instrument.engine.kind === 'sampled-soundfont'
+          ? instrument.engine.program
+          : 'acoustic_grand_piano',
+      destination: trim,
+      volume: 127,
+      onLoadProgress,
+    })
 
     try {
       await withDeadline(player.ready, LOAD_TIMEOUT_MS, signal)

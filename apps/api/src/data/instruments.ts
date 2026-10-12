@@ -43,17 +43,6 @@ const grandVoicing: SynthVoicing = {
 
 export const INSTRUMENTS: readonly Instrument[] = [
   {
-    id: 'splendid-grand',
-    name: 'Splendid Grand',
-    description: 'A concert grand captured at four dynamic layers. The reference sound.',
-    family: 'acoustic',
-    character: ['warm', 'wide', 'detailed'],
-    engine: { kind: 'sampled-splendid' },
-    voicing: grandVoicing,
-    gainDb: 0,
-    range: { low: 21, high: 108 },
-  },
-  {
     id: 'concert-grand',
     name: 'Concert Grand',
     description: 'Classic hall grand — even across the range and quick to respond.',
@@ -172,7 +161,15 @@ export const INSTRUMENTS: readonly Instrument[] = [
   },
 ]
 
-export const DEFAULT_INSTRUMENT_ID = 'splendid-grand'
+/**
+ * The piano a player hears before choosing one.
+ *
+ * A soundfont, which is a megabyte and a half to fetch and some 170MB once it
+ * is decoded. The grand that used to be here, sampled at four dynamic layers,
+ * was 19MB in 227 files and about half a gigabyte in memory — more than a
+ * phone should be asked for by an app that has not been told to.
+ */
+export const DEFAULT_INSTRUMENT_ID = 'bright-upright'
 
 export function findInstrument(id: string): Instrument | undefined {
   return INSTRUMENTS.find((instrument) => instrument.id === id)

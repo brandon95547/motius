@@ -40,8 +40,6 @@ export const synthVoicingSchema = z.object({
 export type SynthVoicing = z.infer<typeof synthVoicingSchema>
 
 export const engineSpecSchema = z.discriminatedUnion('kind', [
-  /** Multi-velocity sampled grand. The flagship, and the largest download. */
-  z.object({ kind: z.literal('sampled-splendid') }),
   /** A General MIDI soundfont program name, e.g. `acoustic_grand_piano`. */
   z.object({ kind: z.literal('sampled-soundfont'), program: z.string().min(1) }),
   /** Synthesised in the browser. No network, no licence, always available. */

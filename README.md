@@ -17,8 +17,9 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
   a playable key width, and never widens past it: a 4K monitor has room for all
   88, but that is not a reason to hand someone more keyboard than they need.
   The view follows what you play, so a note off-screen still shows up.
-- **Seven pianos** — a sampled concert grand, an upright, a honky-tonk, a Rhodes,
-  a Wurlitzer, and a fully synthesized one that needs no network at all.
+- **Six pianos** — a sampled concert grand, an upright, a honky-tonk, a Rhodes,
+  a Wurlitzer, and a fully synthesized one that needs no network at all. The
+  bright upright is the one a new player hears.
 - **USB MIDI in**, with per-keyboard detection and configuration: transpose,
   octave shift, velocity curve, channel filter and sustain pedal, saved against
   the keyboard and restored the next time it is plugged in.
