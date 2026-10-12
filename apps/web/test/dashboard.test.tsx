@@ -157,8 +157,8 @@ describe('a category’s page', () => {
 
   it('lists its sections, numbered, with the way back to the dashboard in the bar', async () => {
     await open('chords-and-harmony')
-    expect(cards()).toEqual(['Chords', 'Arpeggios', 'Progressions', 'Cadences'])
-    expect(numbers()).toEqual(['01', '02', '03', '04'])
+    expect(cards()).toEqual(Object.keys(CHORDS))
+    expect(numbers()).toEqual(['01', '02', '03', '04', '05', '06', '07', '08', '09'])
     expect(trail()).toEqual(['Dashboard', 'Chords & Harmony'])
     expect(screen.getByRole('heading', { name: 'Chords & Harmony' })).toBeDefined()
 
@@ -167,26 +167,22 @@ describe('a category’s page', () => {
   })
 
   it.each([
-    ['scales-intervals-and-keys', ['Scales', 'Intervals']],
     ['piano-technique', ['Fingering Exercises']],
     ['practice-and-repertoire', ['Daily Practice', 'Songs']],
-  ] as const)('%s holds what was moved to it', async (id, sections) => {
+    // The practice areas no outline names, in the bar's Practice until one does.
+    ['practice', ['Scales', 'Chords', 'Arpeggios', 'Cadences']],
+  ] as const)('%s holds the practice areas filed under it', async (id, sections) => {
     await open(id)
     expect(cards()).toEqual(sections)
-  })
-
-  it('says which sections are still to come, where the pointer rests', async () => {
-    await open('chords-and-harmony')
-    const says = (name: string) => card(name).getAttribute('title')
-    expect(says('Progressions')).toBe('Progressions — coming soon')
-    expect(says('Chords')).toBe('Open Chords')
+    for (const section of sections)
+      expect(card(section).getAttribute('title')).toBe(`Open ${section}`)
   })
 
   it.each([
-    ['scales-intervals-and-keys', 'Scales', '#/scales', 'scales'],
-    ['chords-and-harmony', 'Chords', '#/chords', 'chords'],
-    ['chords-and-harmony', 'Arpeggios', '#/arpeggios', 'arpeggios'],
-    ['chords-and-harmony', 'Cadences', '#/progressions/cadences', 'progressions'],
+    ['practice', 'Scales', '#/scales', 'scales'],
+    ['practice', 'Chords', '#/chords', 'chords'],
+    ['practice', 'Arpeggios', '#/arpeggios', 'arpeggios'],
+    ['practice', 'Cadences', '#/progressions/cadences', 'progressions'],
     ['piano-technique', 'Fingering Exercises', '#/fingering', 'fingering'],
     ['practice-and-repertoire', 'Daily Practice', '#/exercises', 'exercises'],
     ['practice-and-repertoire', 'Songs', '#/songs', 'songs'],
@@ -199,32 +195,19 @@ describe('a category’s page', () => {
     if (topic !== 'songs') expect(useLearningStore.getState().exercise).not.toBeNull()
   })
 
-  it.each([
-    ['scales-intervals-and-keys', 'Intervals', 'intervals'],
-    ['chords-and-harmony', 'Progressions', 'progressions'],
-  ] as const)(
-    '%s ▸ %s has a page that says it is to come, and a way back',
-    async (id, section, sectionId) => {
-      await open(id)
-      fireEvent.click(card(section))
-      await at(`#/${id}/${sectionId}`)
-      expect(usePageStore.getState()).toMatchObject({
-        page: 'section',
-        category: id,
-        path: [sectionId],
-      })
+  it('keeps an outlined category to its outline: the practice areas it held are not on it', async () => {
+    await open('scales-intervals-and-keys')
+    expect(cards()).toEqual(Object.keys(SCALES_KEYS))
+    expect(cards()).not.toContain('Scales')
+    cleanup()
 
-      const { label } = category(id)
-      expect(trail()).toEqual(['Dashboard', label, section])
-      const page = within(screen.getByRole('main'))
-      expect(page.getByText('Coming soon')).toBeDefined()
-      expect(screen.getByRole('main').getAttribute('aria-label')).toBe(section)
-
-      fireEvent.click(page.getByRole('button', { name: `Back to ${label}` }))
-      await at(`#/${id}`)
-      expect(usePageStore.getState().page).toBe('category')
-    },
-  )
+    // Cadences is on both: there the lessons about them, in Practice the area that plays them.
+    await open('chords-and-harmony')
+    fireEvent.click(card('Cadences'))
+    await at('#/chords-and-harmony/cadences')
+    expect(usePageStore.getState().page).toBe('section')
+    expect(cards()).toEqual(CHORDS.Cadences)
+  })
 
   it.each([
     ['musical-expression', 'Musical Expression'],
@@ -421,6 +404,193 @@ const RHYTHM = {
   ],
 }
 
+/** Scales, Intervals & Keys. */
+const SCALES_KEYS = {
+  Intervals: {
+    'Half steps': [],
+    'Whole steps': [],
+    'Melodic intervals': [],
+    'Harmonic intervals': [],
+    'Interval sizes': [
+      'Unison',
+      'Seconds',
+      'Thirds',
+      'Fourths',
+      'Fifths',
+      'Sixths',
+      'Sevenths',
+      'Octaves',
+    ],
+    'Interval qualities': ['Perfect', 'Major', 'Minor', 'Augmented', 'Diminished'],
+    'Interval recognition': [],
+    'Interval construction': [],
+  },
+  'Keys & Tonality': [
+    'Tonics and tonal centers',
+    'Major keys',
+    'Minor keys',
+    'Relative major and minor',
+    'Parallel major and minor',
+    'Key signatures',
+    'Enharmonic keys',
+    'Scale degrees',
+    'Transposition',
+    'Modulation',
+  ],
+  'Circle of Fifths': [
+    'Circle construction',
+    'Clockwise movement by fifths',
+    'Counterclockwise movement by fourths',
+    'Order of sharps',
+    'Order of flats',
+    'Identifying key signatures',
+    'Relative keys',
+    'Closely related keys',
+    'Dominant relationships',
+    'Subdominant relationships',
+    'Key changes and modulation',
+  ],
+  'Major Scales': [
+    'Major scale formula',
+    'Tetrachords',
+    'All 12 major scales',
+    'Ascending and descending scales',
+    'Scale degrees',
+    'Major scale fingering',
+  ],
+  'Minor Scales': [
+    'Natural minor',
+    'Harmonic minor',
+    'Melodic minor',
+    'Relative minor relationships',
+    'Minor scale formulas',
+    'Minor scale fingering',
+  ],
+  'Additional Scales': [
+    'Chromatic scales',
+    'Whole-tone scales',
+    'Major pentatonic',
+    'Minor pentatonic',
+    'Blues scales',
+  ],
+  'Diatonic Modes': [
+    'Ionian',
+    'Dorian',
+    'Phrygian',
+    'Lydian',
+    'Mixolydian',
+    'Aeolian',
+    'Locrian',
+    'Mode construction',
+    'Mode relationships',
+  ],
+  'Scale Technique': [
+    'Finger patterns',
+    'Thumb passing',
+    'One-octave scales',
+    'Two-octave scales',
+    'Multiple-octave scales',
+    'Hands-separate scales',
+    'Hands-together scales',
+    'Parallel motion',
+    'Contrary motion',
+    'Chromatic warm-ups',
+    'Scale speed and accuracy',
+  ],
+}
+
+/** Chords & Harmony. */
+const CHORDS = {
+  'Chord Foundations': [
+    'What is a chord?',
+    'Root notes',
+    'Chord tones',
+    'Intervals within chords',
+    'Chord construction formulas',
+    'Diatonic harmony',
+  ],
+  Triads: {
+    'Major triads': [],
+    'Minor triads': [],
+    'Diminished triads': [],
+    'Augmented triads': [],
+    'Suspended chords': ['Sus2', 'Sus4'],
+    'Diatonic triads': [],
+  },
+  'Seventh & Extended Chords': [
+    'Dominant seventh',
+    'Major seventh',
+    'Minor seventh',
+    'Diminished seventh',
+    'Half-diminished seventh',
+    'Sixth chords',
+    'Ninth chords',
+    'Eleventh chords',
+    'Thirteenth chords',
+  ],
+  'Chord Inversions': [
+    'Root position',
+    'First inversion',
+    'Second inversion',
+    'Third inversion (seventh chords)',
+    'Inverting major triads',
+    'Inverting minor triads',
+    'Inverting seventh chords',
+    'Smooth inversion transitions',
+  ],
+  'Chord Voicings': [
+    'Closed-position chords',
+    'Open-position chords',
+    'Block chords',
+    'Broken chords',
+    'Rolled chords',
+    'Slash chords',
+    'Two-handed voicings',
+    'Chord extensions',
+    'Voice leading',
+  ],
+  'Chord Progressions': {
+    'Roman numeral notation': [],
+    'Primary chords': ['I', 'IV', 'V', 'V7'],
+    'Common progressions': ['I–IV–V', 'I–V–vi–IV', 'ii–V–I', '12-bar blues'],
+    'Circle-of-fifths progressions': [],
+    Turnarounds: [],
+    'Chord substitutions': [],
+    'Progressions in major keys': [],
+    'Progressions in minor keys': [],
+  },
+  Cadences: [
+    'Authentic cadences',
+    'Perfect authentic cadences',
+    'Imperfect authentic cadences',
+    'Half cadences',
+    'Plagal cadences',
+    'Deceptive cadences',
+    'Cadence recognition',
+  ],
+  'Harmonic Relationships': [
+    'Chords built from scales',
+    'Tonic function',
+    'Dominant function',
+    'Subdominant function',
+    'Common tones',
+    'Voice leading',
+    'Shared chords',
+    'Pivot chords',
+    'Modulation',
+    'Harmonic movement',
+  ],
+  'Chord Application': [
+    'Reading chord symbols',
+    'Reading chord charts',
+    'Left-hand accompaniment',
+    'Harmonizing melodies',
+    'Changing chords smoothly',
+    'Accompaniment in different keys',
+    'Playing chords by ear',
+  ],
+}
+
 type Outline = readonly string[] | { readonly [label: string]: Outline }
 /** The names under a place, as far down as they go: a list at the bottom, a table above it. */
 const outlineOf = (sections: readonly Section[]): Outline =>
@@ -576,6 +746,8 @@ describe('the categories outlined after it', () => {
   it.each([
     ['music-notation-and-reading', NOTATION],
     ['rhythm-and-timing', RHYTHM],
+    ['scales-intervals-and-keys', SCALES_KEYS],
+    ['chords-and-harmony', CHORDS],
   ] as const)('%s is the outline it was given, in its order and its words', (id, outline) => {
     expect(outlineOf(category(id).sections)).toEqual(outline)
     expect(inOrder(category(id).sections)).toEqual(written(outline))
@@ -585,6 +757,8 @@ describe('the categories outlined after it', () => {
     ['piano-foundations', 33],
     ['music-notation-and-reading', 51],
     ['rhythm-and-timing', 53],
+    ['scales-intervals-and-keys', 77],
+    ['chords-and-harmony', 77],
   ] as const)('%s has every one of its %i lessons still to come', (id, count) => {
     const leaves = (sections: readonly Section[]): Section[] =>
       sections.flatMap((section) =>
@@ -640,6 +814,24 @@ describe('the categories outlined after it', () => {
     expect(within(screen.getByRole('main')).getByText('Coming soon')).toBeDefined()
   })
 
+  it('gives a lesson named in numerals or with a question mark an address of its own', async () => {
+    await open('#/chords-and-harmony/chord-progressions/common-progressions')
+    expect(cards()).toEqual(['I–IV–V', 'I–V–vi–IV', 'ii–V–I', '12-bar blues'])
+    fireEvent.click(card('I–V–vi–IV'))
+    await at('#/chords-and-harmony/chord-progressions/common-progressions/i-v-vi-iv')
+    expect(trail().slice(-1)).toEqual(['I–V–vi–IV'])
+    cleanup()
+
+    await open('#/chords-and-harmony/chord-progressions/primary-chords')
+    fireEvent.click(card('V7'))
+    await at('#/chords-and-harmony/chord-progressions/primary-chords/v7')
+    cleanup()
+
+    await open('#/chords-and-harmony/chord-foundations')
+    fireEvent.click(card('What is a chord?'))
+    await at('#/chords-and-harmony/chord-foundations/what-is-a-chord')
+  })
+
   it('keeps apart two lessons of the same name under different topics', async () => {
     await open('#/music-notation-and-reading/musical-staff/bass-clef/line-notes')
     expect(trail().slice(-2)).toEqual(['Bass clef', 'Line notes'])
@@ -690,17 +882,25 @@ describe('the bar along the bottom', () => {
     await at('#/chords-and-harmony')
     expect(here()).toEqual(['Home'])
 
-    fireEvent.click(card('Progressions'))
-    await at('#/chords-and-harmony/progressions')
+    fireEvent.click(card('Chord Progressions'))
+    await at('#/chords-and-harmony/chord-progressions')
     expect(here()).toEqual(['Home'])
 
     fireEvent.click(bar().getByRole('button', { name: 'Home' }))
     await waitFor(() => expect(usePageStore.getState().page).toBe('dashboard'))
   })
 
+  it('opens Practice on the practice areas no outline names, and marks it', async () => {
+    render(<Pages />)
+    fireEvent.click(bar().getByRole('button', { name: 'Practice' }))
+    await at('#/practice')
+    expect(here()).toEqual(['Practice'])
+    expect(trail()).toEqual(['Dashboard', 'Practice'])
+    expect(cards()).toEqual(['Scales', 'Chords', 'Arpeggios', 'Cadences'])
+  })
+
   it.each([
     ['Lessons', '#/lessons'],
-    ['Practice', '#/practice'],
     ['Progress', '#/progress'],
     ['Search', '#/search'],
   ] as const)('opens %s on a page that says it is to come', async (name, hash) => {
@@ -727,28 +927,28 @@ describe('the bar along the bottom', () => {
 })
 
 describe('where an area is filed', () => {
-  it('finds every practice area a home under one of the nine', () => {
+  it('finds every practice area a home: under one of the nine, or in the bar’s Practice', () => {
     const filed = (topic: Parameters<typeof placeOf>[0]) => {
       const place = placeOf(topic, 'cadences')
       return [place?.category.label, place?.section.label]
     }
-    expect(filed('scales')).toEqual(['Scales, Intervals & Keys', 'Scales'])
-    expect(filed('chords')).toEqual(['Chords & Harmony', 'Chords'])
-    expect(filed('arpeggios')).toEqual(['Chords & Harmony', 'Arpeggios'])
-    expect(filed('progressions')).toEqual(['Chords & Harmony', 'Cadences'])
+    expect(filed('scales')).toEqual(['Practice', 'Scales'])
+    expect(filed('chords')).toEqual(['Practice', 'Chords'])
+    expect(filed('arpeggios')).toEqual(['Practice', 'Arpeggios'])
+    expect(filed('progressions')).toEqual(['Practice', 'Cadences'])
     expect(filed('fingering')).toEqual(['Piano Technique', 'Fingering Exercises'])
     expect(filed('exercises')).toEqual(['Practice & Repertoire', 'Daily Practice'])
     expect(filed('songs')).toEqual(['Practice & Repertoire', 'Songs'])
   })
 
-  it('lists the dashboard, Songs and the nine categories in the menu, and marks where you are', async () => {
+  it('lists the dashboard, Songs, Practice and the nine categories in the menu, and marks where you are', async () => {
     render(<Pages />)
     act(() => pageActions.openArea('fingering'))
     await at('#/fingering')
 
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }))
     const menu = within(screen.getByRole('menu'))
-    const places = ['Dashboard', 'Songs', ...NINE]
+    const places = ['Dashboard', 'Songs', 'Practice', ...NINE]
     for (const place of places)
       expect(menu.getByRole('menuitemradio', { name: place })).toBeDefined()
     expect(menu.queryByRole('menuitemradio', { name: 'Scales' })).toBeNull()
@@ -761,6 +961,23 @@ describe('where an area is filed', () => {
 
     fireEvent.click(menu.getByRole('menuitemradio', { name: 'Chords & Harmony' }))
     await at('#/chords-and-harmony')
+  })
+
+  it('marks Practice in the menu while one of its areas is open', async () => {
+    render(<Pages />)
+    act(() => pageActions.openArea('chords'))
+    await at('#/chords')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }))
+    const menu = within(screen.getByRole('menu'))
+    const checked = menu
+      .getAllByRole('menuitemradio')
+      .filter((item) => item.getAttribute('aria-checked') === 'true')
+      .map((item) => item.textContent)
+    expect(checked).toEqual(['Practice'])
+
+    fireEvent.click(menu.getByRole('menuitemradio', { name: 'Practice' }))
+    await at('#/practice')
   })
 
   it('marks Songs in the menu while a song is open, and not the category it is filed under', async () => {

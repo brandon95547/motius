@@ -1,27 +1,35 @@
 import {
   ALargeSmall,
   Activity,
+  AlignVerticalSpaceAround,
   ArrowUpDown,
   AudioLines,
+  Blocks,
   BookOpen,
   CalendarCheck,
   ChartNoAxesColumn,
   ChartNoAxesColumnIncreasing,
+  CircleDashed,
+  CirclePlay,
   Compass,
   Contrast,
   Drum,
   Dumbbell,
   Eye,
+  FlipVertical2,
   Gauge,
   GraduationCap,
   Hand,
   Hash,
   House,
+  KeyRound,
   KeyboardMusic,
   Layers,
   ListMusic,
+  ListPlus,
   MapPin,
   Milestone,
+  Moon,
   MoveHorizontal,
   Music,
   Music2,
@@ -31,15 +39,20 @@ import {
   PenLine,
   Piano,
   Repeat,
+  RotateCw,
   Route,
+  Rows4,
   Ruler,
   Search,
   Shapes,
   Spline,
+  Sun,
   Tally2,
   Tally4,
   Target,
+  Triangle,
   Waves,
+  Waypoints,
 } from 'lucide-react'
 import type { ProgressionType } from '@motius/shared'
 import type { LearningTopic } from '@/state/learning-store'
@@ -50,9 +63,10 @@ import { MetronomeIcon } from '@/ui/MetronomeIcon'
  *
  * The nine are the mock's (new dashboard.png, 2026-10-12), in its order and
  * its words, and they took the place of the four there were — Songs, Lessons,
- * Explore, Practice. What those held is filed under the nine: the scales with
- * Scales, Intervals & Keys, the chords and what is made of them with Chords &
- * Harmony, the fingering exercises with Piano Technique, and so on.
+ * Explore, Practice. A category is laid out from the outline written for it,
+ * and holds that and nothing else. Until its outline is written it holds the
+ * practice areas that were filed under it: the fingering exercises with Piano
+ * Technique, the routines and the songs with Practice & Repertoire.
  *
  * The dashboard, the pages under it, the bar along the bottom and the menu are
  * all drawn from this one table, so they cannot disagree about what a place is
@@ -558,23 +572,156 @@ export const CATEGORIES: readonly Category[] = [
     icon: Music,
     description: 'Explore intervals, scales, modes and key signatures.',
     accent: 'rose',
-    sections: [
+    // The user's outline of 2026-10-12, in its order and its words.
+    sections: outlined({ icon: Music, accent: 'rose' }, [
       {
-        id: 'scales',
-        label: 'Scales',
-        icon: ChartNoAxesColumnIncreasing,
-        description: 'Every key and mode, fingered, written out, and run with you.',
-        accent: 'scales',
-        opens: { kind: 'area', topic: 'scales' },
-      },
-      {
-        id: 'intervals',
         label: 'Intervals',
         icon: Ruler,
-        description: 'The distance between two notes, by name, on the keys and by ear.',
-        accent: 'rose',
+        accent: 'songs',
+        description: 'Half and whole steps, interval sizes and qualities, and recognizing them.',
+        under: [
+          'Half steps',
+          'Whole steps',
+          'Melodic intervals',
+          'Harmonic intervals',
+          {
+            label: 'Interval sizes',
+            description: 'Unison to octaves.',
+            under: [
+              'Unison',
+              'Seconds',
+              'Thirds',
+              'Fourths',
+              'Fifths',
+              'Sixths',
+              'Sevenths',
+              'Octaves',
+            ],
+          },
+          {
+            label: 'Interval qualities',
+            description: 'Perfect, major, minor, augmented and diminished.',
+            under: ['Perfect', 'Major', 'Minor', 'Augmented', 'Diminished'],
+          },
+          'Interval recognition',
+          'Interval construction',
+        ],
       },
-    ],
+      {
+        label: 'Keys & Tonality',
+        icon: KeyRound,
+        accent: 'arpeggios',
+        description: 'Tonics, major and minor keys, key signatures, transposition and modulation.',
+        under: [
+          'Tonics and tonal centers',
+          'Major keys',
+          'Minor keys',
+          'Relative major and minor',
+          'Parallel major and minor',
+          'Key signatures',
+          'Enharmonic keys',
+          'Scale degrees',
+          'Transposition',
+          'Modulation',
+        ],
+      },
+      {
+        label: 'Circle of Fifths',
+        icon: CircleDashed,
+        accent: 'exercises',
+        description: 'Fifths and fourths, the order of sharps and flats, and related keys.',
+        under: [
+          'Circle construction',
+          'Clockwise movement by fifths',
+          'Counterclockwise movement by fourths',
+          'Order of sharps',
+          'Order of flats',
+          'Identifying key signatures',
+          'Relative keys',
+          'Closely related keys',
+          'Dominant relationships',
+          'Subdominant relationships',
+          'Key changes and modulation',
+        ],
+      },
+      {
+        label: 'Major Scales',
+        icon: Sun,
+        accent: 'rose',
+        description: 'The major scale formula, tetrachords, all 12 scales and their fingering.',
+        under: [
+          'Major scale formula',
+          'Tetrachords',
+          'All 12 major scales',
+          'Ascending and descending scales',
+          'Scale degrees',
+          'Major scale fingering',
+        ],
+      },
+      {
+        label: 'Minor Scales',
+        icon: Moon,
+        accent: 'scales',
+        description: 'Natural, harmonic and melodic minor, their formulas and fingering.',
+        under: [
+          'Natural minor',
+          'Harmonic minor',
+          'Melodic minor',
+          'Relative minor relationships',
+          'Minor scale formulas',
+          'Minor scale fingering',
+        ],
+      },
+      {
+        label: 'Additional Scales',
+        icon: ListPlus,
+        accent: 'teal',
+        description: 'Chromatic, whole-tone, pentatonic and blues scales.',
+        under: [
+          'Chromatic scales',
+          'Whole-tone scales',
+          'Major pentatonic',
+          'Minor pentatonic',
+          'Blues scales',
+        ],
+      },
+      {
+        label: 'Diatonic Modes',
+        icon: RotateCw,
+        accent: 'pink',
+        description: 'Ionian to Locrian, and how the modes are built and related.',
+        under: [
+          'Ionian',
+          'Dorian',
+          'Phrygian',
+          'Lydian',
+          'Mixolydian',
+          'Aeolian',
+          'Locrian',
+          'Mode construction',
+          'Mode relationships',
+        ],
+      },
+      {
+        label: 'Scale Technique',
+        icon: Hand,
+        accent: 'progressions',
+        description: 'Finger patterns, thumb passing, octaves, hands together, and speed.',
+        under: [
+          'Finger patterns',
+          'Thumb passing',
+          'One-octave scales',
+          'Two-octave scales',
+          'Multiple-octave scales',
+          'Hands-separate scales',
+          'Hands-together scales',
+          'Parallel motion',
+          'Contrary motion',
+          'Chromatic warm-ups',
+          'Scale speed and accuracy',
+        ],
+      },
+    ]),
   },
   {
     id: 'chords-and-harmony',
@@ -582,39 +729,161 @@ export const CATEGORIES: readonly Category[] = [
     icon: Layers,
     description: 'Learn chords, inversions, progressions and harmony.',
     accent: 'scales',
-    sections: [
+    // The user's outline of 2026-10-12, in its order and its words.
+    sections: outlined({ icon: Layers, accent: 'scales' }, [
       {
-        id: 'chords',
-        label: 'Chords',
-        icon: Layers,
-        description: 'Triads, four-note chords and sevenths in every position, solid and broken.',
-        accent: 'chords',
-        opens: { kind: 'area', topic: 'chords' },
+        label: 'Chord Foundations',
+        icon: Blocks,
+        accent: 'songs',
+        description: 'What a chord is, roots and chord tones, and how chords are built.',
+        under: [
+          'What is a chord?',
+          'Root notes',
+          'Chord tones',
+          'Intervals within chords',
+          'Chord construction formulas',
+          'Diatonic harmony',
+        ],
       },
       {
-        id: 'arpeggios',
-        label: 'Arpeggios',
-        icon: Waves,
-        description: 'Each key’s chords run up the keyboard, from every position.',
+        label: 'Triads',
+        icon: Triangle,
         accent: 'arpeggios',
-        opens: { kind: 'area', topic: 'arpeggios' },
+        description:
+          'Major, minor, diminished and augmented triads, suspended chords and diatonic triads.',
+        under: [
+          'Major triads',
+          'Minor triads',
+          'Diminished triads',
+          'Augmented triads',
+          { label: 'Suspended chords', description: 'Sus2 and Sus4.', under: ['Sus2', 'Sus4'] },
+          'Diatonic triads',
+        ],
       },
       {
-        id: 'progressions',
-        label: 'Progressions',
+        label: 'Seventh & Extended Chords',
+        icon: Rows4,
+        accent: 'exercises',
+        description: 'Seventh chords, sixths, ninths, elevenths and thirteenths.',
+        under: [
+          'Dominant seventh',
+          'Major seventh',
+          'Minor seventh',
+          'Diminished seventh',
+          'Half-diminished seventh',
+          'Sixth chords',
+          'Ninth chords',
+          'Eleventh chords',
+          'Thirteenth chords',
+        ],
+      },
+      {
+        label: 'Chord Inversions',
+        icon: FlipVertical2,
+        accent: 'rose',
+        description: 'Root position and the inversions of triads and seventh chords.',
+        under: [
+          'Root position',
+          'First inversion',
+          'Second inversion',
+          'Third inversion (seventh chords)',
+          'Inverting major triads',
+          'Inverting minor triads',
+          'Inverting seventh chords',
+          'Smooth inversion transitions',
+        ],
+      },
+      {
+        label: 'Chord Voicings',
+        icon: AlignVerticalSpaceAround,
+        accent: 'scales',
+        description:
+          'Closed and open positions, block, broken and rolled chords, and voice leading.',
+        under: [
+          'Closed-position chords',
+          'Open-position chords',
+          'Block chords',
+          'Broken chords',
+          'Rolled chords',
+          'Slash chords',
+          'Two-handed voicings',
+          'Chord extensions',
+          'Voice leading',
+        ],
+      },
+      {
+        label: 'Chord Progressions',
         icon: Route,
-        description: 'Chords in sequence: the patterns that songs are built on.',
-        accent: 'progressions',
+        accent: 'teal',
+        description: 'Roman numerals, primary chords, common progressions and turnarounds.',
+        under: [
+          'Roman numeral notation',
+          {
+            label: 'Primary chords',
+            description: 'I, IV, V and V7.',
+            under: ['I', 'IV', 'V', 'V7'],
+          },
+          {
+            label: 'Common progressions',
+            description: 'I–IV–V, I–V–vi–IV, ii–V–I and the 12-bar blues.',
+            under: ['I–IV–V', 'I–V–vi–IV', 'ii–V–I', '12-bar blues'],
+          },
+          'Circle-of-fifths progressions',
+          'Turnarounds',
+          'Chord substitutions',
+          'Progressions in major keys',
+          'Progressions in minor keys',
+        ],
       },
       {
-        id: 'cadences',
         label: 'Cadences',
         icon: Milestone,
-        description: 'The cadence of every key, in three positions: I – IV – I – V – I.',
-        accent: 'exercises',
-        opens: { kind: 'area', topic: 'progressions', progression: 'cadences' },
+        accent: 'pink',
+        description: 'Authentic, half, plagal and deceptive cadences, and recognizing them.',
+        under: [
+          'Authentic cadences',
+          'Perfect authentic cadences',
+          'Imperfect authentic cadences',
+          'Half cadences',
+          'Plagal cadences',
+          'Deceptive cadences',
+          'Cadence recognition',
+        ],
       },
-    ],
+      {
+        label: 'Harmonic Relationships',
+        icon: Waypoints,
+        accent: 'progressions',
+        description: 'Tonic, dominant and subdominant function, common tones and modulation.',
+        under: [
+          'Chords built from scales',
+          'Tonic function',
+          'Dominant function',
+          'Subdominant function',
+          'Common tones',
+          'Voice leading',
+          'Shared chords',
+          'Pivot chords',
+          'Modulation',
+          'Harmonic movement',
+        ],
+      },
+      {
+        label: 'Chord Application',
+        icon: CirclePlay,
+        accent: 'arpeggios',
+        description: 'Chord symbols and charts, accompaniment, and harmonizing melodies.',
+        under: [
+          'Reading chord symbols',
+          'Reading chord charts',
+          'Left-hand accompaniment',
+          'Harmonizing melodies',
+          'Changing chords smoothly',
+          'Accompaniment in different keys',
+          'Playing chords by ear',
+        ],
+      },
+    ]),
   },
   {
     id: 'piano-technique',
@@ -672,8 +941,8 @@ export const CATEGORIES: readonly Category[] = [
 
 /**
  * The bar along the bottom: the dashboard, and then these. None is on a card.
- * Songs is the area; the other four are not built yet, and what the categories
- * of the same names used to hold is under the nine.
+ * Songs is the area, and Practice has the practice areas that no outline
+ * names. The other three are not built yet.
  */
 export const HOME = { id: 'home', label: 'Home', icon: House } as const
 export const DESTINATIONS: readonly Category[] = [
@@ -690,9 +959,45 @@ export const DESTINATIONS: readonly Category[] = [
     id: 'practice',
     label: 'Practice',
     icon: Target,
-    description: 'What to play today: routines, fingering, sight-reading and rhythm.',
+    description: 'Scales, chords, arpeggios and cadences, in every key.',
     accent: 'exercises',
-    sections: [],
+    // The practice areas that are in no outline. They were under Scales,
+    // Intervals & Keys and Chords & Harmony until those were laid out, and are
+    // here until the lessons that use them say where they belong.
+    sections: [
+      {
+        id: 'scales',
+        label: 'Scales',
+        icon: ChartNoAxesColumnIncreasing,
+        description: 'Every key and mode, fingered, written out, and run with you.',
+        accent: 'scales',
+        opens: { kind: 'area', topic: 'scales' },
+      },
+      {
+        id: 'chords',
+        label: 'Chords',
+        icon: Layers,
+        description: 'Triads, four-note chords and sevenths in every position, solid and broken.',
+        accent: 'chords',
+        opens: { kind: 'area', topic: 'chords' },
+      },
+      {
+        id: 'arpeggios',
+        label: 'Arpeggios',
+        icon: Waves,
+        description: 'Each key’s chords run up the keyboard, from every position.',
+        accent: 'arpeggios',
+        opens: { kind: 'area', topic: 'arpeggios' },
+      },
+      {
+        id: 'cadences',
+        label: 'Cadences',
+        icon: Milestone,
+        description: 'The cadence of every key, in three positions: I – IV – I – V – I.',
+        accent: 'exercises',
+        opens: { kind: 'area', topic: 'progressions', progression: 'cadences' },
+      },
+    ],
   },
   {
     id: 'progress',
@@ -743,14 +1048,15 @@ const leadsTo = (place: Place, topic: LearningTopic, progression: ProgressionTyp
   (place.opens.progression === undefined || place.opens.progression === progression)
 
 /**
- * Where an area is filed: the category it is under, and the section that opens
- * it. Which is how the menu knows where you are while an area is open.
+ * Where an area is filed: the category or the place in the bar it is under,
+ * and the section that opens it. Which is how the menu knows where you are
+ * while an area is open.
  */
 export function placeOf(
   topic: LearningTopic,
   progression: ProgressionType,
 ): { category: Category; section: Section } | null {
-  for (const category of CATEGORIES) {
+  for (const category of [...CATEGORIES, ...DESTINATIONS]) {
     const section = category.sections.find((entry) => leadsTo(entry, topic, progression))
     if (section) return { category, section }
   }

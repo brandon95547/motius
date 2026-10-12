@@ -288,9 +288,9 @@ function Utilities({ area }: { area: string | null }) {
       : topic === 'songs'
         ? 'songs'
         : placeOf(topic, progression)?.category.id
-  // The one place in the bar along the bottom that is somewhere to play. The
-  // bar is not there in an area, so the menu has it.
-  const songs = DESTINATIONS.find((place) => place.id === 'songs')!
+  // The places in the bar along the bottom that lead somewhere to play. The
+  // bar is not there in an area, so the menu has them.
+  const playing = DESTINATIONS.filter((place) => place.id === 'songs' || place.id === 'practice')
   const live = recording === 'recording' || recording === 'counting'
   const progressLabel = area === 'songs' ? 'Hand position' : 'Progress'
   const ProgressIcon = area === 'songs' ? Hand : Gauge
@@ -342,15 +342,15 @@ function Utilities({ area }: { area: string | null }) {
       checked: page === 'dashboard',
       onSelect: pageActions.openDashboard,
     },
-    // Songs, then the nine categories as the dashboard has them. What is
-    // inside one is on its page: a menu that listed every section would be the
-    // dashboard and all its pages again.
-    ...[songs, ...CATEGORIES].map((entry, index): MenuAction => ({
+    // Songs and Practice, then the nine categories as the dashboard has them.
+    // What is inside one is on its page: a menu that listed every section
+    // would be the dashboard and all its pages again.
+    ...[...playing, ...CATEGORIES].map((entry, index): MenuAction => ({
       id: entry.id,
       label: entry.label,
       icon: <entry.icon size={16} />,
       checked: here === entry.id,
-      separated: index <= 1,
+      separated: index === 0 || index === playing.length,
       onSelect: () => pageActions.openCategory(entry),
     })),
     ...folded,

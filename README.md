@@ -19,16 +19,21 @@ order they are taught:
    Symbols, Sight-Reading, Music Writing.
 3. **Rhythm & Timing** — Beat & Counting, Tempo & Metronome, Time Signatures,
    Note Values, Rests, Rhythm Patterns, Rhythm Exercises.
-4. **Scales, Intervals & Keys** — Scales, Intervals.
-5. **Chords & Harmony** — Chords, Arpeggios, Progressions, Cadences.
+4. **Scales, Intervals & Keys** — Intervals, Keys & Tonality, Circle of Fifths,
+   Major Scales, Minor Scales, Additional Scales, Diatonic Modes, Scale
+   Technique.
+5. **Chords & Harmony** — Chord Foundations, Triads, Seventh & Extended Chords,
+   Chord Inversions, Chord Voicings, Chord Progressions, Cadences, Harmonic
+   Relationships, Chord Application.
 6. **Piano Technique** — Fingering Exercises.
 7. **Musical Expression**
 8. **Musical Structure & Styles**
 9. **Practice & Repertoire** — Daily Practice, Songs.
 
 A category with something in it opens a page of its sections, and a section
-may have sections of its own, as far down as the subject goes. The first three
-categories are laid out in full, from the outline written for each. In Piano
+may have sections of its own, as far down as the subject goes. The first five
+categories are laid out in full, from the outline written for each, and hold
+that and nothing else. In Piano
 Foundations, Keyboard Layout has White and black keys, Musical alphabet and
 Keyboard navigation, each a page of its lessons; Fingers & Hand Positions has
 Finger numbering, Starting positions and Hand movement; and Understanding Pitch
@@ -36,8 +41,10 @@ and Playing Your First Notes are pages of lessons themselves. Where an outline
 has a lesson beside a topic — Time Signatures has Common time next to Simple
 meter — the page has both. Under the dashboard and those pages a bar along the bottom leads to
 the other places at the top of the app: Home (the dashboard), Lessons, Songs,
-Practice, Progress and Search. It is not there in an area, where the bottom of
-the screen is the keyboard's and the menu is the way out.
+Practice, Progress and Search. Practice has the practice areas that no outline
+names — Scales, Chords, Arpeggios, Cadences — until the lessons that use them
+say where they belong. The bar is not there in an area, where the bottom of the
+screen is the keyboard's and the menu is the way out.
 
 Where you are is said in the bar across the top — `Dashboard › Piano
 Foundations › Keyboard Layout` — and each step of it is a way back; on a
@@ -45,9 +52,9 @@ narrow bar the steps furthest up fold away first. A section that is built opens
 what it is for: Scales, Chords and Arpeggios their areas, Cadences the
 cadences, Daily Practice the routines, Fingering Exercises the exercises below,
 Songs the song library. A place that is not built yet (every lesson of the
-three outlined categories, 137 of them; two of the nine categories; the
-Intervals and Progressions sections; and Lessons, Practice, Progress and Search
-in the bar) has a page of its own that says so, at the address it will keep —
+five outlined categories, 291 of them; two of the nine categories; and Lessons,
+Progress and Search in the bar) has a page of its own that says so, at the
+address it will keep —
 `#/piano-foundations/keyboard-layout/white-and-black-keys/two-black-key-groups`,
 `#/musical-expression`, `#/progress` — so what is built there later is built in
 a place that already exists.

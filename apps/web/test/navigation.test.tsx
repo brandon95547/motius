@@ -131,17 +131,17 @@ describe('moving between the dashboard and the areas', () => {
 })
 
 describe('the pages between the dashboard and the areas', () => {
-  it('opens a category by its address, and one of its unbuilt sections under it', async () => {
+  it('opens a category by its address, and one of its sections under it', async () => {
     renderHook(() => usePageSync())
     globalThis.location.hash = '#/chords-and-harmony'
     await waitFor(() => expect(usePageStore.getState().page).toBe('category'))
     expect(usePageStore.getState().category).toBe('chords-and-harmony')
 
-    globalThis.location.hash = '#/chords-and-harmony/progressions'
+    globalThis.location.hash = '#/chords-and-harmony/cadences'
     await waitFor(() => expect(usePageStore.getState().page).toBe('section'))
     expect(usePageStore.getState()).toMatchObject({
       category: 'chords-and-harmony',
-      path: ['progressions'],
+      path: ['cadences'],
     })
   })
 
@@ -165,18 +165,15 @@ describe('the pages between the dashboard and the areas', () => {
     expect(usePageStore.getState().page).toBe('section')
   })
 
-  it('takes a built section’s name under its category as the category: its address is its area’s', async () => {
+  it('takes the name of a section that opens an area as the page above it: its address is its area’s', async () => {
     renderHook(() => usePageSync())
-    globalThis.location.hash = '#/chords-and-harmony/chords'
+    globalThis.location.hash = '#/practice/scales'
     await waitFor(() => expect(usePageStore.getState().page).toBe('category'))
-    expect(usePageStore.getState()).toMatchObject({
-      category: 'chords-and-harmony',
-      path: [],
-    })
+    expect(usePageStore.getState()).toMatchObject({ category: 'practice', path: [] })
 
     // And a name that is no section of it at all.
-    globalThis.location.hash = '#/chords-and-harmony/nonsense'
-    await waitFor(() => expect(globalThis.location.hash).toBe('#/chords-and-harmony/nonsense'))
+    globalThis.location.hash = '#/practice/nonsense'
+    await waitFor(() => expect(globalThis.location.hash).toBe('#/practice/nonsense'))
     expect(usePageStore.getState()).toMatchObject({ page: 'category', path: [] })
   })
 
@@ -187,7 +184,7 @@ describe('the pages between the dashboard and the areas', () => {
     expect(usePageStore.getState()).toMatchObject({ category: 'musical-expression', path: [] })
 
     // And the places the bar along the bottom leads to.
-    for (const place of ['lessons', 'practice', 'progress', 'search']) {
+    for (const place of ['lessons', 'progress', 'search']) {
       globalThis.location.hash = `#/${place}`
       await waitFor(() => expect(usePageStore.getState().category).toBe(place))
       expect(usePageStore.getState().page).toBe('category')
