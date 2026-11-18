@@ -117,8 +117,11 @@ export interface Exercise {
    * and not about the two octaves this exercise happens to walk.
    */
   readonly pitchClasses: readonly number[]
-  /** The tonic, so a root key can be marked without re-deriving it. */
-  readonly rootPitchClass: number
+  /**
+   * The tonic, so a root key can be marked without re-deriving it. Null for
+   * material in no key — a lesson on where the black keys are has no home note.
+   */
+  readonly rootPitchClass: number | null
   /**
    * Pitch class to spelled name — `3` is `E♭` in A minor and `D♯` in B major.
    * Carried on the exercise so nothing downstream has to re-spell anything, or
