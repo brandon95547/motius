@@ -8,3 +8,6 @@ package-lock.json
 # stops being one.
 apps/web/src/styles/tokens.css
 .claude/
+
+# Written by ESLint (`npm run lint:prune`), in its own layout.
+eslint-suppressions.json

@@ -1,0 +1,31 @@
+{
+  "about": "Copies that were there when check-duplicates was added. Fold one into a helper and remove its entry in the same change: this list only shrinks.",
+  "duplicates": [
+    {
+      "hash": "2d5c4af6d69a",
+      "lines": 18,
+      "files": [
+        "apps/web/src/features/songs/import-musescore.ts",
+        "apps/web/src/features/songs/import-musicxml.ts"
+      ]
+    },
+    {
+      "hash": "8c1e33fb6615",
+      "lines": 9,
+      "files": ["scripts/icons.mjs", "scripts/verify-audio.mjs"]
+    },
+    {
+      "hash": "63aa5f7fc2e8",
+      "lines": 8,
+      "files": ["scripts/icons.mjs", "scripts/verify-audio.mjs"]
+    },
+    {
+      "hash": "77d53dc140b3",
+      "lines": 8,
+      "files": [
+        "apps/web/src/features/songs/import-musescore.ts",
+        "apps/web/src/features/songs/import-musicxml.ts"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "apps/web/src/styles/globals.css": {
+    "color": 2
+  },
+  "apps/web/src/styles/motius.css": {
+    "font-size": 40,
+    "small-text": 10,
+    "color": 1
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "apps/web/src/components/OptionsDrawer.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "apps/web/src/components/Stage.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "apps/web/src/components/TopBar.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "apps/web/src/features/areas/Lessons.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "apps/web/src/features/learning/LearningDashboard.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "apps/web/src/features/learning/ScaleControls.tsx": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "apps/web/src/features/recording/RecordControls.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "apps/web/src/features/songs/SongControls.tsx": {
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
+  "apps/web/src/features/songs/SongSearch.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "apps/web/src/state/theme-store.ts": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  }
+}

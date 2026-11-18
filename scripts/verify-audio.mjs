@@ -60,7 +60,8 @@ try {
     if (message.id && pending.has(message.id)) {
       const { resolve, reject } = pending.get(message.id)
       pending.delete(message.id)
-      message.error ? reject(new Error(JSON.stringify(message.error))) : resolve(message.result)
+      if (message.error) reject(new Error(JSON.stringify(message.error)))
+      else resolve(message.result)
     } else if (message.method === 'Runtime.exceptionThrown') {
       consoleLines.push(
         `uncaught: ${message.params.exceptionDetails.exception?.description ?? message.params.exceptionDetails.text}`,

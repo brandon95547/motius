@@ -19,7 +19,11 @@
     "build": "npm run build:shared && npm run build -w @motius/api && npm run build -w @motius/web",
     "start": "npm run start -w @motius/api",
     "typecheck": "npm run build:shared && npm run typecheck --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present",
+    "lint": "eslint .",
+    "lint:prune": "eslint . --prune-suppressions",
+    "check:styles": "node scripts/check-styles.mjs",
+    "check:duplicates": "node scripts/check-duplicates.mjs",
+    "check": "npm run format:check && npm run lint && npm run check:styles && npm run check:duplicates && npm run typecheck && npm test",
     "test": "npm run build:shared && npm run test --workspaces --if-present",
     "verify:audio": "node scripts/verify-audio.mjs",
     "icons": "node scripts/icons.mjs",
@@ -27,9 +31,14 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,css,json,md}\""
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "concurrently": "^9.2.1",
+    "eslint": "^10.15.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.14.0",
     "prettier": "^3.6.2",
-    "typescript": "~5.9.3"
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.73.0"
   },
   "allowScripts": {
     "better-sqlite3@13.0.3": true,

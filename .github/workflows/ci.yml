@@ -27,6 +27,9 @@ jobs:
       - run: npm run build:shared
 
       - run: npm run format:check
+      - run: npm run lint
+      - run: npm run check:styles
+      - run: npm run check:duplicates
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
