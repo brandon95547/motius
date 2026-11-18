@@ -45,6 +45,35 @@
     overscroll-behavior-y: none;
   }
 
+  /* ---- CURSOR POLICY ------------------------------------------------------
+     Anything that can be clicked shows the hand; anything switched off says
+     so. Tailwind 4 leaves buttons on the arrow, so it is set once here. */
+  a[href],
+  button,
+  summary,
+  label[for],
+  select,
+  [role='button'],
+  [role='tab'],
+  [role='menuitem'],
+  [role='menuitemradio'],
+  [role='menuitemcheckbox'],
+  [role='option'],
+  [role='switch'],
+  [role='checkbox'],
+  [role='radio'],
+  input[type='checkbox'],
+  input[type='radio'],
+  input[type='range'],
+  input[type='color'],
+  input[type='file'] {
+    cursor: pointer;
+  }
+  :disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+
   /* Numbers in tables, metrics and code must not dance as they update. */
   table,
   [data-tabular],
