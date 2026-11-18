@@ -27,7 +27,7 @@ export type Panel =
   | 'devices'
   | 'theory'
   | 'fundamentals'
-  /** A section's lessons, on a screen too narrow to keep them beside the stage. */
+  /** A section's lessons, from the left of the bar on its stage. */
   | 'lessons'
 
 interface PanelState {

@@ -6,14 +6,8 @@ import { MidiProvider } from '@/midi/MidiProvider'
 import { BottomNav } from '@/components/BottomNav'
 import { TopBar } from '@/components/TopBar'
 import { Dashboard } from '@/features/areas/Dashboard'
-import { LessonCard, LessonRail } from '@/features/areas/LessonRail'
-import {
-  CATEGORIES,
-  findCategory,
-  placeOf,
-  type CategoryId,
-  type Section,
-} from '@/features/areas/areas'
+import { LessonCard, LessonsDrawer } from '@/features/areas/Lessons'
+import { CATEGORIES, findCategory, type CategoryId, type Section } from '@/features/areas/areas'
 import { useLearningStore } from '@/state/learning-store'
 import { pageActions, usePageStore, usePageSync } from '@/state/page-store'
 import { usePanelStore } from '@/state/panel-store'
@@ -44,7 +38,7 @@ function Pages() {
           <TopBar />
           {page === 'lesson' ? (
             <>
-              <LessonRail />
+              <LessonsDrawer />
               <LessonCard />
             </>
           ) : (
@@ -93,16 +87,31 @@ const card = (name: string) =>
   within(screen.getByRole('main')).getByRole('button', {
     name: new RegExp(`^(Open )?${name.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}`),
   })
-// A section's stage: its lessons beside it, the chapters they are in, and the one that is up.
-const lessons = () =>
-  [...document.querySelectorAll('.lesson-rail__item')].map((item) => item.lastChild!.textContent)
-const chapterTitles = () =>
-  [...document.querySelectorAll('.lesson-rail__chapter-title')].map((title) => title.textContent)
+// A section's stage: the list of its lessons, opened from the bar, the chapters
+// they are in, and the one that is up.
+const openList = () => {
+  if (!document.querySelector('.lesson-list'))
+    fireEvent.click(screen.getByRole('button', { name: / lessons$/ }))
+}
+const lessons = () => {
+  openList()
+  return [...document.querySelectorAll('.lesson-list__item')].map(
+    (item) => item.lastChild!.textContent,
+  )
+}
+const chapterTitles = () => {
+  openList()
+  return [...document.querySelectorAll('.lesson-list__chapter-title')].map(
+    (title) => title.textContent,
+  )
+}
 const lessonUp = () => document.querySelector('.lesson-card__name')?.textContent
-const lesson = (name: string) =>
-  within(screen.getByRole('navigation', { name: / lessons$/ })).getByRole('button', {
+const lesson = (name: string) => {
+  openList()
+  return within(screen.getByRole('navigation', { name: 'Lessons' })).getByRole('button', {
     name: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}$`),
   })
+}
 const trail = () =>
   [...document.querySelectorAll('.top-bar__trail > :not(svg)')].map((step) => step.textContent)
 const at = async (hash: string) =>
@@ -935,10 +944,25 @@ describe('Piano Foundations', () => {
     const layout = FOUNDATIONS['Keyboard Layout']
     expect(chapterTitles()).toEqual(Object.keys(layout))
     expect(lessons()).toEqual(Object.values(layout).flat())
-    // On its first lesson, with the keys clear to play: no lesson is written yet.
+    // On its first lesson, which is written: it says what it asks, and its
+    // exercise is on the keys.
     expect(lessonUp()).toBe('Two-black-key groups')
+    expect(screen.getByRole('region', { name: 'Lesson' }).textContent).toContain(
+      'Find every group of two',
+    )
+    expect(useLearningStore.getState()).toMatchObject({
+      topic: 'lesson',
+      lesson: 'two-black-key-groups',
+    })
+    expect(useLearningStore.getState().exercise!.title).toBe('Two-black-key groups')
+    expect(screen.getByRole('radiogroup', { name: 'Mode' })).toBeDefined()
+
+    // One not written yet says so, and leaves the keys clear to play.
+    fireEvent.click(screen.getByRole('button', { name: 'Next lesson' }))
+    await at('#/piano-foundations/keyboard-layout/white-and-black-keys/three-black-key-groups')
     expect(screen.getByRole('region', { name: 'Lesson' }).textContent).toContain('Coming soon')
-    expect(useLearningStore.getState()).toMatchObject({ topic: 'lesson', exercise: null })
+    expect(useLearningStore.getState()).toMatchObject({ lesson: null, exercise: null })
+    expect(screen.queryByRole('radiogroup', { name: 'Mode' })).toBeNull()
     expect(trail()).toEqual(['Dashboard', 'Piano Foundations', 'Keyboard Layout'])
   })
 
@@ -986,15 +1010,26 @@ describe('Piano Foundations', () => {
     expect(up.getByRole('button', { name: 'Next lesson' })).toHaveProperty('disabled', true)
   })
 
-  it('opens the list over the stage from the lesson, and puts it away when one is picked', async () => {
+  it('closes the lesson over the staff, until another lesson is up', async () => {
     await open('#/piano-foundations/keyboard-layout')
-    const rail = screen.getByRole('navigation', { name: 'Keyboard Layout lessons' })
-    expect(rail.dataset.open).toBe('false')
-    fireEvent.click(screen.getByRole('button', { name: 'All lessons' }))
-    expect(rail.dataset.open).toBe('true')
-    fireEvent.click(lesson('Finding Middle C'))
+    fireEvent.click(
+      within(screen.getByRole('region', { name: 'Lesson' })).getByRole('button', { name: 'Close' }),
+    )
+    expect(screen.queryByRole('region', { name: 'Lesson' })).toBeNull()
+    fireEvent.click(lesson('Three-black-key groups'))
+    await at('#/piano-foundations/keyboard-layout/white-and-black-keys/three-black-key-groups')
+    expect(lessonUp()).toBe('Three-black-key groups')
+  })
+
+  it('opens the list from the bar, as a sheet from the left, and puts it away when one is picked', async () => {
+    await open('#/piano-foundations/keyboard-layout')
+    expect(document.querySelector('.lesson-list')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Keyboard Layout lessons' }))
+    const sheet = screen.getByRole('dialog', { name: 'Keyboard Layout' })
+    expect(sheet.textContent).toContain('10 lessons')
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Finding Middle C' }))
     await at('#/piano-foundations/keyboard-layout/keyboard-navigation/finding-middle-c')
-    expect(rail.dataset.open).toBe('false')
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 
   it('makes every step of the way down a way back to it', async () => {
@@ -1075,8 +1110,8 @@ describe('the categories outlined after it', () => {
       )
     const lessons = leaves(category(id).sections)
     expect(lessons).toHaveLength(count)
-    // A page with its name on it, and nothing to open or to say yet.
-    for (const lesson of lessons) {
+    // Its name, and nothing to open or to say yet — but for the lessons written.
+    for (const lesson of lessons.filter((entry) => !entry.exercise)) {
       expect(lesson.opens).toBeUndefined()
       expect(lesson.description).toBeUndefined()
     }
@@ -1156,6 +1191,7 @@ describe('the categories outlined after it', () => {
     await open('#/music-notation-and-reading/musical-staff/bass-clef/line-notes')
     expect(lessonUp()).toBe('Line notes')
     expect(document.querySelector('.lesson-card__where')!.textContent).toMatch(/^Bass clef · /)
+    openList()
     const current = document.querySelector('[aria-current="step"]')!
     expect(current.closest('section')!.querySelector('h3')!.textContent).toBe('Bass clef')
   })
@@ -1240,72 +1276,20 @@ describe('the bar along the bottom', () => {
   })
 })
 
-describe('where an area is filed', () => {
-  it('finds every practice area in the bar’s Practice, and Songs under nothing', () => {
-    const filed = (topic: Parameters<typeof placeOf>[0]) => {
-      const place = placeOf(topic, 'cadences')
-      return [place?.category.label, place?.section.label]
-    }
-    expect(filed('scales')).toEqual(['Practice', 'Scales'])
-    expect(filed('chords')).toEqual(['Practice', 'Chords'])
-    expect(filed('arpeggios')).toEqual(['Practice', 'Arpeggios'])
-    expect(filed('progressions')).toEqual(['Practice', 'Cadences'])
-    expect(filed('fingering')).toEqual(['Practice', 'Fingering Exercises'])
-    expect(filed('exercises')).toEqual(['Practice', 'Daily Practice'])
-    // Songs is a place in the bar itself, not a section of one.
-    expect(placeOf('songs', 'cadences')).toBeNull()
-  })
-
-  it('lists the dashboard, Songs, Practice and the nine categories in the menu, and marks where you are', async () => {
+describe('the menu', () => {
+  it('keeps the dashboard’s places off the menu: it has the way home and the app’s tools', async () => {
     render(<Pages />)
     act(() => pageActions.openArea('fingering'))
     await at('#/fingering')
 
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }))
     const menu = within(screen.getByRole('menu'))
-    const places = ['Dashboard', 'Songs', 'Practice', ...NINE]
-    for (const place of places)
-      expect(menu.getByRole('menuitemradio', { name: place })).toBeDefined()
-    expect(menu.queryByRole('menuitemradio', { name: 'Scales' })).toBeNull()
-    expect(menu.queryByRole('menuitemradio', { name: 'Explore' })).toBeNull()
-    const checked = places.filter(
-      (place) =>
-        menu.getByRole('menuitemradio', { name: place }).getAttribute('aria-checked') === 'true',
-    )
-    expect(checked).toEqual(['Practice'])
+    for (const place of ['Songs', 'Practice', ...NINE])
+      expect(menu.queryByRole('menuitemradio', { name: place })).toBeNull()
+    expect(menu.getByRole('menuitem', { name: 'Fundamentals' })).toBeDefined()
+    expect(menu.getByRole('menuitem', { name: 'Keyboard & MIDI setup' })).toBeDefined()
 
-    fireEvent.click(menu.getByRole('menuitemradio', { name: 'Chords & Harmony' }))
-    await at('#/chords-and-harmony')
-  })
-
-  it('marks Practice in the menu while one of its areas is open', async () => {
-    render(<Pages />)
-    act(() => pageActions.openArea('chords'))
-    await at('#/chords')
-
-    fireEvent.click(screen.getByRole('button', { name: 'Menu' }))
-    const menu = within(screen.getByRole('menu'))
-    const checked = menu
-      .getAllByRole('menuitemradio')
-      .filter((item) => item.getAttribute('aria-checked') === 'true')
-      .map((item) => item.textContent)
-    expect(checked).toEqual(['Practice'])
-
-    fireEvent.click(menu.getByRole('menuitemradio', { name: 'Practice' }))
-    await at('#/practice')
-  })
-
-  it('marks Songs in the menu while a song is open, and not the category it is filed under', async () => {
-    render(<Pages />)
-    act(() => pageActions.openArea('songs'))
-    await at('#/songs')
-
-    fireEvent.click(screen.getByRole('button', { name: 'Menu' }))
-    const menu = within(screen.getByRole('menu'))
-    const checked = menu
-      .getAllByRole('menuitemradio')
-      .filter((item) => item.getAttribute('aria-checked') === 'true')
-      .map((item) => item.textContent)
-    expect(checked).toEqual(['Songs'])
+    fireEvent.click(menu.getByRole('menuitemradio', { name: 'Dashboard' }))
+    await waitFor(() => expect(usePageStore.getState().page).toBe('dashboard'))
   })
 })

@@ -28,7 +28,8 @@ import { useRecordingStore } from '@/state/recording-store'
 import { useCurrentSong } from '@/state/song-store'
 import { BACKDROPS, useBackdropStore } from '@/state/backdrop-store'
 import { COLOR_THEMES, useThemeStore } from '@/state/theme-store'
-import { CATEGORIES, DESTINATIONS, findCategory, pagesUnder, placeOf } from '@/features/areas/areas'
+import { findCategory, pagesUnder } from '@/features/areas/areas'
+import { LessonsButton } from '@/features/areas/Lessons'
 import { OptionsButton } from '@/components/OptionsDrawer'
 import { LastTakeButton, RecordButton } from '@/features/recording/RecordControls'
 import {
@@ -69,11 +70,14 @@ export function TopBar() {
   const topic = useLearningStore((state) => state.topic)
   const page = usePageStore((state) => state.page)
   const area = page === 'area' ? topic : null
+  // A lesson that is written plays like an area: shown, walked through, or kept score of.
+  const playable = useLearningStore((state) => page === 'lesson' && state.exercise !== null)
 
   return (
     <header className="top-bar">
       <div className="top-bar__row">
         <Brand keep={area === null} deep={page === 'category' || page === 'lesson'} />
+        {page === 'lesson' && <LessonsButton />}
         {area === null && <PageTitle />}
         {area && <OptionsButton />}
         {area === 'songs' && <NowPlaying />}
@@ -95,6 +99,15 @@ export function TopBar() {
               <RecordButton />
               <LastTakeButton />
             </span>
+            <StartButton />
+          </>
+        )}
+
+        {playable && (
+          <>
+            <ModeTabs />
+            <span className="top-bar__divider bar-sm" aria-hidden />
+            <DemoButton />
             <StartButton />
           </>
         )}
@@ -278,21 +291,7 @@ function BackdropMenu({ className }: { className?: string }) {
 
 function Utilities({ area }: { area: string | null }) {
   const recording = useRecordingStore((state) => state.status)
-  // Which of the places in the menu you are at: Songs, or the category whose
-  // page is up, or the one the open area is filed under.
   const page = usePageStore((state) => state.page)
-  const pageCategory = usePageStore((state) => state.category)
-  const topic = useLearningStore((state) => state.topic)
-  const progression = useLearningStore((state) => state.progressionType)
-  const here =
-    page !== 'area'
-      ? pageCategory
-      : topic === 'songs'
-        ? 'songs'
-        : placeOf(topic, progression)?.category.id
-  // The places in the bar along the bottom that lead somewhere to play. The
-  // bar is not there in an area, so the menu has them.
-  const playing = DESTINATIONS.filter((place) => place.id === 'songs' || place.id === 'practice')
   const live = recording === 'recording' || recording === 'counting'
   const progressLabel = area === 'songs' ? 'Hand position' : 'Progress'
   const ProgressIcon = area === 'songs' ? Hand : Gauge
@@ -337,6 +336,9 @@ function Utilities({ area }: { area: string | null }) {
   ].map((action, index) => (index === 0 ? { ...action, separated: true } : action))
 
   const actions: MenuAction[] = [
+    // The way home, which an area has no other of: its bar has no trail, and
+    // the bar along the bottom is not there. The places on the dashboard are
+    // on the dashboard, and the menu does not list them again.
     {
       id: 'dashboard',
       label: 'Dashboard',
@@ -344,17 +346,6 @@ function Utilities({ area }: { area: string | null }) {
       checked: page === 'dashboard',
       onSelect: pageActions.openDashboard,
     },
-    // Songs and Practice, then the nine categories as the dashboard has them.
-    // What is inside one is on its page: a menu that listed every section
-    // would be the dashboard and all its pages again.
-    ...[...playing, ...CATEGORIES].map((entry, index): MenuAction => ({
-      id: entry.id,
-      label: entry.label,
-      icon: <entry.icon size={16} />,
-      checked: here === entry.id,
-      separated: index === 0 || index === playing.length,
-      onSelect: () => pageActions.openCategory(entry),
-    })),
     ...folded,
     {
       id: 'fundamentals',

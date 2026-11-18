@@ -37,7 +37,9 @@ order they are taught. Each is laid out from the outline written for it:
    Repertoire, Creativity & Composition, Progress & Assessment.
 
 A category opens a page of its sections, and a section opens straight onto the
-stage: the keyboard to play on, and the section's lessons in a list beside it.
+stage, the keyboard to play on at the stage's full width. The section's lessons
+are a list that slides in from the left, from the button beside its name in the
+bar.
 Whatever the outline has between the section and a lesson is a chapter of that
 list, not another page of cards, so the keys are two choices from the dashboard
 however deep the outline goes. In Piano Foundations, Keyboard Layout's list has
@@ -48,11 +50,20 @@ next to Simple meter — the list has both, the section's own lessons headed wit
 its name.
 
 The lesson that is up sits over the staff with Previous and Next, which run
-through the section from chapter to chapter. On a screen too narrow for the list
-beside the stage, All lessons opens it over the stage's left edge.
+through the section from chapter to chapter.
 
-There are 534 lessons in the nine outlines, and none is written yet: each says
-so, and the keys are free to play meanwhile. Each has the address it will keep —
+There are 534 lessons in the nine outlines. One is written: **Two-black-key
+groups**, taught as the primer books teach it, before any note has a name. The
+card says what to do, and the bar has Explore, Learn and Practice as an area
+does: Explore lights every group of two black keys, Learn walks them from the
+bottom of the keyboard to the top — the left hand with fingers 3 and 2 up to
+middle C, then the right hand with 2 and 3, both keys pressed together — and
+Practice takes the lights away and counts a three-black-key group as a mistake.
+A written lesson names its exercise in the outline, and the exercise is built
+in `packages/shared/src/learning/lesson-exercise.ts`.
+
+The rest are not written yet: each says so, and the keys are free to play
+meanwhile. Each has the address it will keep —
 `#/piano-foundations/keyboard-layout/white-and-black-keys/two-black-key-groups`
 — which opens the stage on it, so what is built there later is built in a place
 that already exists. An address that stops at a section or a topic opens its
@@ -65,14 +76,15 @@ areas, which no outline names — Scales, Chords, Arpeggios, Cadences, Fingering
 Exercises, Daily Practice — until the lessons that use them say where they
 belong. Lessons, Progress and Search are not built, and say so. The bar is not
 there in an area, where the bottom of the screen is the keyboard's and the menu
-is the way out.
+is the way out: it has the Dashboard, and the app's tools (Fundamentals, Keyboard
+& MIDI setup, Import a song), but not the dashboard's places over again.
 
 Where you are is said in the bar across the top — `Dashboard › Piano
 Foundations › Keyboard Layout` — and each step of it is a way back; on a
 narrow bar the steps furthest up fold away first.
 
 The whole of it is one table (`features/areas/areas.tsx`), from which the
-dashboard, those pages, the bar along the bottom and the menu are all drawn.
+dashboard, those pages and stages and the bar along the bottom are all drawn.
 
 ### The instrument
 

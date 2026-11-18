@@ -15,7 +15,7 @@ import {
  * The pages that lead to the areas: the dashboard, with its nine categories;
  * the page of a category, with its sections; and the page a category has
  * while there is nothing in it yet. A section is no page: it opens onto the
- * stage, with its lessons beside the keys (`LessonRail`).
+ * stage, its lessons a sheet from the left (`Lessons`).
  *
  * Drawn to the dashboard mock (new dashboard.png, 2026-10-12): the practice
  * room behind everything, and each place a plain dark card in an accent, three

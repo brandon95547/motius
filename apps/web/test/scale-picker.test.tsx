@@ -6,17 +6,6 @@ import { ScaleTheoryDialog } from '@/features/learning/ScaleTheoryDialog'
 import { useLearningStore } from '@/state/learning-store'
 import { Combobox } from '@/ui/Controls'
 
-globalThis.matchMedia ??= ((query: string) => ({
-  matches: false,
-  media: query,
-  addEventListener() {},
-  removeEventListener() {},
-  addListener() {},
-  removeListener() {},
-  dispatchEvent: () => false,
-  onchange: null,
-})) as unknown as typeof globalThis.matchMedia
-
 afterEach(cleanup)
 
 const store = () => useLearningStore.getState()

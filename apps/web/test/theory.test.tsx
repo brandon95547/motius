@@ -9,17 +9,6 @@ import { usePanelStore } from '@/state/panel-store'
 /*
  * The drawer asks whether the screen is narrow, and jsdom has no opinion.
  */
-globalThis.matchMedia ??= ((query: string) => ({
-  matches: false,
-  media: query,
-  addEventListener() {},
-  removeEventListener() {},
-  addListener() {},
-  removeListener() {},
-  dispatchEvent: () => false,
-  onchange: null,
-})) as unknown as typeof globalThis.matchMedia
-
 afterEach(cleanup)
 
 const store = () => useLearningStore.getState()

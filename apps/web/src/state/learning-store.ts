@@ -4,6 +4,7 @@ import {
   buildChordExercise,
   buildCadenceExercise,
   buildFingeringExercise,
+  buildLessonExercise,
   buildRoutineExercise,
   buildScaleExercise,
   DEFAULT_ARPEGGIO_SPEC,
@@ -37,6 +38,7 @@ import {
   type RoutineSpec,
   type ScaleSpec,
   type SessionState,
+  type LessonExerciseId,
 } from '@motius/shared'
 
 /**
@@ -102,6 +104,8 @@ type SpecKey = keyof Specs
 /** The settings, and which of them an area with more than one set is using. */
 interface Chosen extends Specs {
   progressionType: ProgressionType
+  /** What the lesson that is up plays, where it plays anything. */
+  lesson: LessonExerciseId | null
 }
 
 export type KeyRole = 'scale' | 'root' | 'upcoming' | 'target' | 'wrong'
@@ -140,6 +144,8 @@ interface LearningState {
   cadenceSpec: CadenceSpec
   routineSpec: RoutineSpec
   fingeringSpec: FingeringDrillSpec
+  /** What the lesson that is up plays: none for a lesson not written yet. */
+  lesson: LessonExerciseId | null
   exercise: Exercise | null
   session: SessionState
   annotations: Readonly<Record<number, KeyAnnotation>>
@@ -198,6 +204,8 @@ interface LearningState {
   songAnnotations: Readonly<Record<number, KeyAnnotation>>
 
   setTopic: (topic: LearningTopic) => void
+  /** Puts a lesson's exercise up, or none. A new lesson ends the run. */
+  setLesson: (lesson: LessonExerciseId | null) => void
   setMode: (mode: LearningMode) => void
   updateSpec: (patch: Partial<ScaleSpec>) => void
   updateChordSpec: (patch: Partial<ChordSpec>) => void
@@ -253,6 +261,8 @@ function buildExercise(
       return buildRoutineExercise(specs.routineSpec, options)
     case 'fingering':
       return buildFingeringExercise(specs.fingeringSpec, options)
+    case 'lesson':
+      return specs.lesson ? buildLessonExercise(specs.lesson, { range }) : null
     default:
       return null
   }
@@ -426,7 +436,7 @@ export const useLearningStore = create<LearningState>((set, get) => {
         fingeringSpec: state.fingeringSpec,
         [key]: next,
       } as Specs
-      const chosen = { ...specs, progressionType: state.progressionType }
+      const chosen = { ...specs, progressionType: state.progressionType, lesson: state.lesson }
       return { ...specs, ...rebuild(state.topic, chosen, state.mode, session) }
     })
 
@@ -440,6 +450,7 @@ export const useLearningStore = create<LearningState>((set, get) => {
     cadenceSpec: DEFAULT_CADENCE_SPEC,
     routineSpec: DEFAULT_ROUTINE_SPEC,
     fingeringSpec: DEFAULT_FINGERING_DRILL_SPEC,
+    lesson: null,
     exercise: initialExercise,
     session: IDLE_SESSION,
     annotations: buildAnnotations(initialExercise, 'learn', IDLE_SESSION),
@@ -456,6 +467,13 @@ export const useLearningStore = create<LearningState>((set, get) => {
 
     setTopic: (topic) =>
       set((state) => ({ topic, ...rebuild(topic, state, state.mode, IDLE_SESSION) })),
+
+    setLesson: (lesson) =>
+      set((state) =>
+        state.lesson === lesson
+          ? state
+          : { lesson, ...rebuild(state.topic, { ...state, lesson }, state.mode, IDLE_SESSION) },
+      ),
 
     setMode: (mode) =>
       // Changing mode ends the run. Half a scale learned with the answers on

@@ -15,14 +15,6 @@ class NoSize {
   disconnect() {}
 }
 globalThis.ResizeObserver = NoSize as unknown as typeof ResizeObserver
-globalThis.matchMedia ??= ((query: string) =>
-  ({
-    matches: false,
-    media: query,
-    addEventListener() {},
-    removeEventListener() {},
-  }) as unknown as MediaQueryList) as typeof matchMedia
-
 afterEach(cleanup)
 
 /**

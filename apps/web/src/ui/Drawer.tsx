@@ -5,7 +5,9 @@ import { IconButton } from './Button'
 import { useDismissable, useFocusTrap, useMediaQuery } from '@/lib/hooks'
 
 /**
- * A side sheet on a wide screen and a bottom sheet on a narrow one.
+ * A side sheet on a wide screen and a bottom sheet on a narrow one. The side
+ * is the right unless a sheet belongs to a control on the bar's left: a
+ * section's lessons come in from the left, under the button that opens them.
  *
  * The two are the same component because they are the same thing: a surface
  * that slides in over a scrim and owns focus until it is dismissed. Only the
@@ -13,9 +15,8 @@ import { useDismissable, useFocusTrap, useMediaQuery } from '@/lib/hooks'
  * targets, which are a pointer question.
  *
  * A dialog gets its lift from the scrim rather than from a lighter surface,
- * which is why `--ds-surface-overlay` sits where it does in the ramp: high
- * enough to read as above the page, low enough that muted text on it still
- * clears 4.5:1.
+ * so a sheet is on the dashboard cards' surface, a notch above the bars, and
+ * not on the lighter overlay that menus use.
  */
 export function Drawer({
   open,
@@ -24,7 +25,12 @@ export function Drawer({
   description,
   children,
   footer,
+  side = 'right',
+  fit = false,
 }: {
+  side?: 'left' | 'right'
+  /** As wide as what is in it, up to the usual width, rather than always that wide: a list of names. */
+  fit?: boolean
   open: boolean
   onClose: () => void
   title: string
@@ -70,10 +76,14 @@ export function Drawer({
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
         className={cn(
-          'relative ml-auto flex flex-col bg-[var(--ds-surface-overlay)] shadow-e5 outline-none',
+          'relative flex flex-col bg-[var(--c-bar-raised)] shadow-e5 outline-none',
+          side === 'left' ? 'mr-auto' : 'ml-auto',
+          !isNarrow && (fit ? 'w-max max-w-[min(26rem,100%)]' : 'w-[26rem] max-w-full'),
           isNarrow
             ? 'mt-auto max-h-[88dvh] w-full rounded-t-[var(--radius-2xl)] border-t border-[var(--ds-border)] motion-safe:animate-[sheet-in_260ms_cubic-bezier(0.32,0.72,0,1)_both]'
-            : 'h-full w-[26rem] max-w-full border-l border-[var(--ds-border)] motion-safe:animate-[drawer-in-right_260ms_cubic-bezier(0.32,0.72,0,1)_both]',
+            : side === 'left'
+              ? 'h-full border-r border-[var(--ds-border)] motion-safe:animate-[drawer-in-left_260ms_cubic-bezier(0.32,0.72,0,1)_both]'
+              : 'h-full border-l border-[var(--ds-border)] motion-safe:animate-[drawer-in-right_260ms_cubic-bezier(0.32,0.72,0,1)_both]',
         )}
       >
         {isNarrow && (

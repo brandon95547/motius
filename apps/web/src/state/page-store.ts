@@ -3,6 +3,8 @@ import { create } from 'zustand'
 import { findProgressionType, type ProgressionType } from '@motius/shared'
 import {
   findCategory,
+  lessonAt,
+  lessonsOf,
   pagesUnder,
   type Category,
   type CategoryId,
@@ -105,11 +107,16 @@ function enter(place: AreaPlace) {
 }
 
 /**
- * Clears the keys for a lesson. No lesson is written yet, so the stage is free
- * play: no scale lit on the keys, and the staff writes what is played.
+ * Puts a lesson on the keys: its exercise, where it is written, or none — free
+ * play, with nothing lit and the staff writing what is played.
  */
-function enterLesson() {
+function enterLesson(place: IndexPlace) {
+  const category = findCategory(place.category)
+  const section = category && pagesUnder(category, place.path)[0]
+  const lessons = section ? lessonsOf(section) : []
+  const lesson = lessons[lessonAt(lessons, place.path)]?.lesson
   const learning = useLearningStore.getState()
+  learning.setLesson(lesson?.exercise ?? null)
   if (learning.topic !== 'lesson') learning.setTopic('lesson')
 }
 
@@ -117,7 +124,7 @@ function enterLesson() {
 // dashboard while an effect catches up.
 const initialPlace = placeIn(globalThis.location?.hash ?? '')
 if (initialPlace?.kind === 'area') enter(initialPlace)
-if (initialPlace?.kind === 'lesson') enterLesson()
+if (initialPlace?.kind === 'lesson') enterLesson(initialPlace)
 
 /** What the store says for a place: which page, and whose. */
 const stateFor = (place: Place | null): PageState =>
@@ -137,7 +144,7 @@ function apply(hash: string) {
     // off again by itself the moment the player came back.
     if (useSongStore.getState().playing) useSongStore.getState().setPlaying(false)
     shutSongChooser()
-    if (place?.kind === 'lesson') enterLesson()
+    if (place?.kind === 'lesson') enterLesson(place)
     usePageStore.setState(stateFor(place))
     return
   }

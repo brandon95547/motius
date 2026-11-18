@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { ArrowLeft, ArrowRight, Hammer, ListTree, X } from 'lucide-react'
+import { Drawer } from '@/ui/Drawer'
 import { panelActions, usePanelStore } from '@/state/panel-store'
 import { pageActions, usePageStore } from '@/state/page-store'
 import {
@@ -14,13 +15,17 @@ import {
 } from './areas'
 
 /**
- * A section's stage: its lessons in a list beside the staff, and the lesson
- * that is up over it, with the way to the one before and the one after.
+ * A section's stage: the lesson that is up over the staff, with the way to the
+ * one before and the one after, and the section's lessons in a sheet from the
+ * left, opened from the bar.
  *
  * The stage is where a section opens, so a player is two choices from the
  * dashboard to the keys however deep the outline goes. The topics under the
  * section are the list's chapters, not pages of cards to get through first.
- * No lesson is written yet, so each says so and the keys are free to play.
+ * The list slides in over the stage rather than standing beside it, so the
+ * staff and the keys keep the whole width. A written lesson says what it asks
+ * and plays in Explore, Learn and Practice from the bar; one not written yet
+ * says so, and the keys are free to play.
  */
 
 interface Here {
@@ -41,9 +46,13 @@ function useHere(): Here | null {
   return { category, section, lessons, index: lessonAt(lessons, path) }
 }
 
+const close = () => {
+  if (usePanelStore.getState().panel === 'lessons') panelActions.close()
+}
+
 const go = (here: Here, lesson: Lesson | undefined) => {
   if (!lesson) return
-  if (usePanelStore.getState().panel === 'lessons') panelActions.close()
+  close()
   pageActions.openLesson(here.category, lesson.path)
 }
 
@@ -68,65 +77,61 @@ function chapters(section: Section, lessons: readonly Lesson[]) {
 }
 
 /**
- * The section's lessons, beside the stage on a wide screen. On a narrower one
- * the stage needs the width, and the list is a panel over its left edge,
- * opened from the lesson over the staff.
+ * The bar's way into the section's lessons, on its left where an area has its
+ * options: the sheet comes in from that side, under it.
  */
-export function LessonRail() {
+export function LessonsButton() {
   const here = useHere()
   const open = usePanelStore((state) => state.panel === 'lessons')
-  React.useEffect(() => {
-    if (!open) return
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') panelActions.close()
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [open])
-  // Leaving the stage puts the list away with it.
-  React.useEffect(
-    () => () => {
-      if (usePanelStore.getState().panel === 'lessons') panelActions.close()
-    },
-    [],
+  if (!here) return null
+  const label = `${here.section.label} lessons`
+  return (
+    <button
+      type="button"
+      className="bar-options"
+      aria-haspopup="dialog"
+      aria-expanded={open}
+      aria-label={label}
+      title={label}
+      onClick={() => (open ? panelActions.close() : panelActions.open('lessons'))}
+    >
+      <ListTree size={18} aria-hidden />
+    </button>
   )
+}
+
+/** The section's lessons, by chapter, the one that is up marked. */
+export function LessonsDrawer() {
+  const here = useHere()
+  const open = usePanelStore((state) => state.panel === 'lessons')
   if (!here) return null
   const current = here.lessons[here.index]
+  const count = here.lessons.length
 
   return (
-    <nav
-      className="lesson-rail"
-      data-accent={here.section.accent}
-      data-open={open}
-      aria-label={`${here.section.label} lessons`}
+    <Drawer
+      side="left"
+      fit
+      open={open}
+      onClose={close}
+      title={here.section.label}
+      description={`${count} ${count === 1 ? 'lesson' : 'lessons'}`}
     >
-      <header className="lesson-rail__header">
-        <h2 className="lesson-rail__title">{here.section.label}</h2>
-        <button
-          type="button"
-          className="bar-icon-button lesson-rail__close"
-          aria-label="Close the lessons"
-          title="Close"
-          onClick={panelActions.close}
-        >
-          <X size={18} aria-hidden />
-        </button>
-      </header>
-      <div className="lesson-rail__body">
+      <nav className="lesson-list" data-accent={here.section.accent} aria-label="Lessons">
         {chapters(here.section, here.lessons).map((chapter, index) => (
-          <section key={index} className="lesson-rail__chapter">
-            {chapter.title && <h3 className="lesson-rail__chapter-title">{chapter.title}</h3>}
-            <ol className="lesson-rail__list">
+          <section key={index} className="lesson-list__chapter">
+            {chapter.title && <h3 className="lesson-list__chapter-title">{chapter.title}</h3>}
+            <ol>
               {chapter.lessons.map((lesson) => (
-                // Numbered through the section, not the chapter: the card says "4 of 11".
+                // Numbered through the section, not the chapter: the card says "4 of 10".
                 <li key={lesson.path.join('/')}>
                   <button
                     type="button"
-                    className="lesson-rail__item"
+                    className="lesson-list__item"
                     aria-current={lesson === current ? 'step' : undefined}
                     onClick={() => go(here, lesson)}
                   >
-                    <span className="lesson-rail__number" aria-hidden>
+                    <span className="lesson-list__number" aria-hidden>
                       {String(here.lessons.indexOf(lesson) + 1).padStart(2, '0')}
                     </span>
                     {lesson.lesson.label}
@@ -136,41 +141,50 @@ export function LessonRail() {
             </ol>
           </section>
         ))}
-      </div>
-    </nav>
+      </nav>
+    </Drawer>
   )
 }
 
-/** The lesson that is up, over the staff: its name, where it is, and the way on. */
+/**
+ * The lesson that is up, over the staff: its name, where it is, and the way on.
+ * Closed, it is gone until another lesson is up: the staff is the player's.
+ */
 export function LessonCard() {
   const here = useHere()
+  const [closed, setClosed] = React.useState<string | null>(null)
   if (!here) return null
   const lesson = here.lessons[here.index]!
+  const key = lesson.path.join('/')
+  if (closed === key) return null
   const before = here.lessons[here.index - 1]
   const after = here.lessons[here.index + 1]
   const where = chapterOf(lesson) || here.section.label
 
   return (
     <section className="lesson-card" data-accent={here.section.accent} aria-label="Lesson">
+      <button
+        type="button"
+        className="bar-icon-button lesson-card__close"
+        aria-label="Close"
+        title="Close"
+        onClick={() => setClosed(key)}
+      >
+        <X size={18} aria-hidden />
+      </button>
       <p className="lesson-card__where">
         {where} · <span data-tabular>{`${here.index + 1} of ${here.lessons.length}`}</span>
       </p>
       <h2 className="lesson-card__name">{lesson.lesson.label}</h2>
-      <p className="lesson-card__status">
-        <Hammer size={14} aria-hidden />
-        {COMING_SOON}. The keys are yours to play meanwhile.
-      </p>
+      {lesson.lesson.about ? (
+        <p className="lesson-card__about">{lesson.lesson.about}</p>
+      ) : (
+        <p className="lesson-card__status">
+          <Hammer size={14} aria-hidden />
+          {COMING_SOON}. The keys are yours to play meanwhile.
+        </p>
+      )}
       <div className="lesson-card__steps">
-        <button
-          type="button"
-          className="lesson-card__step lesson-card__all"
-          aria-label="All lessons"
-          onClick={() => panelActions.open('lessons')}
-        >
-          <ListTree size={16} aria-hidden />
-          <span className="lesson-card__step-word">All lessons</span>
-        </button>
-        <span className="lesson-card__spacer" />
         <button
           type="button"
           className="lesson-card__step"
@@ -180,7 +194,7 @@ export function LessonCard() {
           onClick={() => go(here, before)}
         >
           <ArrowLeft size={16} aria-hidden />
-          <span className="lesson-card__step-word">Previous</span>
+          Previous
         </button>
         <button
           type="button"

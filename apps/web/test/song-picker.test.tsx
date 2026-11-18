@@ -27,13 +27,6 @@ import { useSongStore } from '@/state/song-store'
 
 // jsdom has no layout and so no media queries; the dialog asks one to know
 // whether it is on a phone. Nothing matches, which is the desktop it is drawn for.
-globalThis.matchMedia ??= ((query: string) => ({
-  matches: false,
-  media: query,
-  addEventListener: () => {},
-  removeEventListener: () => {},
-})) as unknown as typeof globalThis.matchMedia
-
 const score = (id: string) =>
   new Uint8Array(readFileSync(path.join(import.meta.dirname, '..', 'public', 'songs', `${id}.mxl`)))
 

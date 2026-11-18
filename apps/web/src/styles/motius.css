@@ -106,6 +106,9 @@
      about where you are. Everything on the stage that needs a dark surface to
      carry small text (pills, the run meter, the keys' felt) uses the bar's. */
   --c-bar: #131416;
+  /* A surface a notch above the bars: the dashboard's cards, and the sheets
+     that slide in from either side. */
+  --c-bar-raised: color-mix(in srgb, var(--c-bar), white 5%);
   --c-bar-fg: #ffffff;
   /* 8.5:1 on the bar. */
   --c-bar-fg-muted: rgb(255 255 255 / 0.74);
@@ -214,8 +217,7 @@
   --c-dash-quiet: #aeafaf;
   --c-dash-room: #111214; /* under the photograph, while it loads */
   --c-dash-shade: 8 8 10; /* channels: the room's darkening */
-  /* The bars' surface, raised a notch: the cards sit above them. */
-  --c-dash-card: color-mix(in srgb, var(--c-bar), white 5%);
+  --c-dash-card: var(--c-bar-raised); /* the cards sit a notch above the bars */
   --c-dash-card-edge: rgb(255 255 255 / 0.13);
   --c-dash-tile: #0b0b0d; /* the icon tile, before its accent is mixed in */
   --c-dash-number: #c49164; /* a card's number: the first accent, turned down */
@@ -1510,7 +1512,7 @@
 .top-bar__title {
   min-width: 0;
   overflow: hidden;
-  font-size: 1.125rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   letter-spacing: -0.005em;
   text-overflow: ellipsis;
@@ -1524,7 +1526,7 @@
   min-width: 2.5rem;
   min-height: 32px;
   overflow: hidden;
-  font-size: 1.125rem;
+  font-size: 0.9375rem;
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2708,7 +2710,6 @@ button.area-card:hover .area-card__go {
   position: relative;
   display: flex;
   flex: 1 1 auto;
-  min-width: 0;
   min-height: 0;
   flex-direction: column;
   justify-content: center;
@@ -2942,119 +2943,54 @@ button.area-card:hover .area-card__go {
 }
 
 /* ---- A section's stage: its lessons, and the one that is up --------------
-   The list is on the bar's surface, beside the stage on a wide screen and a
-   panel over its left edge on a narrower one, opened from the lesson card. The
-   card sits over the staff on the same surface: the stage cannot carry small
-   text of its own. */
-.lesson-room {
-  position: relative;
-  display: flex;
-  flex: 1 1 auto;
-  min-height: 0;
-}
-.lesson-rail {
-  position: absolute;
-  inset-block: 0;
-  left: 0;
-  z-index: var(--z-panel);
-  display: none;
-  flex-direction: column;
-  width: 20rem;
-  max-width: calc(100% - 2.5rem);
-  border-right: 1px solid var(--c-bar-line);
-  background-color: var(--c-bar);
-  color: var(--c-bar-fg);
-  box-shadow: var(--ds-shadow-4);
-}
-.lesson-rail[data-open='true'] {
-  display: flex;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .lesson-rail[data-open='true'] {
-    animation: drawer-in-left 220ms var(--ease-emphasized) both;
-  }
-}
-@media (min-width: 64rem) {
-  .lesson-rail,
-  .lesson-rail[data-open='true'] {
-    position: relative;
-    z-index: auto;
-    display: flex;
-    flex: none;
-    width: 18rem;
-    box-shadow: none;
-    animation: none;
-  }
-}
-.lesson-rail__header {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 12px 10px 20px;
-}
-.lesson-rail__title {
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  font-weight: 600;
-  line-height: 1.25;
-}
-@media (min-width: 64rem) {
-  .lesson-rail__close {
-    display: none;
-  }
-}
-.lesson-rail__body {
-  flex: 1 1 auto;
-  min-height: 0;
-  padding: 0 8px 16px;
-  overflow-y: auto;
-}
-.lesson-rail__chapter-title {
-  padding: 14px 12px 6px;
+   The list is in a sheet from the left, so the staff and the keys keep the
+   whole width. The card sits over the staff on the bar's surface: the stage
+   cannot carry small text of its own. */
+.lesson-list__chapter-title {
+  padding: 14px 10px 6px;
   font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--c-bar-fg-muted);
+  color: var(--ds-fg-muted);
 }
-.lesson-rail__item {
+.lesson-list__chapter:first-child .lesson-list__chapter-title {
+  padding-top: 0;
+}
+.lesson-list__item {
   display: flex;
   align-items: baseline;
   gap: 12px;
   width: 100%;
   min-height: 40px;
-  padding: 9px 12px;
+  padding: 9px 10px;
   border-radius: var(--radius-md);
   font-size: 0.875rem;
   line-height: 1.35;
   text-align: left;
-  color: var(--c-bar-fg-muted);
-  transition:
-    background-color var(--duration-fast) var(--ease-standard),
-    color var(--duration-fast) var(--ease-standard);
+  color: var(--ds-fg);
 }
-.lesson-rail__item:hover {
-  background-color: var(--c-bar-hover);
-  color: var(--c-bar-fg);
+.lesson-list__item:hover {
+  background-color: var(--ds-layer-hover);
 }
-.lesson-rail__item[aria-current='step'] {
-  background-color: var(--c-bar-pressed);
-  color: var(--c-bar-fg);
+.lesson-list__item[aria-current='step'] {
+  background-color: var(--ds-layer-active);
   font-weight: 600;
 }
-.lesson-rail__item:focus-visible {
+.lesson-list__item:focus-visible {
   outline: 2px solid var(--ds-focus-ring);
   outline-offset: -2px;
 }
-.lesson-rail__number {
+.lesson-list__number {
   flex: none;
   font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
   color: var(--accent);
 }
 
+/* Clear of the stage's notices along its top — the run meter, the audio chip —
+   which sit over the corner the card's close button is in. */
 .lesson-card {
   position: relative;
+  margin-top: 32px;
   z-index: 1;
   flex: none;
   align-self: center;
@@ -3065,7 +3001,13 @@ button.area-card:hover .area-card__go {
   color: var(--c-bar-fg);
   box-shadow: var(--ds-shadow-4);
 }
+.lesson-card__close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
 .lesson-card__where {
+  padding-right: 40px;
   font-size: 0.8125rem;
   color: var(--c-bar-fg-muted);
 }
@@ -3075,6 +3017,13 @@ button.area-card:hover .area-card__go {
   font-size: 1.375rem;
   font-weight: 600;
   line-height: 1.25;
+}
+.lesson-card__about {
+  max-width: 34rem;
+  margin-top: 6px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--c-bar-fg-muted);
 }
 .lesson-card__status {
   display: inline-flex;
@@ -3120,20 +3069,8 @@ button.area-card:hover .area-card__go {
 .lesson-card__step--next {
   color: var(--accent);
 }
-/* On a phone the three fit one row: the list and the way back as their icons,
-   with the way on still in words. */
-@media (max-width: 29.999rem) {
-  .lesson-card__step-word {
-    display: none;
-  }
-}
-@media (min-width: 64rem) {
-  .lesson-card__all {
-    display: none;
-  }
-}
 @media (pointer: coarse) {
-  .lesson-rail__item,
+  .lesson-list__item,
   .lesson-card__step {
     min-height: 44px;
   }

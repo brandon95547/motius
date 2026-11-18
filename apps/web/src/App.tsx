@@ -24,7 +24,7 @@ import { useLearningStore } from '@/state/learning-store'
 import { usePanelStore } from '@/state/panel-store'
 import { usePageStore, usePageSync } from '@/state/page-store'
 import { Dashboard } from '@/features/areas/Dashboard'
-import { LessonCard, LessonRail } from '@/features/areas/LessonRail'
+import { LessonCard, LessonsDrawer } from '@/features/areas/Lessons'
 import { BottomNav } from '@/components/BottomNav'
 import { preloadSoundEffects } from '@/audio/sound-effects'
 
@@ -125,8 +125,8 @@ function Shell() {
    *
    * The dashboard takes the workspace's place: it is where you choose what to
    * play, not where you play it. Under it, where the keys would be, the places
-   * to choose between. A section's stage is the workspace too, with its
-   * lessons beside the staff in place of an area's options.
+   * to choose between. A section's stage is the workspace too, with the
+   * lesson that is up over the staff and its lessons a sheet from the left.
    */
   return (
     <div className="app-shell">
@@ -147,12 +147,9 @@ function Shell() {
           ) : (
             <>
               {page === 'lesson' ? (
-                <div className="lesson-room">
-                  <LessonRail />
-                  <Stage>
-                    <LessonCard />
-                  </Stage>
-                </div>
+                <Stage>
+                  <LessonCard />
+                </Stage>
               ) : (
                 <Stage />
               )}
@@ -166,7 +163,7 @@ function Shell() {
           must keep playing, and a metronome keep time, while a menu is shut.
           Leaving for the dashboard is leaving the area, and stops them. */}
       <KeyboardRangeSync />
-      {page === 'area' && topic !== 'songs' && <ScaleEngine />}
+      {(page === 'area' || page === 'lesson') && topic !== 'songs' && <ScaleEngine />}
       {page === 'area' && topic === 'songs' && <SongEngine />}
 
       <SettingsDrawer
@@ -186,6 +183,7 @@ function Shell() {
         )
       )}
       <FundamentalsDrawer open={panel === 'fundamentals'} onClose={closePanel} />
+      {page === 'lesson' && <LessonsDrawer />}
       <DeviceSettingsDrawer open={panel === 'devices'} onClose={closePanel} />
       <SongPicker open={panel === 'library'} onClose={closePanel} />
       <RecordingOverlay />

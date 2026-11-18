@@ -71,7 +71,7 @@ import {
   Waves,
   Waypoints,
 } from 'lucide-react'
-import type { ProgressionType } from '@motius/shared'
+import type { LessonExerciseId, ProgressionType } from '@motius/shared'
 import type { LearningTopic } from '@/state/learning-store'
 import { MetronomeIcon } from '@/ui/MetronomeIcon'
 
@@ -84,9 +84,9 @@ import { MetronomeIcon } from '@/ui/MetronomeIcon'
  * it, and holds that and nothing else. The practice areas, which were filed
  * under them before the outlines were written, are in the bar's Practice.
  *
- * The dashboard, the pages under it, the bar along the bottom and the menu are
- * all drawn from this one table, so they cannot disagree about what a place is
- * called, what it looks like, where it is or whether it is built yet.
+ * The dashboard, the pages and stages under it and the bar along the bottom
+ * are all drawn from this one table, so they cannot disagree about what a
+ * place is called, what it looks like, where it is or whether it is built yet.
  *
  * What is in a category is its sections, and a section may have sections of
  * its own, as far down as the subject goes: Piano Foundations has Keyboard
@@ -168,6 +168,10 @@ interface Place {
 export interface Section extends Place {
   /** Its name in the address: `#/chords-and-harmony/progressions`. */
   readonly id: string
+  /** What a lesson plays on the stage, once it is written. */
+  readonly exercise?: LessonExerciseId
+  /** What a written lesson asks of the player, as a teacher would say it. */
+  readonly about?: string
   /** What is under it, where it is a page of cards itself. */
   readonly sections?: readonly Section[]
 }
@@ -198,6 +202,9 @@ interface Outline {
   readonly accent?: Accent
   readonly description?: string
   readonly under?: readonly (string | Outline)[]
+  /** A lesson that is written: what it plays, and what it asks. */
+  readonly exercise?: LessonExerciseId
+  readonly about?: string
 }
 
 /**
@@ -213,13 +220,16 @@ const outlined = (
   items: readonly (string | Outline)[],
 ): Section[] =>
   items.map((item) => {
-    const { label, description, under, ...own } = typeof item === 'string' ? { label: item } : item
+    const { label, description, under, exercise, about, ...own } =
+      typeof item === 'string' ? { label: item } : item
     const look = { icon: own.icon ?? of.icon, accent: own.accent ?? of.accent }
     return {
       id: slug(label),
       label,
       ...look,
       ...(description && { description }),
+      ...(exercise && { exercise }),
+      ...(about && { about }),
       ...(under && { sections: outlined(look, under) }),
     }
   })
@@ -255,7 +265,12 @@ export const CATEGORIES: readonly Category[] = [
             icon: Contrast,
             description: 'Two-black-key groups, three-black-key groups and keyboard patterns.',
             under: [
-              'Two-black-key groups',
+              {
+                label: 'Two-black-key groups',
+                exercise: 'two-black-key-groups',
+                about:
+                  'The black keys come in groups of two and three. Find every group of two, from the bottom of the keyboard to the top, and press both keys at once: the left hand with fingers 3 and 2 up to middle C, then the right hand with fingers 2 and 3. The sound climbs as you go right.',
+              },
               'Three-black-key groups',
               'Recognizing keyboard patterns',
             ],
@@ -1554,27 +1569,5 @@ export const lessonAt = (lessons: readonly Lesson[], path: readonly string[]): n
 /** Whether there is anything at a place yet: something it opens, or sections of its own. */
 export const isBuilt = (place: Category | Section): boolean =>
   Boolean(place.opens) || (place.sections?.length ?? 0) > 0
-
-/** Whether a place opens this area — on this type of progression, where it names one. */
-const leadsTo = (place: Place, topic: LearningTopic, progression: ProgressionType) =>
-  place.opens?.kind === 'area' &&
-  place.opens.topic === topic &&
-  (place.opens.progression === undefined || place.opens.progression === progression)
-
-/**
- * Where an area is filed: the place it is under, and the section that opens
- * it. Which is how the menu knows where you are while an area is open. Songs is
- * under nothing: it is a place in the bar itself.
- */
-export function placeOf(
-  topic: LearningTopic,
-  progression: ProgressionType,
-): { category: Category; section: Section } | null {
-  for (const category of [...CATEGORIES, ...DESTINATIONS]) {
-    const section = category.sections.find((entry) => leadsTo(entry, topic, progression))
-    if (section) return { category, section }
-  }
-  return null
-}
 
 export const COMING_SOON = 'Coming soon'
