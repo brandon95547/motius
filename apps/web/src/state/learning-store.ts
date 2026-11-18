@@ -62,6 +62,9 @@ export const LEARNING_TOPICS = [
   'progressions',
   'exercises',
   'fingering',
+  // A lesson's stage: nothing to build until lessons are written, so the keys
+  // are clear and the staff writes what is played. It is no area of its own.
+  'lesson',
 ] as const
 export type LearningTopic = (typeof LEARNING_TOPICS)[number]
 
@@ -73,13 +76,16 @@ export const LEARNING_TOPIC_LABELS: Record<LearningTopic, string> = {
   progressions: 'Progressions',
   exercises: 'Daily Practice',
   fingering: 'Fingering Exercises',
+  lesson: 'Lesson',
 }
 
 /**
- * Topics with a builder — which is all of them now. Kept as a list, so an area
- * added before it is built can be announced honestly rather than faked.
+ * The areas: every topic with a builder, each at an address of its own. A
+ * lesson's stage is at its lesson's address, not at one of these.
  */
-export const AVAILABLE_TOPICS: readonly LearningTopic[] = LEARNING_TOPICS
+export const AVAILABLE_TOPICS: readonly LearningTopic[] = LEARNING_TOPICS.filter(
+  (topic) => topic !== 'lesson',
+)
 
 /** What each area is set to. One per area, so leaving one and coming back finds it as it was. */
 interface Specs {

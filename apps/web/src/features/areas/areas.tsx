@@ -90,13 +90,18 @@ import { MetronomeIcon } from '@/ui/MetronomeIcon'
  *
  * What is in a category is its sections, and a section may have sections of
  * its own, as far down as the subject goes: Piano Foundations has Keyboard
- * Layout, which has White and black keys, which has its three lessons. Each of
- * them with something under it is a page of cards.
+ * Layout, which has White and black keys, which has its three lessons.
+ *
+ * Only a category is a page of cards. A section opens onto the stage, with the
+ * keyboard to play on and its lessons in a list beside it, the topics under it
+ * as the list's chapters: a player is two choices from the dashboard to the
+ * keys, however deep the outline goes. Each lesson keeps an address of its
+ * own, which opens the stage on it.
  *
  * A section that is built says what it opens: one of the practice areas, or a
- * panel. A place with nothing under it and nothing to open has a page of its
- * own that says so — the place is there, with its name on it, before what goes
- * in it is. Every lesson is one of those so far.
+ * panel. A category with nothing in it has a page of its own that says so —
+ * the place is there, with its name on it, before what goes in it is. No
+ * lesson is written yet, and the list says so of each.
  *
  * Five more places are at the top and on no card: the ones the bar along the
  * bottom leads to. Songs is the area, and Practice has the other practice
@@ -1510,6 +1515,41 @@ export function pagesUnder(category: Category, ids: readonly string[]): Section[
   }
   return pages
 }
+
+/** A lesson on a section's stage, and the way down to it. */
+export interface Lesson {
+  readonly lesson: Section
+  /** The topics between the section and the lesson: none for a lesson right under it. */
+  readonly topics: readonly Section[]
+  /** The names from the section down to the lesson, as its address has them. */
+  readonly path: readonly string[]
+}
+
+/**
+ * A section's lessons, in the outline's order: whatever under it has nothing
+ * under it in turn. A section with nothing under it is its own one lesson.
+ */
+export function lessonsOf(section: Section): Lesson[] {
+  const walk = (sections: readonly Section[], topics: readonly Section[]): Lesson[] =>
+    sections.flatMap((entry) =>
+      entry.sections?.length
+        ? walk(entry.sections, [...topics, entry])
+        : [{ lesson: entry, topics, path: [section.id, ...topics.map((t) => t.id), entry.id] }],
+    )
+  return section.sections?.length
+    ? walk(section.sections, [])
+    : [{ lesson: section, topics: [], path: [section.id] }]
+}
+
+/**
+ * Which of a section's lessons the way down names: that lesson, or the first
+ * under the topic or the section it stops at.
+ */
+export const lessonAt = (lessons: readonly Lesson[], path: readonly string[]): number =>
+  Math.max(
+    0,
+    lessons.findIndex((entry) => path.every((id, index) => entry.path[index] === id)),
+  )
 
 /** Whether there is anything at a place yet: something it opens, or sections of its own. */
 export const isBuilt = (place: Category | Section): boolean =>

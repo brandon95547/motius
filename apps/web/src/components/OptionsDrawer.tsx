@@ -28,6 +28,8 @@ const TITLES: Record<LearningTopic, string> = {
   exercises: 'Exercise Options',
   fingering: 'Exercise Options',
   songs: 'Song Options',
+  // A lesson's stage has no options of its own; the panel is not on it.
+  lesson: 'Lesson',
 }
 
 const closeOptions = () => {

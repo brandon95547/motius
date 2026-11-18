@@ -24,6 +24,7 @@ import { useLearningStore } from '@/state/learning-store'
 import { usePanelStore } from '@/state/panel-store'
 import { usePageStore, usePageSync } from '@/state/page-store'
 import { Dashboard } from '@/features/areas/Dashboard'
+import { LessonCard, LessonRail } from '@/features/areas/LessonRail'
 import { BottomNav } from '@/components/BottomNav'
 import { preloadSoundEffects } from '@/audio/sound-effects'
 
@@ -124,27 +125,37 @@ function Shell() {
    *
    * The dashboard takes the workspace's place: it is where you choose what to
    * play, not where you play it. Under it, where the keys would be, the places
-   * to choose between.
+   * to choose between. A section's stage is the workspace too, with its
+   * lessons beside the staff in place of an area's options.
    */
   return (
     <div className="app-shell">
       <TopBar />
 
-      {page !== 'area' ? (
+      {page !== 'area' && page !== 'lesson' ? (
         <>
           <Dashboard />
           <BottomNav />
         </>
       ) : (
         <div className="workspace">
-          <OptionsDrawer />
+          {page === 'area' && <OptionsDrawer />}
           {catalogue.isError ? (
             <main className="stage stage--message">
               <CatalogueError error={catalogue.error} onRetry={() => void catalogue.refetch()} />
             </main>
           ) : (
             <>
-              <Stage />
+              {page === 'lesson' ? (
+                <div className="lesson-room">
+                  <LessonRail />
+                  <Stage>
+                    <LessonCard />
+                  </Stage>
+                </div>
+              ) : (
+                <Stage />
+              )}
               <KeyboardDock />
             </>
           )}
@@ -170,7 +181,9 @@ function Shell() {
       {topic === 'scales' || topic === 'songs' ? (
         <ScaleTheoryDialog open={panel === 'theory'} onClose={closePanel} />
       ) : (
-        <KeyTheoryDrawer open={panel === 'theory'} onClose={closePanel} topic={topic} />
+        topic !== 'lesson' && (
+          <KeyTheoryDrawer open={panel === 'theory'} onClose={closePanel} topic={topic} />
+        )
       )}
       <FundamentalsDrawer open={panel === 'fundamentals'} onClose={closePanel} />
       <DeviceSettingsDrawer open={panel === 'devices'} onClose={closePanel} />

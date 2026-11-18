@@ -73,7 +73,7 @@ export function TopBar() {
   return (
     <header className="top-bar">
       <div className="top-bar__row">
-        <Brand keep={area === null} deep={page === 'category' || page === 'section'} />
+        <Brand keep={area === null} deep={page === 'category' || page === 'lesson'} />
         {area === null && <PageTitle />}
         {area && <OptionsButton />}
         {area === 'songs' && <NowPlaying />}
@@ -136,9 +136,11 @@ function Brand({ keep, deep = false }: { keep: boolean; deep?: boolean }) {
 }
 
 /**
- * Where you are, on the pages that lead to the areas: the dashboard's name, or
- * the way down to the page that is up — Dashboard, Piano Foundations, Keyboard
- * Layout — each step but the last a way back to it.
+ * Where you are, off the areas: the dashboard's name, or the way down to the
+ * page or the stage that is up — Dashboard, Piano Foundations, Keyboard
+ * Layout — each step but the last a way back to it. On a section's stage the
+ * trail ends at the section: which lesson is up is said on the stage, in the
+ * list of them and over the staff.
  *
  * It is the page's heading. Those pages have none of their own: the bar is the
  * one place a page's name is on every page, and a second, larger one under it
@@ -151,15 +153,15 @@ function PageTitle() {
   const categoryId = usePageStore((state) => state.category)
   const path = usePageStore((state) => state.path)
   const category = findCategory(categoryId)
-  const way = category ? pagesUnder(category, path) : []
+  const way = category ? pagesUnder(category, path).slice(0, 1) : []
   const trail = [
     { label: 'Dashboard', open: pageActions.openDashboard },
     ...(category
       ? [{ label: category.label, open: () => pageActions.openCategory(category) }]
       : []),
-    ...way.map((section, index) => ({
+    ...way.map((section) => ({
       label: section.label,
-      open: () => pageActions.openSection(category!, way.slice(0, index + 1)),
+      open: () => pageActions.openSection(category!, [section]),
     })),
   ]
 

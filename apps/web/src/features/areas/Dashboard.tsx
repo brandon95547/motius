@@ -6,7 +6,6 @@ import {
   COMING_SOON,
   findCategory,
   isBuilt,
-  pagesUnder,
   type Accent,
   type Category,
   type Section,
@@ -14,8 +13,9 @@ import {
 
 /**
  * The pages that lead to the areas: the dashboard, with its nine categories;
- * the page of a category or of a section, with what is under it; and the page
- * a place has while there is nothing in it yet.
+ * the page of a category, with its sections; and the page a category has
+ * while there is nothing in it yet. A section is no page: it opens onto the
+ * stage, with its lessons beside the keys (`LessonRail`).
  *
  * Drawn to the dashboard mock (new dashboard.png, 2026-10-12): the practice
  * room behind everything, and each place a plain dark card in an accent, three
@@ -33,34 +33,14 @@ import {
 export function Dashboard() {
   const page = usePageStore((state) => state.page)
   const categoryId = usePageStore((state) => state.category)
-  const path = usePageStore((state) => state.path)
   const category = findCategory(categoryId)
-  if (page === 'dashboard' || !category) return <Categories />
-
-  // The way down to the page that is up, and the page itself at the end of it.
-  const way = pagesUnder(category, path)
-  const place = way[way.length - 1] ?? category
-  const above = way.length > 1 ? way[way.length - 2]! : way.length === 1 ? category : null
-
-  if (!isBuilt(place))
-    return (
-      <ComingSoon
-        place={place}
-        back={above?.label ?? 'Dashboard'}
-        onBack={() =>
-          !above
-            ? pageActions.openDashboard()
-            : way.length > 1
-              ? pageActions.openSection(category, way.slice(0, -1))
-              : pageActions.openCategory(category)
-        }
-      />
-    )
+  if (page !== 'category' || !category) return <Categories />
+  if (!isBuilt(category)) return <ComingSoon place={category} />
   return (
     <Cards
-      label={place.label}
-      places={place.sections ?? []}
-      onOpen={(section) => pageActions.openSection(category, [...way, section])}
+      label={category.label}
+      places={category.sections}
+      onOpen={(section) => pageActions.openSection(category, [section])}
     />
   )
 }
@@ -107,8 +87,8 @@ function Cards<P extends Category | Section>({
 }
 
 /**
- * One place, as a card: a category on the dashboard, a section on the page of
- * what it is under.
+ * One place, as a card: a category on the dashboard, a section on its
+ * category's page.
  */
 function PlaceCard({
   place,
@@ -121,14 +101,14 @@ function PlaceCard({
   onOpen: () => void
 }) {
   const Icon = place.icon
-  const built = isBuilt(place)
-
+  // Every card opens onto something: a section onto its stage, where the keys
+  // are, whether or not its lessons are written yet.
   return (
     <button
       type="button"
       className="area-card"
       data-accent={place.accent}
-      title={built ? `Open ${place.label}` : `${place.label} — ${COMING_SOON.toLowerCase()}`}
+      title={`Open ${place.label}`}
       onClick={onOpen}
     >
       {/* Its place in the order, which the name already has by where it sits. */}
@@ -154,16 +134,7 @@ function PlaceCard({
  * will have, so that what is built there later is built in a place that
  * already exists and is already linked to.
  */
-function ComingSoon({
-  place,
-  back,
-  onBack,
-}: {
-  place: Category | Section
-  /** The name of the page above it. */
-  back: string
-  onBack: () => void
-}) {
+function ComingSoon({ place }: { place: Category }) {
   const Icon = place.icon
   return (
     <main className="dashboard" aria-label={place.label}>
@@ -179,9 +150,9 @@ function ComingSoon({
             <Hammer size={14} aria-hidden />
             {COMING_SOON}
           </p>
-          <button type="button" className="placeholder__back" onClick={onBack}>
+          <button type="button" className="placeholder__back" onClick={pageActions.openDashboard}>
             <ArrowLeft size={16} aria-hidden />
-            Back to {back}
+            Back to Dashboard
           </button>
         </Placeholder>
       </div>

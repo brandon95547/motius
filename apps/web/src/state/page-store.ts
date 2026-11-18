@@ -21,13 +21,15 @@ import { useSongStore } from './song-store'
  * player was. A hash rather than a path because nothing on the server has to
  * know about it.
  *
- * Between the dashboard and the areas there are two kinds of page. A category
- * — `#/chords-and-harmony` — lists its sections, or, where it is not built
- * yet, says so: `#/lessons`, `#/progress`. A section is a page under
- * its category, and the address is the way down to it, however far that is:
- * `#/piano-foundations/keyboard-layout/white-and-black-keys`. It lists its own
- * sections, or says it is still to come. A section that opens an area has no
- * page of its own; it opens the area, at the address that area has always had.
+ * Between the dashboard and the areas is a category's page — `#/chords-and-harmony`
+ * — which lists its sections, or, where it is not built yet, says so:
+ * `#/lessons`, `#/progress`. A section opens onto the stage, with its lessons
+ * beside the keys, and the address is the way down to the lesson that is up,
+ * however far that is:
+ * `#/piano-foundations/keyboard-layout/white-and-black-keys/two-black-key-groups`.
+ * An address that stops at the section, or at a topic in it, is its first
+ * lesson. A section that opens an area has no stage of its own; it opens the
+ * area, at the address that area has always had.
  *
  * An area with types of its own carries the type as a second step —
  * `#/progressions/cadences` — for the same reason: a reload should land on the
@@ -37,13 +39,13 @@ import { useSongStore } from './song-store'
  * Which area is open is still the learning store's `topic`, and which type its
  * `progressionType`; this only says whether we are in it.
  */
-export type Page = 'dashboard' | 'category' | 'section' | 'area'
+export type Page = 'dashboard' | 'category' | 'lesson' | 'area'
 
 interface PageState {
   page: Page
-  /** The category whose page is up, or that the section whose page is up is under. */
+  /** The category whose page is up, or that the lesson that is up is under. */
   category: CategoryId | null
-  /** The way down from the category to the section whose page is up. Empty on any other page. */
+  /** The way down from the category to the lesson that is up, as far as the address names it. Empty on any other page. */
   path: readonly string[]
 }
 
@@ -55,9 +57,9 @@ interface AreaPlace {
   readonly progression: ProgressionType | null
 }
 
-/** A page of the dashboard's: a category, or a section somewhere under one. */
+/** A category's page, or a lesson on the stage of a section under one. */
 interface IndexPlace {
-  readonly kind: 'category' | 'section'
+  readonly kind: 'category' | 'lesson'
   readonly category: CategoryId
   readonly path: readonly string[]
 }
@@ -79,10 +81,10 @@ function placeIn(hash: string): Place | null {
   const category = findCategory(name)
   // A place that is itself an area has no page: its address is its area's.
   if (!category || category.opens) return null
-  // As far down as the address names a page. A section that opens an area is
-  // not one — its address is its area's — so named here it is the page above it.
+  // As far down as the address names a place. A section that opens an area
+  // has no stage — its address is its area's — so named here it is the page above it.
   const path = pagesUnder(category, rest).map((section) => section.id)
-  return { kind: path.length > 0 ? 'section' : 'category', category: category.id, path }
+  return { kind: path.length > 0 ? 'lesson' : 'category', category: category.id, path }
 }
 
 /** The song chooser belongs to Songs, and leaving the area puts it away. */
@@ -102,10 +104,20 @@ function enter(place: AreaPlace) {
   else shutSongChooser()
 }
 
+/**
+ * Clears the keys for a lesson. No lesson is written yet, so the stage is free
+ * play: no scale lit on the keys, and the staff writes what is played.
+ */
+function enterLesson() {
+  const learning = useLearningStore.getState()
+  if (learning.topic !== 'lesson') learning.setTopic('lesson')
+}
+
 // Read before the first render, so a reload on an area does not flash the
 // dashboard while an effect catches up.
 const initialPlace = placeIn(globalThis.location?.hash ?? '')
 if (initialPlace?.kind === 'area') enter(initialPlace)
+if (initialPlace?.kind === 'lesson') enterLesson()
 
 /** What the store says for a place: which page, and whose. */
 const stateFor = (place: Place | null): PageState =>
@@ -125,6 +137,7 @@ function apply(hash: string) {
     // off again by itself the moment the player came back.
     if (useSongStore.getState().playing) useSongStore.getState().setPlaying(false)
     shutSongChooser()
+    if (place?.kind === 'lesson') enterLesson()
     usePageStore.setState(stateFor(place))
     return
   }
@@ -166,10 +179,13 @@ export const pageActions = {
   openCategory: (category: Category) => open(category, addressOf(category)),
   /**
    * A section, by the way down to it from its category: what it is for, or
-   * its page — of its own sections, or saying it is still to come.
+   * its stage, on the lesson the way down names — the first, if it names none.
    */
   openSection: (category: Category, path: readonly Section[]) =>
     open(path[path.length - 1]!, addressOf(category, path)),
+  /** A lesson on its section's stage, by the names from the section down to it. */
+  openLesson: (category: Category, path: readonly string[]) =>
+    go(`#/${[category.id, ...path].join('/')}`),
   openArea,
   openProgression,
 }

@@ -34,7 +34,7 @@ import { Facts, Panel, Prose, Row, Section } from './parts'
  * which is where this ground is covered in the order a learner meets it.
  */
 
-type KeyTopic = Exclude<LearningTopic, 'songs' | 'scales'>
+type KeyTopic = Exclude<LearningTopic, 'songs' | 'scales' | 'lesson'>
 
 export const THEORY_TITLES: Record<Exercise['kind'], string> = {
   scale: 'Understand this scale',

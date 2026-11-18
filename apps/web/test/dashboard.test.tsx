@@ -6,6 +6,7 @@ import { MidiProvider } from '@/midi/MidiProvider'
 import { BottomNav } from '@/components/BottomNav'
 import { TopBar } from '@/components/TopBar'
 import { Dashboard } from '@/features/areas/Dashboard'
+import { LessonCard, LessonRail } from '@/features/areas/LessonRail'
 import {
   CATEGORIES,
   findCategory,
@@ -41,11 +42,18 @@ function Pages() {
       <AudioProvider>
         <MidiProvider>
           <TopBar />
-          {page !== 'area' && (
+          {page === 'lesson' ? (
             <>
-              <Dashboard />
-              <BottomNav />
+              <LessonRail />
+              <LessonCard />
             </>
+          ) : (
+            page !== 'area' && (
+              <>
+                <Dashboard />
+                <BottomNav />
+              </>
+            )
           )}
         </MidiProvider>
       </AudioProvider>
@@ -84,6 +92,16 @@ const numbers = () =>
 const card = (name: string) =>
   within(screen.getByRole('main')).getByRole('button', {
     name: new RegExp(`^(Open )?${name.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}`),
+  })
+// A section's stage: its lessons beside it, the chapters they are in, and the one that is up.
+const lessons = () =>
+  [...document.querySelectorAll('.lesson-rail__item')].map((item) => item.lastChild!.textContent)
+const chapterTitles = () =>
+  [...document.querySelectorAll('.lesson-rail__chapter-title')].map((title) => title.textContent)
+const lessonUp = () => document.querySelector('.lesson-card__name')?.textContent
+const lesson = (name: string) =>
+  within(screen.getByRole('navigation', { name: / lessons$/ })).getByRole('button', {
+    name: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}$`),
   })
 const trail = () =>
   [...document.querySelectorAll('.top-bar__trail > :not(svg)')].map((step) => step.textContent)
@@ -207,8 +225,8 @@ describe('a category’s page', () => {
     await open('chords-and-harmony')
     fireEvent.click(card('Cadences'))
     await at('#/chords-and-harmony/cadences')
-    expect(usePageStore.getState().page).toBe('section')
-    expect(cards()).toEqual(CHORDS.Cadences)
+    expect(usePageStore.getState().page).toBe('lesson')
+    expect(lessons()).toEqual(CHORDS.Cadences)
   })
 })
 
@@ -905,82 +923,89 @@ describe('Piano Foundations', () => {
     }
   })
 
-  it('opens a section onto its topics, and a topic onto its lessons', async () => {
+  it('opens a section onto the stage, its topics as the chapters of its lessons', async () => {
     await open('#/piano-foundations')
     fireEvent.click(card('Keyboard Layout'))
     await at('#/piano-foundations/keyboard-layout')
     expect(usePageStore.getState()).toMatchObject({
-      page: 'section',
+      page: 'lesson',
       category: 'piano-foundations',
       path: ['keyboard-layout'],
     })
-    expect(cards()).toEqual(Object.keys(FOUNDATIONS['Keyboard Layout']))
+    const layout = FOUNDATIONS['Keyboard Layout']
+    expect(chapterTitles()).toEqual(Object.keys(layout))
+    expect(lessons()).toEqual(Object.values(layout).flat())
+    // On its first lesson, with the keys clear to play: no lesson is written yet.
+    expect(lessonUp()).toBe('Two-black-key groups')
+    expect(screen.getByRole('region', { name: 'Lesson' }).textContent).toContain('Coming soon')
+    expect(useLearningStore.getState()).toMatchObject({ topic: 'lesson', exercise: null })
     expect(trail()).toEqual(['Dashboard', 'Piano Foundations', 'Keyboard Layout'])
-    expect(screen.getByRole('main').getAttribute('aria-label')).toBe('Keyboard Layout')
-
-    fireEvent.click(card('White and black keys'))
-    await at('#/piano-foundations/keyboard-layout/white-and-black-keys')
-    expect(cards()).toEqual(FOUNDATIONS['Keyboard Layout']['White and black keys'])
-    expect(numbers()).toEqual(['01', '02', '03'])
-    expect(trail()).toEqual([
-      'Dashboard',
-      'Piano Foundations',
-      'Keyboard Layout',
-      'White and black keys',
-    ])
   })
 
-  it('opens a section with no topics straight onto its lessons', async () => {
+  it('opens a section with no topics onto its lessons, with no chapters', async () => {
     await open('#/piano-foundations/understanding-pitch')
-    expect(cards()).toEqual(FOUNDATIONS['Understanding Pitch'])
-    expect(numbers()).toEqual(['01', '02', '03', '04', '05', '06'])
+    expect(lessons()).toEqual(FOUNDATIONS['Understanding Pitch'])
+    expect(chapterTitles()).toEqual([])
+    expect(lessonUp()).toBe('High and low notes')
   })
 
-  it('draws a lesson as a card with its name and no line about it, still to come', async () => {
-    await open('#/piano-foundations/keyboard-layout/white-and-black-keys')
-    const lesson = card('Two-black-key groups')
-    expect(lesson.querySelector('.area-card__description')).toBeNull()
-    expect(lesson.getAttribute('title')).toBe('Two-black-key groups — coming soon')
+  it('opens a topic’s address on its first lesson', async () => {
+    await open('#/piano-foundations/keyboard-layout/musical-alphabet')
+    expect(lessonUp()).toBe('Notes A through G')
+    expect(lesson('Notes A through G').getAttribute('aria-current')).toBe('step')
   })
 
-  it('gives a lesson a page that says it is to come, and the way back to its topic', async () => {
-    await open('#/piano-foundations/keyboard-layout/white-and-black-keys')
-    fireEvent.click(card('Two-black-key groups'))
-    const address = '#/piano-foundations/keyboard-layout/white-and-black-keys/two-black-key-groups'
-    await at(address)
-    expect(usePageStore.getState().path).toEqual([
-      'keyboard-layout',
-      'white-and-black-keys',
-      'two-black-key-groups',
-    ])
+  it('gives each lesson an address that opens the stage on it, and steps through them in order', async () => {
+    await open('#/piano-foundations/keyboard-layout/white-and-black-keys/two-black-key-groups')
+    const up = within(screen.getByRole('region', { name: 'Lesson' }))
+    expect(up.getByRole('button', { name: 'Previous lesson' })).toHaveProperty('disabled', true)
 
-    const page = within(screen.getByRole('main'))
-    expect(screen.getByRole('main').getAttribute('aria-label')).toBe('Two-black-key groups')
-    expect(page.getByText('Coming soon')).toBeDefined()
-    expect(trail()).toEqual([
-      'Dashboard',
-      'Piano Foundations',
-      'Keyboard Layout',
-      'White and black keys',
-      'Two-black-key groups',
-    ])
+    fireEvent.click(up.getByRole('button', { name: 'Next lesson' }))
+    await at('#/piano-foundations/keyboard-layout/white-and-black-keys/three-black-key-groups')
+    expect(lessonUp()).toBe('Three-black-key groups')
 
-    fireEvent.click(page.getByRole('button', { name: 'Back to White and black keys' }))
-    await at('#/piano-foundations/keyboard-layout/white-and-black-keys')
-    expect(cards()).toEqual(FOUNDATIONS['Keyboard Layout']['White and black keys'])
+    // From one chapter into the next.
+    fireEvent.click(lesson('Recognizing keyboard patterns'))
+    await at(
+      '#/piano-foundations/keyboard-layout/white-and-black-keys/recognizing-keyboard-patterns',
+    )
+    fireEvent.click(up.getByRole('button', { name: 'Next lesson' }))
+    await at('#/piano-foundations/keyboard-layout/musical-alphabet/notes-a-through-g')
+    expect(document.querySelector('.lesson-card__where')!.textContent).toBe(
+      'Musical alphabet · 4 of 10',
+    )
+
+    fireEvent.click(up.getByRole('button', { name: 'Previous lesson' }))
+    await at(
+      '#/piano-foundations/keyboard-layout/white-and-black-keys/recognizing-keyboard-patterns',
+    )
+
+    // And none past the last.
+    fireEvent.click(lesson('Recognizing octaves'))
+    await at('#/piano-foundations/keyboard-layout/keyboard-navigation/recognizing-octaves')
+    expect(up.getByRole('button', { name: 'Next lesson' })).toHaveProperty('disabled', true)
+  })
+
+  it('opens the list over the stage from the lesson, and puts it away when one is picked', async () => {
+    await open('#/piano-foundations/keyboard-layout')
+    const rail = screen.getByRole('navigation', { name: 'Keyboard Layout lessons' })
+    expect(rail.dataset.open).toBe('false')
+    fireEvent.click(screen.getByRole('button', { name: 'All lessons' }))
+    expect(rail.dataset.open).toBe('true')
+    fireEvent.click(lesson('Finding Middle C'))
+    await at('#/piano-foundations/keyboard-layout/keyboard-navigation/finding-middle-c')
+    expect(rail.dataset.open).toBe('false')
   })
 
   it('makes every step of the way down a way back to it', async () => {
     await open('#/piano-foundations/fingers-and-hand-positions/starting-positions/g-position')
+    expect(lessonUp()).toBe('G position')
+    expect(trail()).toEqual(['Dashboard', 'Piano Foundations', 'Fingers & Hand Positions'])
     const bar = within(screen.getByRole('navigation', { name: 'You are here' }))
 
-    fireEvent.click(bar.getByRole('button', { name: 'Starting positions' }))
-    await at('#/piano-foundations/fingers-and-hand-positions/starting-positions')
-    fireEvent.click(bar.getByRole('button', { name: 'Fingers & Hand Positions' }))
-    await at('#/piano-foundations/fingers-and-hand-positions')
-    expect(cards()).toEqual(Object.keys(FOUNDATIONS['Fingers & Hand Positions']))
     fireEvent.click(bar.getByRole('button', { name: 'Piano Foundations' }))
     await at('#/piano-foundations')
+    expect(cards()).toEqual(Object.keys(FOUNDATIONS))
     fireEvent.click(bar.getByRole('button', { name: 'Dashboard' }))
     await waitFor(() => expect(usePageStore.getState().page).toBe('dashboard'))
   })
@@ -992,10 +1017,8 @@ describe('Piano Foundations', () => {
       step.dataset.up,
     ])
     expect(steps).toEqual([
-      ['Dashboard', '4'],
-      ['Piano Foundations', '3'],
-      ['Keyboard Layout', '2'],
-      ['Musical alphabet', '1'],
+      ['Dashboard', '2'],
+      ['Piano Foundations', '1'],
     ])
   })
 })
@@ -1072,75 +1095,69 @@ describe('the categories outlined after it', () => {
 
   it('has lessons and topics side by side where the outline does', async () => {
     await open('#/rhythm-and-timing/time-signatures')
-    expect(cards()).toEqual(Object.keys(RHYTHM['Time Signatures']))
-    // A topic says what is in it and opens; a lesson has only its name, and is to come.
-    expect(card('Simple meter').querySelector('.area-card__description')!.textContent).toBe(
-      '2/4, 3/4 and 4/4.',
-    )
-    expect(card('Simple meter').getAttribute('title')).toBe('Open Simple meter')
-    expect(card('Cut time (2/2)').querySelector('.area-card__description')).toBeNull()
-    expect(card('Cut time (2/2)').getAttribute('title')).toBe('Cut time (2/2) — coming soon')
-
-    fireEvent.click(card('Simple meter'))
-    await at('#/rhythm-and-timing/time-signatures/simple-meter')
-    expect(cards()).toEqual(['2/4', '3/4', '4/4'])
-  })
-
-  it('gives a lesson named in figures an address, and a page that says it is to come', async () => {
-    await open('#/rhythm-and-timing/time-signatures/simple-meter')
-    fireEvent.click(card('3/4'))
-    await at('#/rhythm-and-timing/time-signatures/simple-meter/3-4')
-    expect(trail()).toEqual([
-      'Dashboard',
-      'Rhythm & Timing',
+    // A lesson of the section's own, among its topics, is headed with the section's name.
+    expect(chapterTitles()).toEqual([
       'Time Signatures',
       'Simple meter',
-      '3/4',
+      'Compound meter',
+      'Time Signatures',
     ])
-    expect(within(screen.getByRole('main')).getByText('Coming soon')).toBeDefined()
+    expect(lessons()).toEqual([
+      'Measures and bar lines',
+      '2/4',
+      '3/4',
+      '4/4',
+      '6/8',
+      'Common time',
+      'Cut time (2/2)',
+      'Changing time signatures',
+      'Beat groupings',
+    ])
+  })
+
+  it('gives a lesson named in figures an address', async () => {
+    await open('#/rhythm-and-timing/time-signatures')
+    fireEvent.click(lesson('3/4'))
+    await at('#/rhythm-and-timing/time-signatures/simple-meter/3-4')
+    expect(lessonUp()).toBe('3/4')
+    expect(trail()).toEqual(['Dashboard', 'Rhythm & Timing', 'Time Signatures'])
   })
 
   it('gives a lesson named in numerals or with a question mark an address of its own', async () => {
     await open('#/chords-and-harmony/chord-progressions/common-progressions')
-    expect(cards()).toEqual(['I–IV–V', 'I–V–vi–IV', 'ii–V–I', '12-bar blues'])
-    fireEvent.click(card('I–V–vi–IV'))
+    fireEvent.click(lesson('I–V–vi–IV'))
     await at('#/chords-and-harmony/chord-progressions/common-progressions/i-v-vi-iv')
-    expect(trail().slice(-1)).toEqual(['I–V–vi–IV'])
-    cleanup()
-
-    await open('#/chords-and-harmony/chord-progressions/primary-chords')
-    fireEvent.click(card('V7'))
+    expect(lessonUp()).toBe('I–V–vi–IV')
+    fireEvent.click(lesson('V7'))
     await at('#/chords-and-harmony/chord-progressions/primary-chords/v7')
     cleanup()
 
     await open('#/chords-and-harmony/chord-foundations')
-    fireEvent.click(card('What is a chord?'))
+    fireEvent.click(lesson('What is a chord?'))
     await at('#/chords-and-harmony/chord-foundations/what-is-a-chord')
   })
 
   it('gives a lesson named with a comma or a mark in brackets an address of its own', async () => {
     await open('#/practice-and-repertoire/practice-methods')
-    fireEvent.click(card('Short, consistent sessions'))
+    fireEvent.click(lesson('Short, consistent sessions'))
     await at('#/practice-and-repertoire/practice-methods/short-consistent-sessions')
     cleanup()
 
     await open('#/musical-expression/dynamics')
-    fireEvent.click(card('Mezzo-forte (mf)'))
+    fireEvent.click(lesson('Mezzo-forte (mf)'))
     await at('#/musical-expression/dynamics/mezzo-forte-mf')
     cleanup()
 
     await open('#/musical-structure-and-styles/musical-styles/classical')
-    expect(cards()).toEqual(['Baroque', 'Classical period', 'Romantic', 'Contemporary classical'])
+    expect(lessonUp()).toBe('Baroque')
   })
 
   it('keeps apart two lessons of the same name under different topics', async () => {
     await open('#/music-notation-and-reading/musical-staff/bass-clef/line-notes')
-    expect(trail().slice(-2)).toEqual(['Bass clef', 'Line notes'])
-    fireEvent.click(
-      within(screen.getByRole('main')).getByRole('button', { name: 'Back to Bass clef' }),
-    )
-    await at('#/music-notation-and-reading/musical-staff/bass-clef')
-    expect(cards()).toEqual(['Line notes', 'Space notes'])
+    expect(lessonUp()).toBe('Line notes')
+    expect(document.querySelector('.lesson-card__where')!.textContent).toMatch(/^Bass clef · /)
+    const current = document.querySelector('[aria-current="step"]')!
+    expect(current.closest('section')!.querySelector('h3')!.textContent).toBe('Bass clef')
   })
 
   it('has a topic wear its section’s icon and color unless it was given its own', () => {
@@ -1181,10 +1198,6 @@ describe('the bar along the bottom', () => {
     render(<Pages />)
     fireEvent.click(card('Chords & Harmony'))
     await at('#/chords-and-harmony')
-    expect(here()).toEqual(['Home'])
-
-    fireEvent.click(card('Chord Progressions'))
-    await at('#/chords-and-harmony/chord-progressions')
     expect(here()).toEqual(['Home'])
 
     fireEvent.click(bar().getByRole('button', { name: 'Home' }))

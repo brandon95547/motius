@@ -21,8 +21,11 @@ import { StageBackdrop } from './StageBackdrop'
  * appear is transient and says one thing each — the engine asking for a key
  * press before it can make a sound, where a run has got to, how it ended — and
  * each gets out of the way again.
+ *
+ * What is put in it goes over the staff: on a section's stage, the lesson that
+ * is up.
  */
-export function Stage() {
+export function Stage({ children }: { children?: React.ReactNode }) {
   const topic = useLearningStore((state) => state.topic)
   const hasExercise = useLearningStore((state) => state.exercise !== null)
   const song = useCurrentSong()
@@ -35,6 +38,7 @@ export function Stage() {
     <main className="stage" aria-label="Staff">
       <StageBackdrop />
       {topic === 'songs' && <SongProgress />}
+      {children}
 
       <div className="stage__notices">
         <EngineNotice />

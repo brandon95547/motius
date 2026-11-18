@@ -36,18 +36,27 @@ order they are taught. Each is laid out from the outline written for it:
    Practice, Theory Practice, Ear Training, Practice Methods, Songs &
    Repertoire, Creativity & Composition, Progress & Assessment.
 
-A category opens a page of its sections, and a section may have sections of its
-own, as far down as the subject goes. In Piano Foundations, Keyboard Layout has
-White and black keys, Musical alphabet and Keyboard navigation, each a page of
-its lessons; Fingers & Hand Positions has Finger numbering, Starting positions
-and Hand movement; and Understanding Pitch and Playing Your First Notes are
-pages of lessons themselves. Where an outline has a lesson beside a topic —
-Time Signatures has Common time next to Simple meter — the page has both.
+A category opens a page of its sections, and a section opens straight onto the
+stage: the keyboard to play on, and the section's lessons in a list beside it.
+Whatever the outline has between the section and a lesson is a chapter of that
+list, not another page of cards, so the keys are two choices from the dashboard
+however deep the outline goes. In Piano Foundations, Keyboard Layout's list has
+White and black keys, Musical alphabet and Keyboard navigation as its chapters;
+Understanding Pitch and Playing Your First Notes are lessons with no chapters.
+Where an outline has a lesson beside a topic — Time Signatures has Common time
+next to Simple meter — the list has both, the section's own lessons headed with
+its name.
 
-There are 534 lessons in the nine outlines, and none is written yet: each has a
-page of its own that says so, at the address it will keep —
+The lesson that is up sits over the staff with Previous and Next, which run
+through the section from chapter to chapter. On a screen too narrow for the list
+beside the stage, All lessons opens it over the stage's left edge.
+
+There are 534 lessons in the nine outlines, and none is written yet: each says
+so, and the keys are free to play meanwhile. Each has the address it will keep —
 `#/piano-foundations/keyboard-layout/white-and-black-keys/two-black-key-groups`
-— so what is built there later is built in a place that already exists.
+— which opens the stage on it, so what is built there later is built in a place
+that already exists. An address that stops at a section or a topic opens its
+first lesson.
 
 Under the dashboard and those pages a bar along the bottom leads to the other
 places at the top of the app: Home (the dashboard), Lessons, Songs, Practice,

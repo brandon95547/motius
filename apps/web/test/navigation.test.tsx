@@ -137,18 +137,19 @@ describe('the pages between the dashboard and the areas', () => {
     await waitFor(() => expect(usePageStore.getState().page).toBe('category'))
     expect(usePageStore.getState().category).toBe('chords-and-harmony')
 
+    // A section is no page of its own: it opens onto its stage.
     globalThis.location.hash = '#/chords-and-harmony/cadences'
-    await waitFor(() => expect(usePageStore.getState().page).toBe('section'))
+    await waitFor(() => expect(usePageStore.getState().page).toBe('lesson'))
     expect(usePageStore.getState()).toMatchObject({
       category: 'chords-and-harmony',
       path: ['cadences'],
     })
   })
 
-  it('opens a section as far down as its address goes, and stops where it names nothing', async () => {
+  it('opens a lesson as far down as its address goes, and stops where it names nothing', async () => {
     renderHook(() => usePageSync())
     globalThis.location.hash = '#/piano-foundations/keyboard-layout/white-and-black-keys'
-    await waitFor(() => expect(usePageStore.getState().page).toBe('section'))
+    await waitFor(() => expect(usePageStore.getState().page).toBe('lesson'))
     expect(usePageStore.getState()).toMatchObject({
       category: 'piano-foundations',
       path: ['keyboard-layout', 'white-and-black-keys'],
@@ -162,7 +163,7 @@ describe('the pages between the dashboard and the areas', () => {
     // A name that is no lesson of it: the page above, which is one.
     globalThis.location.hash = '#/piano-foundations/keyboard-layout/nonsense/two-black-key-groups'
     await waitFor(() => expect(usePageStore.getState().path).toEqual(['keyboard-layout']))
-    expect(usePageStore.getState().page).toBe('section')
+    expect(usePageStore.getState().page).toBe('lesson')
   })
 
   it('takes the name of a section that opens an area as the page above it: its address is its area’s', async () => {

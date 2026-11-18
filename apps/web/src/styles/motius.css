@@ -2431,32 +2431,33 @@
   }
 }
 
-/* A card's accent: one of the nine there are. */
-.area-card[data-accent='songs'] {
+/* A place's accent, one of the nine there are: on its card, and on its
+   section's lessons beside the stage. */
+[data-accent='songs'] {
   --accent: var(--c-area-songs);
 }
-.area-card[data-accent='scales'] {
+[data-accent='scales'] {
   --accent: var(--c-area-scales);
 }
-.area-card[data-accent='chords'] {
+[data-accent='chords'] {
   --accent: var(--c-area-chords);
 }
-.area-card[data-accent='arpeggios'] {
+[data-accent='arpeggios'] {
   --accent: var(--c-area-arpeggios);
 }
-.area-card[data-accent='progressions'] {
+[data-accent='progressions'] {
   --accent: var(--c-area-progressions);
 }
-.area-card[data-accent='exercises'] {
+[data-accent='exercises'] {
   --accent: var(--c-area-exercises);
 }
-.area-card[data-accent='rose'] {
+[data-accent='rose'] {
   --accent: var(--c-area-rose);
 }
-.area-card[data-accent='teal'] {
+[data-accent='teal'] {
   --accent: var(--c-area-teal);
 }
-.area-card[data-accent='pink'] {
+[data-accent='pink'] {
   --accent: var(--c-area-pink);
 }
 
@@ -2707,6 +2708,7 @@ button.area-card:hover .area-card__go {
   position: relative;
   display: flex;
   flex: 1 1 auto;
+  min-width: 0;
   min-height: 0;
   flex-direction: column;
   justify-content: center;
@@ -2937,6 +2939,204 @@ button.area-card:hover .area-card__go {
   font-size: 0.875rem;
   color: var(--c-bar-fg-muted);
   white-space: nowrap;
+}
+
+/* ---- A section's stage: its lessons, and the one that is up --------------
+   The list is on the bar's surface, beside the stage on a wide screen and a
+   panel over its left edge on a narrower one, opened from the lesson card. The
+   card sits over the staff on the same surface: the stage cannot carry small
+   text of its own. */
+.lesson-room {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.lesson-rail {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  z-index: var(--z-panel);
+  display: none;
+  flex-direction: column;
+  width: 20rem;
+  max-width: calc(100% - 2.5rem);
+  border-right: 1px solid var(--c-bar-line);
+  background-color: var(--c-bar);
+  color: var(--c-bar-fg);
+  box-shadow: var(--ds-shadow-4);
+}
+.lesson-rail[data-open='true'] {
+  display: flex;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .lesson-rail[data-open='true'] {
+    animation: drawer-in-left 220ms var(--ease-emphasized) both;
+  }
+}
+@media (min-width: 64rem) {
+  .lesson-rail,
+  .lesson-rail[data-open='true'] {
+    position: relative;
+    z-index: auto;
+    display: flex;
+    flex: none;
+    width: 18rem;
+    box-shadow: none;
+    animation: none;
+  }
+}
+.lesson-rail__header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 12px 10px 20px;
+}
+.lesson-rail__title {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+@media (min-width: 64rem) {
+  .lesson-rail__close {
+    display: none;
+  }
+}
+.lesson-rail__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0 8px 16px;
+  overflow-y: auto;
+}
+.lesson-rail__chapter-title {
+  padding: 14px 12px 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--c-bar-fg-muted);
+}
+.lesson-rail__item {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  line-height: 1.35;
+  text-align: left;
+  color: var(--c-bar-fg-muted);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+.lesson-rail__item:hover {
+  background-color: var(--c-bar-hover);
+  color: var(--c-bar-fg);
+}
+.lesson-rail__item[aria-current='step'] {
+  background-color: var(--c-bar-pressed);
+  color: var(--c-bar-fg);
+  font-weight: 600;
+}
+.lesson-rail__item:focus-visible {
+  outline: 2px solid var(--ds-focus-ring);
+  outline-offset: -2px;
+}
+.lesson-rail__number {
+  flex: none;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.lesson-card {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  align-self: center;
+  width: min(100%, 36rem);
+  padding: 16px 16px 14px 20px;
+  border-radius: var(--radius-xl);
+  background-color: var(--c-bar);
+  color: var(--c-bar-fg);
+  box-shadow: var(--ds-shadow-4);
+}
+.lesson-card__where {
+  font-size: 0.8125rem;
+  color: var(--c-bar-fg-muted);
+}
+.lesson-card__name {
+  margin-top: 4px;
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+.lesson-card__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 0.8125rem;
+  color: var(--c-bar-fg-muted);
+}
+.lesson-card__steps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+.lesson-card__spacer {
+  flex: 1 1 auto;
+}
+.lesson-card__step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding-inline: 12px;
+  border-radius: var(--radius-md);
+  background-color: var(--c-bar-control);
+  color: var(--c-bar-fg);
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+.lesson-card__step:hover:not(:disabled) {
+  background-color: var(--c-bar-control-hover);
+}
+.lesson-card__step:disabled {
+  opacity: 0.45;
+}
+.lesson-card__step:focus-visible {
+  outline: 2px solid var(--ds-focus-ring);
+  outline-offset: 2px;
+}
+.lesson-card__step--next {
+  color: var(--accent);
+}
+/* On a phone the three fit one row: the list and the way back as their icons,
+   with the way on still in words. */
+@media (max-width: 29.999rem) {
+  .lesson-card__step-word {
+    display: none;
+  }
+}
+@media (min-width: 64rem) {
+  .lesson-card__all {
+    display: none;
+  }
+}
+@media (pointer: coarse) {
+  .lesson-rail__item,
+  .lesson-card__step {
+    min-height: 44px;
+  }
 }
 
 /* ---- The keys, along the bottom ------------------------------------------ */

@@ -20,7 +20,15 @@ import { create } from 'zustand'
  * are scattered: the bar, its overflow menu, a card inside another panel.
  */
 export type Panel =
-  'options' | 'settings' | 'session' | 'library' | 'devices' | 'theory' | 'fundamentals'
+  | 'options'
+  | 'settings'
+  | 'session'
+  | 'library'
+  | 'devices'
+  | 'theory'
+  | 'fundamentals'
+  /** A section's lessons, on a screen too narrow to keep them beside the stage. */
+  | 'lessons'
 
 interface PanelState {
   panel: Panel | null
