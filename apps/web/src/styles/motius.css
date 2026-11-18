@@ -100,11 +100,12 @@
   /* --- The practice room ---------------------------------------------------
      A dark bar over a bright stage, with the paper in the middle, as the design
      for this screen draws it. Both are set values rather than ramp steps: a
-     charcoal bar and a lavender stage. The one blue the semantic tier names
+     near-black bar (the dashboard's footer shares it, its cards sit a notch
+     above) and a lavender stage. The one blue the semantic tier names
      (--ds-info) is kept for what it means — the playhead, which is information
      about where you are. Everything on the stage that needs a dark surface to
      carry small text (pills, the run meter, the keys' felt) uses the bar's. */
-  --c-bar: #2b2b2b;
+  --c-bar: #131416;
   --c-bar-fg: #ffffff;
   /* 8.5:1 on the bar. */
   --c-bar-fg-muted: rgb(255 255 255 / 0.74);
@@ -213,11 +214,12 @@
   --c-dash-quiet: #aeafaf;
   --c-dash-room: #111214; /* under the photograph, while it loads */
   --c-dash-shade: 8 8 10; /* channels: the room's darkening */
-  --c-dash-card: #0e0f11;
+  /* The bars' surface, raised a notch: the cards sit above them. */
+  --c-dash-card: color-mix(in srgb, var(--c-bar), white 5%);
   --c-dash-card-edge: rgb(255 255 255 / 0.13);
   --c-dash-tile: #0b0b0d; /* the icon tile, before its accent is mixed in */
   --c-dash-number: #c49164; /* a card's number: the first accent, turned down */
-  --c-dash-nav: #131416; /* the bar along the bottom */
+  --c-dash-nav: var(--c-bar); /* the bar along the bottom */
   --c-dash-nav-fg: #868787; /* a place you are not at */
   --c-dash-nav-here: #f0c080; /* and the one you are */
   /* The photograph turned down by a flat 30% of black: an even dim over the
@@ -2649,8 +2651,8 @@ button.area-card:hover .area-card__go {
   display: flex;
   flex: 1 1 0;
   min-width: 0;
-  /* As far apart as the mock has them, and no further. */
-  max-width: 8.375rem;
+  /* Close enough to read as one group; still a 44px touch target and more. */
+  max-width: 5.5rem;
 }
 .bottom-nav__item {
   position: relative;
