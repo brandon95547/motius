@@ -129,6 +129,16 @@
   --c-now-deep: var(--p-info-700);
   --c-playhead: var(--ds-info);
 
+  /* Falling notes: a bar in each hand's color, the convention every falling-
+     notes app keeps (right green, left blue), with the finger printed on it in
+     the bar's dark ink. The one being waited on is "now", as on the keys. */
+  --c-fall-right: var(--c-area-exercises);
+  --c-fall-left: var(--c-area-arpeggios);
+  --c-fall-ink: var(--c-bar);
+  --c-fall-edge: rgb(0 0 0 / 0.18);
+  --c-fall-rule: rgb(0 0 0 / 0.07);
+  --c-fall-flash: rgb(255 255 255 / 0.85);
+
   /* --- Keys: light and shade -----------------------------------------------
      The bevels and shadows that make a flat key read as a real one, and the
      inks printed on keys. Black and white at an alpha, because they are light
@@ -3000,6 +3010,90 @@ button.area-card:hover .area-card__go {
   }
 }
 
+/* ---- Falling notes ---------------------------------------------------------
+   The stage as a field of lanes over the keys: every note a bar in its key's
+   column, falling to the top of the keys on its beat. The track moves as one
+   (a transform, written by the component), and nothing in it takes a click. */
+.falling {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.falling__octave {
+  position: absolute;
+  inset-block: 0;
+  width: 1px;
+  background-color: var(--c-fall-rule);
+}
+.falling__track {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+.falling__note {
+  position: absolute;
+  bottom: calc(var(--start) * var(--beat));
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: max(8px, calc(var(--length) * var(--beat) - 3px));
+  padding-bottom: 4px;
+  border-radius: var(--radius-sm);
+  background-color: var(--c-fall-right);
+  box-shadow: inset 0 0 0 1px var(--c-fall-edge);
+  color: var(--c-fall-ink);
+  font-size: var(--text-label);
+  font-weight: 700;
+  line-height: 1;
+  /* Fades as slowly as the hit flash, so the flash is seen at full strength. */
+  transition: opacity var(--duration-slow) var(--ease-standard);
+}
+.falling__note[data-hand='left'] {
+  background-color: var(--c-fall-left);
+}
+.falling__note[data-now='true'] {
+  background-color: var(--c-now);
+  color: var(--c-bar-fg);
+}
+.falling__note[data-done='true'] {
+  opacity: 0.35;
+}
+/* Played: a flash of light over the bar as it goes down, at the keys. */
+.falling__note[data-done='true']::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: var(--c-fall-flash);
+  opacity: 0;
+  content: '';
+}
+@media (prefers-reduced-motion: no-preference) {
+  .falling__note[data-done='true']::after {
+    animation: fall-hit var(--duration-slow) var(--ease-standard);
+  }
+}
+@keyframes fall-hit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+/* Gone by unplayed: faded, and ringed in the color of a mistake. */
+.falling__note[data-missed='true'] {
+  opacity: 0.35;
+  box-shadow: inset 0 0 0 2px var(--ds-danger);
+}
+/* How a step went in Practice, ringed in its own color. */
+.falling__note[data-timing='on-time'] {
+  box-shadow: inset 0 0 0 2px var(--ds-success);
+}
+.falling__note[data-timing='early'],
+.falling__note[data-timing='late'] {
+  box-shadow: inset 0 0 0 2px var(--ds-warning);
+}
 /* ---- The keys, along the bottom ------------------------------------------ */
 .keyboard-dock {
   position: relative;

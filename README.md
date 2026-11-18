@@ -105,8 +105,17 @@ dashboard, those pages and stages and the bar along the bottom are all drawn.
   octave shift, velocity curve, channel filter and sustain pedal, saved against
   the keyboard and restored the next time it is plugged in.
 - **A live grand staff** above the keyboard, and view controls beneath it —
-  follow, key labels (off, notes, degrees or fingers), scale structure, and the
-  staff itself.
+  follow, key labels (off, notes, degrees or fingers), scale structure, and
+  what is shown above the keys.
+- **Falling notes**, the other choice for above the keys (Settings ▸ Above the
+  keys: Staff, Falling notes or Nothing). Each note is a bar in its key's
+  column, as wide as the key, as long as it is held, in its hand's color (right
+  green, left blue) with its finger on it, reaching the keys on its beat. In
+  Learn the next notes come down to the keys and wait until they are played; in
+  Practice they fall at the tempo after a four-beat lead-in, in time with the
+  click, and each step is ringed on time or early/late (within 150 ms is on
+  time); with Hear they fall with the demonstration. Every exercise and lesson
+  has them; songs keep the staff until they do too.
 
 ### Learning a scale
 

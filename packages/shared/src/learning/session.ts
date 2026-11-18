@@ -43,6 +43,12 @@ export interface SessionState {
   readonly completedAt: number | null
   /** When each step was completed. The only input to the tempo estimate. */
   readonly stepTimes: readonly number[]
+  /**
+   * Steps that went by unplayed: a run kept to the tempo (falling notes in
+   * Practice) moves on without them. Counted in `completedSteps` too, so the
+   * run's progress is where the music is, and against its accuracy.
+   */
+  readonly missedSteps: readonly number[]
 }
 
 export const IDLE_SESSION: SessionState = {
@@ -55,6 +61,7 @@ export const IDLE_SESSION: SessionState = {
   startedAt: null,
   completedAt: null,
   stepTimes: [],
+  missedSteps: [],
 }
 
 export type SessionEvent =
@@ -63,6 +70,8 @@ export type SessionEvent =
   | { type: 'noteOn'; note: number; at: number }
   /** Drops wrong-note flashes older than `before`. Keeps the state pure. */
   | { type: 'expireWrong'; before: number }
+  /** The step being waited on has gone by unplayed, as the tempo moved on. */
+  | { type: 'miss'; at: number }
 
 /**
  * How long a wrong note stays lit. Long enough to notice mid-phrase, short
@@ -86,6 +95,23 @@ export function sessionReducer(
       const kept = Object.entries(state.wrongNotes).filter(([, at]) => at >= event.before)
       if (kept.length === Object.keys(state.wrongNotes).length) return state
       return { ...state, wrongNotes: Object.fromEntries(kept.map(([n, at]) => [Number(n), at])) }
+    }
+
+    case 'miss': {
+      if (state.status !== 'running' || !exercise) return state
+      const stepIndex = state.stepIndex + 1
+      const done = stepIndex >= exercise.steps.length
+      return {
+        ...state,
+        stepIndex: done ? state.stepIndex : stepIndex,
+        satisfied: [],
+        completedSteps: state.completedSteps + 1,
+        // Kept in step with the steps, so `stepTimes[n]` is still step n's.
+        stepTimes: [...state.stepTimes, event.at],
+        missedSteps: [...state.missedSteps, state.stepIndex],
+        status: done ? 'complete' : 'running',
+        completedAt: done ? event.at : null,
+      }
     }
 
     case 'noteOn': {
@@ -153,7 +179,7 @@ export function upcomingSteps(
 export function accuracy(state: SessionState): number {
   const attempts = state.completedSteps + state.mistakes
   if (attempts === 0) return 1
-  return state.completedSteps / attempts
+  return (state.completedSteps - state.missedSteps.length) / attempts
 }
 
 export function progress(exercise: Exercise | null, state: SessionState): number {

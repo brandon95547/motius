@@ -6,6 +6,7 @@ import { buildLayout, keyCenterPercent } from '@/features/keyboard/keyboard-layo
 import { useKeyboardStore } from '@/state/keyboard-store'
 import { useLearningStore } from '@/state/learning-store'
 import { useSongStore } from '@/state/song-store'
+import { sizeEverything } from './layout-size'
 
 /**
  * The hands over the keys.
@@ -19,21 +20,7 @@ import { useSongStore } from '@/state/song-store'
 // jsdom lays nothing out, and the hands are drawn in the keybed's own pixels:
 // on a keybed of no size there is nothing to draw them on.
 const BED = { width: 1500, height: 150 }
-class SizedObserver {
-  constructor(private readonly notify: ResizeObserverCallback) {}
-  observe(target: Element) {
-    this.notify(
-      [{ target, contentRect: BED } as ResizeObserverEntry],
-      this as unknown as ResizeObserver,
-    )
-  }
-  unobserve() {}
-  disconnect() {}
-}
-globalThis.ResizeObserver = SizedObserver as unknown as typeof ResizeObserver
-Element.prototype.getBoundingClientRect = function () {
-  return { ...BED, top: 0, left: 0, right: BED.width, bottom: BED.height, x: 0, y: 0 } as DOMRect
-}
+sizeEverything(BED)
 
 // Asked for no motion, a hand is simply where it is to be, which is also what
 // a test wants: where it ends up, not the tenth of a second on the way.

@@ -18,7 +18,7 @@ import { EngineChip } from '@/audio/EngineChip'
 import { InstrumentSelect } from '@/features/instruments/InstrumentSelect'
 import { KEYBOARD_SPANS, canShift } from '@/features/keyboard/keyboard-layout'
 import { useLearningStore, type KeyLabels } from '@/state/learning-store'
-import { AUTO_SPAN, useViewStore } from '@/state/view-store'
+import { AUTO_SPAN, useViewStore, type StageView } from '@/state/view-store'
 import { BACKDROPS, isBackdropChoice, useBackdropStore } from '@/state/backdrop-store'
 import { COLOR_THEMES, isColorTheme, useThemeStore } from '@/state/theme-store'
 import { useCurrentSong, useSongStore, type FingeringDensity } from '@/state/song-store'
@@ -282,8 +282,8 @@ function KeyboardSection() {
 }
 
 function StaffSection() {
-  const showStaff = useViewStore((state) => state.showStaff)
-  const setShowStaff = useViewStore((state) => state.setShowStaff)
+  const stageView = useViewStore((state) => state.stageView)
+  const setStageView = useViewStore((state) => state.setStageView)
   const topic = useLearningStore((state) => state.topic)
   const song = useCurrentSong()
   const staffView = useSongStore((state) => state.staffView)
@@ -293,16 +293,31 @@ function StaffSection() {
   const scoreOpen = topic === 'songs' && song !== null
 
   return (
-    <Section title="Staff">
-      <Switch
-        label="Show the staff"
-        description="Write the music out above the keys."
-        checked={showStaff}
-        onChange={setShowStaff}
-      />
+    <Section title="Above the keys">
+      <Field
+        label="Show"
+        hint={
+          stageView === 'falling'
+            ? topic === 'songs'
+              ? 'Songs keep the staff for now; falling notes come to them next.'
+              : 'Notes fall to the keys that play them, in each hand’s color with the finger on them.'
+            : undefined
+        }
+      >
+        <SegmentedControl<StageView>
+          label="Above the keys"
+          value={stageView}
+          onChange={setStageView}
+          options={[
+            { value: 'staff', label: 'Staff' },
+            { value: 'falling', label: 'Falling notes' },
+            { value: 'off', label: 'Nothing' },
+          ]}
+        />
+      </Field>
       {/* Only where there is a score to lay out and fingering to print. A scale
           is one line of notes with its fingering on the keys. */}
-      {showStaff && scoreOpen && (
+      {stageView !== 'off' && scoreOpen && (
         <>
           <Field label="Score layout">
             <SegmentedControl

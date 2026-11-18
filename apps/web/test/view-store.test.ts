@@ -21,7 +21,7 @@ describe('the keyboard view', () => {
   it('starts on Auto, following the player, with the staff up', () => {
     expect(view().spanId).toBe(AUTO_SPAN)
     expect(view().follow).toBe(true)
-    expect(view().showStaff).toBe(true)
+    expect(view().stageView).toBe('staff')
   })
 
   it('moves the visible keys an octave at a time, keeping their number', () => {
@@ -49,12 +49,12 @@ describe('the keyboard view', () => {
   it('keeps what the drawer set after the drawer has gone', () => {
     view().setSpanId('61')
     view().setFollow(false)
-    view().setShowStaff(false)
+    view().setStageView('falling')
     // Nothing here is component state: a fresh read sees the same answer.
     expect(useViewStore.getState()).toMatchObject({
       spanId: '61',
       follow: false,
-      showStaff: false,
+      stageView: 'falling',
     })
   })
 })

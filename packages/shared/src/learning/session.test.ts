@@ -250,4 +250,29 @@ describe('selectors', () => {
       exercise.steps.slice(3, 6).map((s) => s.label),
     )
   })
+
+  it('moves on from a step that went by unplayed, counting it missed and against accuracy', () => {
+    const second = exercise.steps[1]!.notes[0]!
+    const state = run(
+      [
+        { type: 'miss', at: 900 },
+        { type: 'noteOn', note: second, at: 1700 },
+      ],
+      started(),
+    )
+    expect(state.stepIndex).toBe(2)
+    expect(state.completedSteps).toBe(2)
+    expect(state.missedSteps).toEqual([0])
+    // Step n's time is still at stepTimes[n].
+    expect(state.stepTimes).toEqual([900, 1700])
+    expect(accuracy(state)).toBe(0.5)
+  })
+
+  it('ends the run when the last step goes by unplayed', () => {
+    const events: SessionEvent[] = exercise.steps.map((_, i) => ({ type: 'miss', at: i * 100 }))
+    const state = run(events, started())
+    expect(state.status).toBe('complete')
+    expect(state.missedSteps).toHaveLength(exercise.steps.length)
+    expect(accuracy(state)).toBe(0)
+  })
 })

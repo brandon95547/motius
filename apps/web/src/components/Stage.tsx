@@ -3,6 +3,7 @@ import { accuracy } from '@motius/shared'
 import { cn } from '@/lib/cn'
 import { useAudio } from '@/audio/AudioProvider'
 import { EngineChip } from '@/audio/EngineChip'
+import { FallingNotes } from '@/features/keyboard/FallingNotes'
 import { GrandStaff } from '@/features/staff/GrandStaff'
 import { ScaleScore } from '@/features/staff/ScaleScore'
 import { SongScore } from '@/features/staff/SongScore'
@@ -30,10 +31,13 @@ export function Stage({ children }: { children?: React.ReactNode }) {
   const topic = useLearningStore((state) => state.topic)
   const hasExercise = useLearningStore((state) => state.exercise !== null)
   const song = useCurrentSong()
-  const showStaff = useViewStore((state) => state.showStaff)
+  const stageView = useViewStore((state) => state.stageView)
   const staffView = useSongStore((state) => state.staffView)
   const scoreOpen = topic === 'songs' && song !== null
   const sheet = scoreOpen && staffView === 'sheet'
+  // Falling notes need material to fall: an exercise. Free play, and songs until
+  // they have them, keep the staff.
+  const falling = stageView === 'falling' && topic !== 'songs' && hasExercise
 
   return (
     <main className="stage" aria-label="Staff">
@@ -46,7 +50,8 @@ export function Stage({ children }: { children?: React.ReactNode }) {
         {topic !== 'songs' && <RunStatus />}
       </div>
 
-      {showStaff && (
+      {falling && <FallingNotes />}
+      {stageView !== 'off' && !falling && (
         <div className={cn('staff-panel', sheet && 'staff-panel--sheet')}>
           {/* Whatever has notes to read gets them written out: a song its
               score, a scale the scale. Only a topic with nothing written —
@@ -134,9 +139,15 @@ function RunComplete() {
         <span className="run-complete__title">Complete</span>
         <span className="run-complete__detail" data-tabular>
           {steps} {unit} · {percent}% accuracy ·{' '}
-          {session.mistakes === 0
+          {session.mistakes === 0 && session.missedSteps.length === 0
             ? 'clean'
-            : `${session.mistakes} ${session.mistakes === 1 ? 'mistake' : 'mistakes'}`}
+            : [
+                session.mistakes > 0 &&
+                  `${session.mistakes} ${session.mistakes === 1 ? 'mistake' : 'mistakes'}`,
+                session.missedSteps.length > 0 && `${session.missedSteps.length} missed`,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
         </span>
       </div>
       <button type="button" className="bar-start" onClick={start}>

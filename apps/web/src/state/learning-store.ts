@@ -227,6 +227,8 @@ interface LearningState {
   setAutoTempo: (enabled: boolean) => void
   setMetronome: (enabled: boolean) => void
   noteOn: (note: number) => void
+  /** The step being waited on went by unplayed: the run moves on without it. */
+  missStep: () => void
   expireWrongNotes: () => void
 }
 
@@ -592,6 +594,20 @@ export const useLearningStore = create<LearningState>((set, get) => {
         ...(session.status === 'complete' && state.autoTempo
           ? { targetBpm: nextTargetBpm(state.targetBpm, session, state.exercise) }
           : {}),
+      })
+    },
+
+    missStep: () => {
+      const state = get()
+      const session = sessionReducer(
+        state.session,
+        { type: 'miss', at: Date.now() },
+        state.exercise,
+      )
+      if (session === state.session) return
+      set({
+        session,
+        annotations: buildAnnotations(state.exercise, state.mode, session, state.demoStepIndex),
       })
     },
 
