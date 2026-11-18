@@ -1,6 +1,9 @@
 import * as React from 'react'
-import { ArrowLeft, ArrowRight, Hammer, ListTree, X } from 'lucide-react'
+import { ArrowRight, ListTree } from 'lucide-react'
+import { Button } from '@/ui/Button'
+import { Dialog } from '@/ui/Dialog'
 import { Drawer } from '@/ui/Drawer'
+import { useLearningStore } from '@/state/learning-store'
 import { panelActions, usePanelStore } from '@/state/panel-store'
 import { pageActions, usePageStore } from '@/state/page-store'
 import {
@@ -15,9 +18,8 @@ import {
 } from './areas'
 
 /**
- * A section's stage: the lesson that is up over the staff, with the way to the
- * one before and the one after, and the section's lessons in a sheet from the
- * left, opened from the bar.
+ * A section's stage: a written lesson's introduction in a dialog, and the
+ * section's lessons in a sheet from the left, opened from the bar.
  *
  * The stage is where a section opens, so a player is two choices from the
  * dashboard to the keys however deep the outline goes. The topics under the
@@ -147,67 +149,81 @@ export function LessonsDrawer() {
 }
 
 /**
- * The lesson that is up, over the staff: its name, where it is, and the way on.
- * Closed, it is gone until another lesson is up: the staff is the player's.
+ * A written lesson's introduction: what it asks, as a teacher would say it
+ * before the student starts. The app's own dialog, in the middle of the
+ * screen. It goes when it is closed or a run starts — from it or from the bar —
+ * and stays gone for that lesson: from then on the staff and the keys are the
+ * player's. A lesson not written yet has nothing to say, and is a tag in the
+ * corner of the stage that says so.
+ *
+ * Which lesson is next is not asked here: the list in the sheet is the way to
+ * any lesson, and the end of a run is the way on to the next.
  */
-export function LessonCard() {
+export function LessonIntro() {
   const here = useHere()
+  const running = useLearningStore((state) => state.session.status !== 'idle')
   const [closed, setClosed] = React.useState<string | null>(null)
-  if (!here) return null
+  const key = here?.lessons[here.index]?.path.join('/')
+  React.useEffect(() => {
+    if (running && key) setClosed(key)
+  }, [running, key])
+  if (!here || !key) return null
   const lesson = here.lessons[here.index]!
-  const key = lesson.path.join('/')
-  if (closed === key) return null
-  const before = here.lessons[here.index - 1]
-  const after = here.lessons[here.index + 1]
+
+  if (!lesson.lesson.about) return null
+
+  const close = () => setClosed(key)
+  // Explore has nothing to start: the lesson begins in Learn, as a teacher
+  // would begin it, a step at a time.
+  const start = () => {
+    const learning = useLearningStore.getState()
+    if (learning.mode === 'explore') learning.setMode('learn')
+    useLearningStore.getState().start()
+  }
   const where = chapterOf(lesson) || here.section.label
 
   return (
-    <section className="lesson-card" data-accent={here.section.accent} aria-label="Lesson">
-      <button
-        type="button"
-        className="bar-icon-button lesson-card__close"
-        aria-label="Close"
-        title="Close"
-        onClick={() => setClosed(key)}
-      >
-        <X size={18} aria-hidden />
-      </button>
-      <p className="lesson-card__where">
-        {where} · <span data-tabular>{`${here.index + 1} of ${here.lessons.length}`}</span>
-      </p>
-      <h2 className="lesson-card__name">{lesson.lesson.label}</h2>
-      {lesson.lesson.about ? (
-        <p className="lesson-card__about">{lesson.lesson.about}</p>
-      ) : (
-        <p className="lesson-card__status">
-          <Hammer size={14} aria-hidden />
-          {COMING_SOON}. The keys are yours to play meanwhile.
-        </p>
-      )}
-      <div className="lesson-card__steps">
-        <button
-          type="button"
-          className="lesson-card__step"
-          disabled={!before}
-          aria-label="Previous lesson"
-          title={before ? before.lesson.label : undefined}
-          onClick={() => go(here, before)}
-        >
-          <ArrowLeft size={16} aria-hidden />
-          Previous
-        </button>
-        <button
-          type="button"
-          className="lesson-card__step lesson-card__step--next"
-          disabled={!after}
-          aria-label="Next lesson"
-          title={after ? after.lesson.label : undefined}
-          onClick={() => go(here, after)}
-        >
-          Next
-          <ArrowRight size={16} aria-hidden />
-        </button>
-      </div>
-    </section>
+    <Dialog
+      open={closed !== key}
+      onClose={close}
+      title={lesson.lesson.label}
+      description={`${where} · ${here.index + 1} of ${here.lessons.length}`}
+      footer={
+        <>
+          <Button variant="outlined" onClick={close}>
+            Not now
+          </Button>
+          <Button onClick={start}>Start</Button>
+        </>
+      }
+    >
+      <p className="text-body text-[var(--ds-fg-secondary)]">{lesson.lesson.about}</p>
+    </Dialog>
+  )
+}
+
+/** A lesson not written yet, said in the corner of the stage. */
+export function LessonSoon() {
+  const here = useHere()
+  if (!here || here.lessons[here.index]?.lesson.about) return null
+  return <span className="stage-pill lesson-soon">{COMING_SOON}</span>
+}
+
+/** On to the next lesson, where there is one: at the end of a run, beside Again. */
+export function NextLessonButton() {
+  const here = useHere()
+  const page = usePageStore((state) => state.page)
+  const after = here?.lessons[here.index + 1]
+  if (page !== 'lesson' || !here || !after) return null
+  return (
+    <button
+      type="button"
+      className="bar-start bar-start--stop"
+      title={after.lesson.label}
+      onClick={() => go(here, after)}
+    >
+      <span className="bar-start__label">Next lesson</span>
+      <ArrowRight size={18} aria-hidden />
+    </button>
   )
 }

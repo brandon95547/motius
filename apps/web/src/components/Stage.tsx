@@ -12,6 +12,7 @@ import { EXERCISE_NOUNS } from '@/features/learning/ScaleControls'
 import { useLearningStore } from '@/state/learning-store'
 import { useCurrentSong, useSongStore } from '@/state/song-store'
 import { useViewStore } from '@/state/view-store'
+import { NextLessonButton } from '@/features/areas/Lessons'
 import { StageBackdrop } from './StageBackdrop'
 
 /**
@@ -108,17 +109,20 @@ function RunStatus() {
  *
  * It used to be a line in a card under the keyboard, which is to say nowhere a
  * player with their eyes on the music would see it. It sits on the music now,
- * with the one thing anyone wants next: to go again.
+ * with the one thing anyone wants next: to go again — or, at the end of a
+ * lesson, to go on to the next.
  */
 function RunComplete() {
   const session = useLearningStore((state) => state.session)
   const steps = useLearningStore((state) => state.exercise?.steps.length ?? 0)
   // A step of solid chords is a chord, not a note.
-  const unit = useLearningStore((state) =>
-    (state.exercise?.kind === 'chord' || state.exercise?.kind === 'progression') &&
-    state.exercise.steps.every((step) => step.noteLabels)
-      ? 'chords'
-      : 'notes',
+  const unit = useLearningStore(
+    (state) =>
+      state.exercise?.stepsAre ??
+      ((state.exercise?.kind === 'chord' || state.exercise?.kind === 'progression') &&
+      state.exercise.steps.every((step) => step.noteLabels)
+        ? 'chords'
+        : 'notes'),
   )
   const start = useLearningStore((state) => state.start)
   if (session.status !== 'complete') return null
@@ -139,6 +143,7 @@ function RunComplete() {
         <RotateCcw size={18} aria-hidden />
         <span className="bar-start__label">Again</span>
       </button>
+      <NextLessonButton />
     </div>
   )
 }

@@ -98,7 +98,7 @@ export function Dialog({
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
         className={cn(
-          'relative flex w-full flex-col overflow-hidden bg-[var(--ds-surface-overlay)] shadow-e5 outline-none',
+          'relative flex w-full flex-col overflow-hidden bg-[var(--c-bar-raised)] shadow-e5 outline-none',
           'motion-safe:animate-[scale-in_200ms_cubic-bezier(0.32,0.72,0,1)_both]',
           isNarrow
             ? 'h-dvh'

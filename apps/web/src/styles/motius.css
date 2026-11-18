@@ -2925,7 +2925,7 @@ button.area-card:hover .area-card__go {
   background-color: var(--c-bar);
   color: var(--c-bar-fg);
   box-shadow: var(--ds-shadow-4);
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
 }
 @media (prefers-reduced-motion: no-preference) {
   .run-complete {
@@ -2986,92 +2986,16 @@ button.area-card:hover .area-card__go {
   color: var(--accent);
 }
 
-/* Clear of the stage's notices along its top — the run meter, the audio chip —
-   which sit over the corner the card's close button is in. */
-.lesson-card {
-  position: relative;
-  margin-top: 32px;
-  z-index: 1;
-  flex: none;
-  align-self: center;
-  width: min(100%, 36rem);
-  padding: 16px 16px 14px 20px;
-  border-radius: var(--radius-xl);
-  background-color: var(--c-bar);
-  color: var(--c-bar-fg);
-  box-shadow: var(--ds-shadow-4);
-}
-.lesson-card__close {
+/* A lesson not written yet, said in the corner the stage's notices are not in. */
+.lesson-soon {
   position: absolute;
-  top: 8px;
-  right: 8px;
-}
-.lesson-card__where {
-  padding-right: 40px;
-  font-size: 0.8125rem;
+  top: 12px;
+  left: clamp(12px, 2.5vw, 36px);
+  z-index: 2;
   color: var(--c-bar-fg-muted);
-}
-.lesson-card__name {
-  margin-top: 4px;
-  font-family: var(--font-display);
-  font-size: 1.375rem;
-  font-weight: 600;
-  line-height: 1.25;
-}
-.lesson-card__about {
-  max-width: 34rem;
-  margin-top: 6px;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  color: var(--c-bar-fg-muted);
-}
-.lesson-card__status {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 6px;
-  font-size: 0.8125rem;
-  color: var(--c-bar-fg-muted);
-}
-.lesson-card__steps {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-top: 14px;
-}
-.lesson-card__spacer {
-  flex: 1 1 auto;
-}
-.lesson-card__step {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 36px;
-  padding-inline: 12px;
-  border-radius: var(--radius-md);
-  background-color: var(--c-bar-control);
-  color: var(--c-bar-fg);
-  font-size: 0.875rem;
-  font-weight: 600;
-  transition: background-color var(--duration-fast) var(--ease-standard);
-}
-.lesson-card__step:hover:not(:disabled) {
-  background-color: var(--c-bar-control-hover);
-}
-.lesson-card__step:disabled {
-  opacity: 0.45;
-}
-.lesson-card__step:focus-visible {
-  outline: 2px solid var(--ds-focus-ring);
-  outline-offset: 2px;
-}
-.lesson-card__step--next {
-  color: var(--accent);
 }
 @media (pointer: coarse) {
-  .lesson-list__item,
-  .lesson-card__step {
+  .lesson-list__item {
     min-height: 44px;
   }
 }

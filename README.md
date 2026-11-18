@@ -49,12 +49,15 @@ Where an outline has a lesson beside a topic — Time Signatures has Common time
 next to Simple meter — the list has both, the section's own lessons headed with
 its name.
 
-The lesson that is up sits over the staff with Previous and Next, which run
-through the section from chapter to chapter.
+A written lesson opens with its introduction in a dialog — what it asks, as a
+teacher would say it, with Start — which goes when it is closed or a run
+starts. A run's
+end offers Again and Next lesson. A lesson not written yet has no introduction,
+only a Coming soon tag in the stage's corner.
 
 There are 534 lessons in the nine outlines. One is written: **Two-black-key
-groups**, taught as the primer books teach it, before any note has a name. The
-card says what to do, and the bar has Explore, Learn and Practice as an area
+groups**, taught as the primer books teach it, before any note has a name. Its
+introduction says what to do, and the bar has Explore, Learn and Practice as an area
 does: Explore lights every group of two black keys, Learn walks them from the
 bottom of the keyboard to the top — the left hand with fingers 3 and 2 up to
 middle C, then the right hand with 2 and 3, both keys pressed together — and

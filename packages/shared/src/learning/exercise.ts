@@ -151,6 +151,11 @@ export interface Exercise {
   /** Played detached. A demonstration lifts each step well before the next. */
   readonly staccato?: boolean
   /**
+   * What a step is called, in the plural, where it is neither a note nor a
+   * chord: a lesson on the black keys counts `groups`.
+   */
+  readonly stepsAre?: string
+  /**
    * The metre, where the exercise has one to state.
    *
    * Left out for material that is one note a beat with nothing to group — a

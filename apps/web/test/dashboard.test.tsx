@@ -6,7 +6,7 @@ import { MidiProvider } from '@/midi/MidiProvider'
 import { BottomNav } from '@/components/BottomNav'
 import { TopBar } from '@/components/TopBar'
 import { Dashboard } from '@/features/areas/Dashboard'
-import { LessonCard, LessonsDrawer } from '@/features/areas/Lessons'
+import { LessonIntro, LessonsDrawer, LessonSoon, NextLessonButton } from '@/features/areas/Lessons'
 import { CATEGORIES, findCategory, type CategoryId, type Section } from '@/features/areas/areas'
 import { useLearningStore } from '@/state/learning-store'
 import { pageActions, usePageStore, usePageSync } from '@/state/page-store'
@@ -39,7 +39,8 @@ function Pages() {
           {page === 'lesson' ? (
             <>
               <LessonsDrawer />
-              <LessonCard />
+              <LessonIntro />
+              <LessonSoon />
             </>
           ) : (
             page !== 'area' && (
@@ -105,7 +106,13 @@ const chapterTitles = () => {
     (title) => title.textContent,
   )
 }
-const lessonUp = () => document.querySelector('.lesson-card__name')?.textContent
+// Which lesson is up: the one the list marks.
+const lessonUp = () => {
+  openList()
+  return document.querySelector('.lesson-list [aria-current="step"]')?.lastChild?.textContent
+}
+// A written lesson's introduction: the app's dialog, named for the lesson.
+const intro = () => screen.queryByRole('dialog', { name: 'Two-black-key groups' })
 const lesson = (name: string) => {
   openList()
   return within(screen.getByRole('navigation', { name: 'Lessons' })).getByRole('button', {
@@ -946,10 +953,8 @@ describe('Piano Foundations', () => {
     expect(lessons()).toEqual(Object.values(layout).flat())
     // On its first lesson, which is written: it says what it asks, and its
     // exercise is on the keys.
+    expect(intro()!.textContent).toContain('Find every group of two')
     expect(lessonUp()).toBe('Two-black-key groups')
-    expect(screen.getByRole('region', { name: 'Lesson' }).textContent).toContain(
-      'Find every group of two',
-    )
     expect(useLearningStore.getState()).toMatchObject({
       topic: 'lesson',
       lesson: 'two-black-key-groups',
@@ -957,10 +962,12 @@ describe('Piano Foundations', () => {
     expect(useLearningStore.getState().exercise!.title).toBe('Two-black-key groups')
     expect(screen.getByRole('radiogroup', { name: 'Mode' })).toBeDefined()
 
-    // One not written yet says so, and leaves the keys clear to play.
-    fireEvent.click(screen.getByRole('button', { name: 'Next lesson' }))
+    // One not written yet has no introduction, only a tag that says so, and
+    // leaves the keys clear to play.
+    fireEvent.click(lesson('Three-black-key groups'))
     await at('#/piano-foundations/keyboard-layout/white-and-black-keys/three-black-key-groups')
-    expect(screen.getByRole('region', { name: 'Lesson' }).textContent).toContain('Coming soon')
+    expect(intro()).toBeNull()
+    expect(document.querySelector('.lesson-soon')!.textContent).toBe('Coming soon')
     expect(useLearningStore.getState()).toMatchObject({ lesson: null, exercise: null })
     expect(screen.queryByRole('radiogroup', { name: 'Mode' })).toBeNull()
     expect(trail()).toEqual(['Dashboard', 'Piano Foundations', 'Keyboard Layout'])
@@ -979,46 +986,47 @@ describe('Piano Foundations', () => {
     expect(lesson('Notes A through G').getAttribute('aria-current')).toBe('step')
   })
 
-  it('gives each lesson an address that opens the stage on it, and steps through them in order', async () => {
-    await open('#/piano-foundations/keyboard-layout/white-and-black-keys/two-black-key-groups')
-    const up = within(screen.getByRole('region', { name: 'Lesson' }))
-    expect(up.getByRole('button', { name: 'Previous lesson' })).toHaveProperty('disabled', true)
-
-    fireEvent.click(up.getByRole('button', { name: 'Next lesson' }))
-    await at('#/piano-foundations/keyboard-layout/white-and-black-keys/three-black-key-groups')
-    expect(lessonUp()).toBe('Three-black-key groups')
-
-    // From one chapter into the next.
-    fireEvent.click(lesson('Recognizing keyboard patterns'))
-    await at(
-      '#/piano-foundations/keyboard-layout/white-and-black-keys/recognizing-keyboard-patterns',
-    )
-    fireEvent.click(up.getByRole('button', { name: 'Next lesson' }))
-    await at('#/piano-foundations/keyboard-layout/musical-alphabet/notes-a-through-g')
-    expect(document.querySelector('.lesson-card__where')!.textContent).toBe(
-      'Musical alphabet · 4 of 10',
-    )
-
-    fireEvent.click(up.getByRole('button', { name: 'Previous lesson' }))
-    await at(
-      '#/piano-foundations/keyboard-layout/white-and-black-keys/recognizing-keyboard-patterns',
-    )
-
-    // And none past the last.
+  it('gives each lesson an address that opens the stage on it', async () => {
+    await open('#/piano-foundations/keyboard-layout/musical-alphabet/notes-a-through-g')
+    expect(lessonUp()).toBe('Notes A through G')
     fireEvent.click(lesson('Recognizing octaves'))
     await at('#/piano-foundations/keyboard-layout/keyboard-navigation/recognizing-octaves')
-    expect(up.getByRole('button', { name: 'Next lesson' })).toHaveProperty('disabled', true)
+    expect(lessonUp()).toBe('Recognizing octaves')
   })
 
-  it('closes the lesson over the staff, until another lesson is up', async () => {
+  it('introduces a written lesson until it is closed or a run starts, and not again for that lesson', async () => {
     await open('#/piano-foundations/keyboard-layout')
-    fireEvent.click(
-      within(screen.getByRole('region', { name: 'Lesson' })).getByRole('button', { name: 'Close' }),
-    )
-    expect(screen.queryByRole('region', { name: 'Lesson' })).toBeNull()
-    fireEvent.click(lesson('Three-black-key groups'))
+    expect(intro()!.textContent).toContain('White and black keys · 1 of 10')
+    fireEvent.click(within(intro()!).getByRole('button', { name: 'Close' }))
+    expect(intro()).toBeNull()
+    cleanup()
+
+    await open('#/piano-foundations/keyboard-layout/white-and-black-keys/two-black-key-groups')
+    expect(intro()).not.toBeNull()
+    // Its Start begins the run, in Learn where Explore has nothing to start.
+    act(() => useLearningStore.getState().setMode('explore'))
+    fireEvent.click(within(intro()!).getByRole('button', { name: 'Start' }))
+    await waitFor(() => expect(intro()).toBeNull())
+    expect(useLearningStore.getState()).toMatchObject({ mode: 'learn' })
+    expect(useLearningStore.getState().session.status).toBe('running')
+    act(() => useLearningStore.getState().reset())
+    expect(intro()).toBeNull()
+  })
+
+  it('goes on to the next lesson from the end of a run, and offers none after the last', async () => {
+    await open('#/piano-foundations/keyboard-layout/white-and-black-keys/two-black-key-groups')
+    const { unmount } = render(<NextLessonButton />)
+    fireEvent.click(screen.getByRole('button', { name: 'Next lesson' }))
     await at('#/piano-foundations/keyboard-layout/white-and-black-keys/three-black-key-groups')
-    expect(lessonUp()).toBe('Three-black-key groups')
+    unmount()
+
+    act(() => {
+      globalThis.location.hash =
+        '#/piano-foundations/keyboard-layout/keyboard-navigation/recognizing-octaves'
+    })
+    await at('#/piano-foundations/keyboard-layout/keyboard-navigation/recognizing-octaves')
+    render(<NextLessonButton />)
+    expect(screen.queryByRole('button', { name: 'Next lesson' })).toBeNull()
   })
 
   it('opens the list from the bar, as a sheet from the left, and puts it away when one is picked', async () => {
@@ -1190,7 +1198,6 @@ describe('the categories outlined after it', () => {
   it('keeps apart two lessons of the same name under different topics', async () => {
     await open('#/music-notation-and-reading/musical-staff/bass-clef/line-notes')
     expect(lessonUp()).toBe('Line notes')
-    expect(document.querySelector('.lesson-card__where')!.textContent).toMatch(/^Bass clef · /)
     openList()
     const current = document.querySelector('[aria-current="step"]')!
     expect(current.closest('section')!.querySelector('h3')!.textContent).toBe('Bass clef')

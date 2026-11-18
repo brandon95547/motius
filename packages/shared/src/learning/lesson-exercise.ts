@@ -82,6 +82,7 @@ function twoBlackKeyGroups(range: NoteRange): Exercise {
       perStep: 2,
     })),
     defaultBpm: 60,
+    stepsAre: 'groups',
   }
 }
 

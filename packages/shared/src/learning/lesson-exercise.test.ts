@@ -52,6 +52,8 @@ describe('two-black-key groups', () => {
   it('is in no key: Explore lights the groups and marks no home note', () => {
     expect(exercise.pitchClasses).toEqual([1, 3])
     expect(exercise.rootPitchClass).toBeNull()
+    // And a run of it is counted in groups, not notes.
+    expect(exercise.stepsAre).toBe('groups')
   })
 
   it('takes both keys of a group to move on, and counts a three-black-key group as a mistake', () => {

@@ -24,7 +24,7 @@ import { useLearningStore } from '@/state/learning-store'
 import { usePanelStore } from '@/state/panel-store'
 import { usePageStore, usePageSync } from '@/state/page-store'
 import { Dashboard } from '@/features/areas/Dashboard'
-import { LessonCard, LessonsDrawer } from '@/features/areas/Lessons'
+import { LessonIntro, LessonsDrawer, LessonSoon } from '@/features/areas/Lessons'
 import { BottomNav } from '@/components/BottomNav'
 import { preloadSoundEffects } from '@/audio/sound-effects'
 
@@ -77,7 +77,7 @@ function Shell() {
     staleTime: Infinity,
   })
 
-  const instruments = catalogue.data?.items ?? []
+  const instruments = React.useMemo(() => catalogue.data?.items ?? [], [catalogue.data])
 
   const select = React.useCallback(
     (instrument: Instrument) => {
@@ -148,7 +148,7 @@ function Shell() {
             <>
               {page === 'lesson' ? (
                 <Stage>
-                  <LessonCard />
+                  <LessonSoon />
                 </Stage>
               ) : (
                 <Stage />
@@ -183,7 +183,12 @@ function Shell() {
         )
       )}
       <FundamentalsDrawer open={panel === 'fundamentals'} onClose={closePanel} />
-      {page === 'lesson' && <LessonsDrawer />}
+      {page === 'lesson' && (
+        <>
+          <LessonsDrawer />
+          <LessonIntro />
+        </>
+      )}
       <DeviceSettingsDrawer open={panel === 'devices'} onClose={closePanel} />
       <SongPicker open={panel === 'library'} onClose={closePanel} />
       <RecordingOverlay />
