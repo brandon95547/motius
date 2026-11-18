@@ -43,6 +43,9 @@ describe('the fingering exercises', () => {
     }
   })
 
+  // Every drill in every key, hand and system: about a thousand exercises. A
+  // few seconds alone, and more on a machine busy with other work, so it is
+  // given longer than the default five before it counts as stuck.
   it('builds every exercise in every key, for every hand it takes, in whole bars', () => {
     for (const drill of FINGERING_DRILLS)
       for (const mode of ['major', 'minor'] as const)
@@ -68,7 +71,7 @@ describe('the fingering exercises', () => {
               const beats = exercise.steps.reduce((sum, step) => sum + stepBeats(step), 0)
               expect(Math.abs(beats / 4 - Math.round(beats / 4)), where).toBeLessThan(1e-6)
             }
-  })
+  }, 30_000)
 
   it('puts five fingers on five keys, the left hand’s the other way up', () => {
     const right = build('five-finger')
