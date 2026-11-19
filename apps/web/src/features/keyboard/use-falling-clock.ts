@@ -83,6 +83,7 @@ export function useFallingClock(
   const goTo = React.useCallback(
     (beat: number) => {
       const step = stepAt(beat)
+      if (useLearningStore.getState().session.status !== 'running') moved.current = true
       useLearningStore.getState().seekStep(step)
       useFallingStore.getState().clearPlayed()
       counted.current = step
@@ -92,16 +93,26 @@ export function useFallingClock(
     [stepAt, starts, runFrom],
   )
 
-  // A run begins: from the start, or from wherever the music was left.
+  // A run begins — Start, or Again after one ended: from wherever the music
+  // was left before the first, from the top (or the loop's start) after one.
+  // Not when the run itself was moved (a loop going round): that placed itself.
   const previous = React.useRef(status)
+  const moved = React.useRef(false)
   React.useEffect(() => {
-    const begun = previous.current === 'idle' && status === 'running'
+    const before = previous.current
     previous.current = status
-    if (status === 'idle') useFallingStore.getState().setPaused(false)
+    const begun = before !== 'running' && status === 'running' && !moved.current
+    moved.current = false
+    if (status !== 'running') useFallingStore.getState().setPaused(false)
     if (!begun || !starts) return
+    useFallingStore.getState().setPaused(false)
     useFallingStore.getState().clearPlayed()
     const practice = mode === 'practice'
-    const step = stepAt(Math.max(0, fallingClock.now + (practice ? LEAD_IN : 0)))
+    const from =
+      before === 'idle'
+        ? fallingClock.now + (practice ? LEAD_IN : 0)
+        : (useFallingStore.getState().loop?.from ?? 0)
+    const step = stepAt(Math.max(0, from))
     if (step > 0) useLearningStore.getState().seekStep(step)
     counted.current = step
     runFrom(practice ? starts[step]! - LEAD_IN : starts[step]!)
