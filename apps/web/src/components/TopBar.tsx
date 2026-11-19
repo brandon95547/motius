@@ -32,7 +32,7 @@ import { BACKDROPS, useBackdropStore } from '@/state/backdrop-store'
 import { COLOR_THEMES, useThemeStore } from '@/state/theme-store'
 import { useViewStore } from '@/state/view-store'
 import { findCategory, pagesUnder } from '@/features/areas/areas'
-import { LessonsButton } from '@/features/areas/Lessons'
+import { LessonAboutButton, LessonsButton } from '@/features/areas/Lessons'
 import { OptionsButton } from '@/components/OptionsDrawer'
 import { LastTakeButton, RecordButton } from '@/features/recording/RecordControls'
 import {
@@ -77,10 +77,24 @@ export function TopBar() {
   const playable = useLearningStore((state) => page === 'lesson' && state.exercise !== null)
 
   return (
-    <header className="top-bar">
+    // A click on the bar's controls leaves focus where it was. They drive what
+    // is playing, and the keys that do it too — Space to pause, the computer
+    // keyboard as a piano — must keep going to the music after one is clicked,
+    // not land on it (and draw its focus ring when Space is next pressed). Tab
+    // still reaches every control, and Space and Enter press the one it is on.
+    // A field is the exception: clicking into the tempo is to type in it.
+    <header
+      className="top-bar"
+      onMouseDown={(event) => {
+        const target = event.target as Element
+        if (target.closest('button, [role="radio"], [role="tab"]') && !target.closest('input'))
+          event.preventDefault()
+      }}
+    >
       <div className="top-bar__row">
         <Brand keep={area === null} deep={page === 'category' || page === 'lesson'} />
         {page === 'lesson' && <LessonsButton />}
+        {page === 'lesson' && <LessonAboutButton />}
         {area === null && <PageTitle />}
         {area && <OptionsButton />}
         {area === 'songs' && <NowPlaying />}

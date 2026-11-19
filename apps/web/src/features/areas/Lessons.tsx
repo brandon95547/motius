@@ -1,6 +1,8 @@
 import * as React from 'react'
-import { ArrowRight, ListTree } from 'lucide-react'
+import { ArrowRight, Info, ListTree } from 'lucide-react'
+import { BarButton } from '@/ui/BarButton'
 import { Button } from '@/ui/Button'
+import { Checkbox } from '@/ui/Controls'
 import { Dialog } from '@/ui/Dialog'
 import { Drawer } from '@/ui/Drawer'
 import { useLearningStore } from '@/state/learning-store'
@@ -149,11 +151,45 @@ export function LessonsDrawer() {
 }
 
 /**
+ * The lessons whose introduction the player has said not to show again, by
+ * address, kept on this device.
+ */
+const HIDDEN_INTROS_KEY = 'motius.lesson-intros-hidden'
+
+function hiddenIntros(): string[] {
+  try {
+    const stored = JSON.parse(globalThis.localStorage?.getItem(HIDDEN_INTROS_KEY) ?? '[]')
+    return Array.isArray(stored) ? stored.filter((entry) => typeof entry === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+const introHidden = (key: string) => hiddenIntros().includes(key)
+
+/** Keeps the player's answer to Show next time for one lesson. */
+function showIntroNextTime(key: string, show: boolean) {
+  const others = hiddenIntros().filter((entry) => entry !== key)
+  try {
+    globalThis.localStorage?.setItem(
+      HIDDEN_INTROS_KEY,
+      JSON.stringify(show ? others : [...others, key]),
+    )
+  } catch {
+    // Storage off: it shows again next time, which is what the box says by default.
+  }
+}
+
+/**
  * A written lesson's introduction: what it asks, as a teacher would say it
  * before the student starts. The app's own dialog, in the middle of the
  * screen. It goes when it is closed or a run starts — from it or from the bar —
  * and stays gone for that lesson: from then on the staff and the keys are the
- * player's. A lesson not written yet has nothing to say, and is a tag in the
+ * player's. "Show next time", ticked unless the player unticks it, brings it
+ * back on the next visit; unticked, that lesson opens straight on the stage
+ * from then on, on this device. "About this lesson" on the bar opens it again
+ * whenever it is wanted, its box as the player left it, so ticking it again
+ * turns the introduction back on. A lesson not written yet has nothing to say, and is a tag in the
  * corner of the stage that says so.
  *
  * Which lesson is next is not asked here: the list in the sheet is the way to
@@ -163,19 +199,33 @@ export function LessonIntro() {
   const here = useHere()
   const running = useLearningStore((state) => state.session.status !== 'idle')
   const [closed, setClosed] = React.useState<string | null>(null)
-  const key = here?.lessons[here.index]?.path.join('/')
+  const [showNext, setShowNext] = React.useState(true)
+  const asked = usePanelStore((state) => state.panel === 'lesson')
+  // The lesson's whole address: its category, then the way down to it.
+  const path = here?.lessons[here.index]?.path
+  const key = here && path ? [here.category.id, ...path].join('/') : undefined
   React.useEffect(() => {
     if (running && key) setClosed(key)
   }, [running, key])
+  // The box says what the player last said for this lesson: ticked, unless
+  // they unticked it.
+  React.useEffect(() => {
+    if (key) setShowNext(!introHidden(key))
+  }, [key, asked])
   if (!here || !key) return null
   const lesson = here.lessons[here.index]!
-
   if (!lesson.lesson.about) return null
+  const open = asked || (closed !== key && !introHidden(key))
 
-  const close = () => setClosed(key)
+  const close = () => {
+    showIntroNextTime(key, showNext)
+    setClosed(key)
+    if (usePanelStore.getState().panel === 'lesson') panelActions.close()
+  }
   // Explore has nothing to start: the lesson begins in Learn, as a teacher
   // would begin it, a step at a time.
   const start = () => {
+    close()
     const learning = useLearningStore.getState()
     if (learning.mode === 'explore') learning.setMode('learn')
     useLearningStore.getState().start()
@@ -184,21 +234,39 @@ export function LessonIntro() {
 
   return (
     <Dialog
-      open={closed !== key}
+      open={open}
       onClose={close}
       title={lesson.lesson.label}
       description={`${where} · ${here.index + 1} of ${here.lessons.length}`}
       footer={
-        <>
-          <Button variant="outlined" onClick={close}>
-            Not now
-          </Button>
-          <Button onClick={start}>Start</Button>
-        </>
+        <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-3">
+          <Checkbox label="Show next time" checked={showNext} onChange={setShowNext} />
+          <div className="flex items-center gap-2.5 coarse:gap-3">
+            {/* Read again during a run: nothing to start, only to go back to. */}
+            <Button variant={running ? 'filled' : 'outlined'} onClick={close}>
+              {running ? 'Close' : 'Not now'}
+            </Button>
+            {!running && <Button onClick={start}>Start</Button>}
+          </div>
+        </div>
       }
     >
       <p className="text-body text-[var(--ds-fg-secondary)]">{lesson.lesson.about}</p>
     </Dialog>
+  )
+}
+
+/** The bar's way back to a written lesson's introduction, at any time. */
+export function LessonAboutButton() {
+  const here = useHere()
+  if (!here?.lessons[here.index]?.lesson.about) return null
+  return (
+    <BarButton
+      look="icon"
+      label="About this lesson"
+      icon={<Info size={18} aria-hidden />}
+      onClick={() => panelActions.open('lesson')}
+    />
   )
 }
 

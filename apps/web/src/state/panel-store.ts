@@ -29,6 +29,8 @@ export type Panel =
   | 'fundamentals'
   /** A section's lessons, from the left of the bar on its stage. */
   | 'lessons'
+  /** A written lesson's introduction, asked for again from the bar. */
+  | 'lesson'
 
 interface PanelState {
   panel: Panel | null

@@ -1014,6 +1014,38 @@ describe('Piano Foundations', () => {
     expect(intro()).toBeNull()
   })
 
+  it('shows a lesson’s introduction next time unless Show next time is unticked', async () => {
+    globalThis.localStorage.removeItem('motius.lesson-intros-hidden')
+    await open('#/piano-foundations/keyboard-layout')
+    const box = within(intro()!).getByRole('checkbox', { name: 'Show next time' })
+    expect(box).toHaveProperty('checked', true)
+    // Closed with the box ticked: back on the next visit.
+    fireEvent.click(within(intro()!).getByRole('button', { name: 'Not now' }))
+    cleanup()
+    await open('#/piano-foundations/keyboard-layout')
+    expect(intro()).not.toBeNull()
+
+    // Unticked, then closed: the lesson opens straight on the stage from then on.
+    fireEvent.click(within(intro()!).getByRole('checkbox', { name: 'Show next time' }))
+    fireEvent.click(within(intro()!).getByRole('button', { name: 'Not now' }))
+    cleanup()
+    await open('#/piano-foundations/keyboard-layout')
+    expect(intro()).toBeNull()
+
+    // About this lesson on the bar opens it again, the box as it was left;
+    // ticked again, the introduction is back on the next visit.
+    fireEvent.click(screen.getByRole('button', { name: 'About this lesson' }))
+    const again = within(intro()!).getByRole('checkbox', { name: 'Show next time' })
+    expect(again).toHaveProperty('checked', false)
+    fireEvent.click(again)
+    fireEvent.click(within(intro()!).getByRole('button', { name: 'Not now' }))
+    expect(intro()).toBeNull()
+    cleanup()
+    await open('#/piano-foundations/keyboard-layout')
+    expect(intro()).not.toBeNull()
+    globalThis.localStorage.removeItem('motius.lesson-intros-hidden')
+  })
+
   it('goes on to the next lesson from the end of a run, and offers none after the last', async () => {
     await open('#/piano-foundations/keyboard-layout/white-and-black-keys/two-black-key-groups')
     const { unmount } = render(<NextLessonButton />)
@@ -1320,5 +1352,17 @@ describe('the menu', () => {
     await at('#/piano-foundations/keyboard-layout')
     expect(screen.getByRole('button', { name: 'Above the keys: falling notes' })).toBeDefined()
     act(() => useViewStore.getState().setStageView('staff'))
+  })
+
+  it('takes no focus from a click on the bar’s controls, but lets the tempo field be typed in', async () => {
+    render(<Pages />)
+    act(() => pageActions.openArea('scales'))
+    await at('#/scales')
+    // A mouse-down left alone would move focus: refused, it stays with the music.
+    expect(fireEvent.mouseDown(screen.getByRole('button', { name: 'Start' }))).toBe(false)
+    expect(fireEvent.mouseDown(screen.getByRole('radio', { name: /Practice/ }))).toBe(false)
+    expect(fireEvent.mouseDown(screen.getByRole('button', { name: 'Settings' }))).toBe(false)
+    const tempo = document.querySelector<HTMLInputElement>('.top-bar input')
+    if (tempo) expect(fireEvent.mouseDown(tempo)).toBe(true)
   })
 })

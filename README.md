@@ -51,7 +51,9 @@ its name.
 
 A written lesson opens with its introduction in a dialog — what it asks, as a
 teacher would say it, with Start — which goes when it is closed or a run
-starts. A run's
+starts. Unticking "Show next time" opens that lesson straight on the stage
+from then on; the bar's About this lesson (ⓘ) opens the introduction again at
+any time, and ticking the box there turns it back on. A run's
 end offers Again and Next lesson. A lesson not written yet has no introduction,
 only a Coming soon tag in the stage's corner.
 
@@ -122,10 +124,13 @@ dashboard, those pages and stages and the bar along the bottom are all drawn.
   - A note pressed right lights its bar and its key in the hand's color while
     held, each key of a chord as it goes down, with a white glow on the
     keyboard's top edge above it; a played step flashes.
-  - **Tap the notes or press Space** to pause and go on; Practice goes on with
-    a two-beat count-in. **Drag or scroll** them to move through the music
-    (a run is paused, and goes on from the step it is left at). While still,
-    **Loop from here / to here** loops a stretch.
+  - **Tap the notes, press Space, or use the bar's Pause** to pause and go on
+    (during a run the bar's button is Pause / Go on, with Back to the start
+    beside it); the music goes on from exactly where it stood. No control on
+    the bar takes focus from a click, so Space and the keys stay with the music.
+    **Drag or scroll** them to move through the music (a run is paused, and
+    goes on from the step it is left at). While still, **Loop from here / to
+    here** loops a stretch.
   - Every exercise and lesson has them; songs keep the staff for now.
 
 ### Learning a scale
