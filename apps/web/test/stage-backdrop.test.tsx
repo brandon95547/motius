@@ -8,7 +8,8 @@ import { BACKDROPS, useBackdropStore } from '@/state/backdrop-store'
  *
  * What is pinned is what makes it a backdrop and not a video player: it is not
  * there at all until asked for, it can never make a sound or take a click or a
- * tab stop, and it holds still for someone who has asked for less motion.
+ * tab stop. And that once chosen it plays, Reduce Motion or not: choosing a
+ * film from a menu of films is asking for it to move.
  */
 
 const film = () => document.querySelector<HTMLVideoElement>('video.stage__backdrop')
@@ -62,14 +63,14 @@ describe('the background video', () => {
     expect(play).toHaveBeenCalled()
   })
 
-  it('holds still for someone who has asked for less motion', () => {
+  it('plays once chosen even with Reduce Motion on: the choice is the asking', () => {
     reducedMotion(true)
     useBackdropStore.getState().setBackdrop('fireplace')
     render(<StageBackdrop />)
 
     expect(film()).not.toBeNull()
-    expect(play).not.toHaveBeenCalled()
-    expect(pause).toHaveBeenCalled()
+    expect(play).toHaveBeenCalled()
+    expect(pause).not.toHaveBeenCalled()
   })
 
   it('goes when it is turned off, and is remembered when it is on', () => {

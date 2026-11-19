@@ -8,8 +8,10 @@ import { backdropUrl, useBackdropStore } from '@/state/backdrop-store'
  * a silent loop under everything on the stage, which no pointer and no screen
  * reader ever meets.
  *
- * Someone who has asked their system for less motion gets the picture and not
- * the movement: the film is held on its first frame.
+ * It plays whatever the system's motion setting: nothing starts it but the
+ * player choosing it, by name, from a menu that is only films — that choice is
+ * the consent Reduce Motion is there to ask for. It is faint, slow and silent,
+ * and None takes it away.
  */
 export function StageBackdrop() {
   const backdrop = useBackdropStore((state) => state.backdrop)
@@ -21,9 +23,9 @@ export function StageBackdrop() {
     // Set here as well as in the markup: a film that is not muted when it is
     // asked to play is one the browser will not start on its own.
     video.muted = true
-    const still = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    if (still) video.pause()
-    else void video.play()?.catch(() => {})
+    // A browser that refuses to start it (a power-saving mode, say) leaves it
+    // on its first frame, which is still the picture that was asked for.
+    void video.play()?.catch(() => {})
   }, [backdrop])
 
   if (backdrop === 'none') return null
