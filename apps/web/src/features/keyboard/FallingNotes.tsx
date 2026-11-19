@@ -147,13 +147,15 @@ export function FallingNotes() {
     settleTimer.current = globalThis.setTimeout(clock.settle, 200)
   }
 
-  if (!exercise || !timeline) return null
-
+  // With nothing written to fall — free play, a lesson not written yet — the
+  // field stays up all the same: the player chose falling notes, and the lanes
+  // and the line at the keys still answer every key played.
+  const notes = timeline?.notes ?? []
   const labelOf = (note: { note: number; finger?: number }) =>
     keyLabels === 'notes'
-      ? exercise.pitchNames[pitchClass(note.note)]
+      ? exercise?.pitchNames[pitchClass(note.note)]
       : keyLabels === 'degrees'
-        ? exercise.pitchDegrees?.[pitchClass(note.note)]
+        ? exercise?.pitchDegrees?.[pitchClass(note.note)]
         : keyLabels === 'fingers'
           ? note.finger
           : undefined
@@ -161,7 +163,7 @@ export function FallingNotes() {
   const missed = new Set(session.missedSteps)
   // How each step played in Practice went, against its beat.
   const timings = new Map<number, Timing>()
-  if (mode === 'practice')
+  if (mode === 'practice' && timeline)
     for (const [step, beat] of Object.entries(playedAt)) {
       const due = timeline.stepStarts[Number(step)] ?? 0
       timings.set(Number(step), timingOf(beat * beatMs, due * beatMs))
@@ -171,7 +173,12 @@ export function FallingNotes() {
   const waitingOn = mode === 'learn' && running ? session.stepIndex : null
   // Keys pressed when they were due, and still held.
   const lit = (note: number, step: number) => held[note] !== undefined && hits[note]?.step === step
-  const glowing = Object.entries(hits).filter(([note]) => held[Number(note)] !== undefined)
+  // With music to play, the keys played right; in free play, every key held.
+  const glowing: [string, { step: number; hand?: 'left' | 'right' } | null][] = exercise
+    ? Object.entries(hits).filter(([note]) => held[Number(note)] !== undefined)
+    : Object.keys(held)
+        .filter((note) => held[Number(note)] !== undefined)
+        .map((note) => [note, null])
 
   return (
     <div
@@ -204,7 +211,7 @@ export function FallingNotes() {
             style={{ '--start': loop.from, '--length': loop.to - loop.from } as React.CSSProperties}
           />
         )}
-        {timeline.notes.map((note, index) => {
+        {notes.map((note, index) => {
           const key = keys.get(note.note)
           if (!key) return null
           return (
@@ -239,15 +246,16 @@ export function FallingNotes() {
         if (!key) return null
         return (
           <span
-            key={`${note}:${hit.step}`}
+            key={`${note}:${hit?.step ?? 'free'}`}
             className="falling__glow"
             aria-hidden
-            data-hand={hit.hand}
+            data-hand={hit?.hand}
+            data-free={hit === null}
             style={{ left: `${key.leftPercent}%`, width: `${key.widthPercent}%` }}
           />
         )
       })}
-      <FallingControls timeline={timeline} />
+      {timeline && <FallingControls timeline={timeline} />}
     </div>
   )
 }

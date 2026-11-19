@@ -1,6 +1,6 @@
 import * as React from 'react'
 import {
-  ArrowDownToLine,
+  AlignEndHorizontal,
   AudioWaveform,
   BookOpen,
   ChevronRight,
@@ -315,7 +315,7 @@ function StageViewMenu() {
   const view = useViewStore((state) => state.stageView)
   const setView = useViewStore((state) => state.setStageView)
   const songs = useLearningStore((state) => state.topic === 'songs')
-  const Icon = view === 'falling' ? ArrowDownToLine : Music
+  const Icon = view === 'falling' ? AlignEndHorizontal : Music
   return (
     <ActionMenu
       label={view === 'falling' ? 'Above the keys: falling notes' : 'Above the keys: staff'}
@@ -331,7 +331,7 @@ function StageViewMenu() {
         {
           id: 'falling',
           label: 'Falling notes',
-          icon: <ArrowDownToLine size={16} />,
+          icon: <AlignEndHorizontal size={16} />,
           checked: view === 'falling',
           disabled: songs,
           title: songs ? 'Songs keep the staff for now' : undefined,

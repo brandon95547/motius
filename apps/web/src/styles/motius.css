@@ -3188,6 +3188,10 @@ button.area-card:hover .area-card__go {
     animation: fade-in var(--duration-fast) var(--ease-standard);
   }
 }
+/* Free play: every key held glows, in no hand's color. */
+.falling__glow[data-free='true'] {
+  --hand: var(--c-fall-flash);
+}
 .falling-controls {
   position: absolute;
   top: 12px;

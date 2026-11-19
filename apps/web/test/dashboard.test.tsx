@@ -965,13 +965,24 @@ describe('Piano Foundations', () => {
 
     // One not written yet has no introduction, only a tag that says so, and
     // leaves the keys clear to play.
-    fireEvent.click(lesson('Three-black-key groups'))
-    await at('#/piano-foundations/keyboard-layout/white-and-black-keys/three-black-key-groups')
+    fireEvent.click(lesson('Recognizing keyboard patterns'))
+    await at(
+      '#/piano-foundations/keyboard-layout/white-and-black-keys/recognizing-keyboard-patterns',
+    )
     expect(intro()).toBeNull()
     expect(document.querySelector('.lesson-soon')!.textContent).toBe('Coming soon')
     expect(useLearningStore.getState()).toMatchObject({ lesson: null, exercise: null })
     expect(screen.queryByRole('radiogroup', { name: 'Mode' })).toBeNull()
     expect(trail()).toEqual(['Dashboard', 'Piano Foundations', 'Keyboard Layout'])
+  })
+
+  it('has Three-black-key groups written: its introduction, and its exercise on the keys', async () => {
+    globalThis.localStorage.removeItem('motius.lesson-intros-hidden')
+    await open('#/piano-foundations/keyboard-layout/white-and-black-keys/three-black-key-groups')
+    const dialog = screen.getByRole('dialog', { name: 'Three-black-key groups' })
+    expect(dialog.textContent).toContain('fingers 4, 3 and 2')
+    expect(useLearningStore.getState()).toMatchObject({ lesson: 'three-black-key-groups' })
+    expect(useLearningStore.getState().exercise!.pitchClasses).toEqual([6, 8, 10])
   })
 
   it('opens a section with no topics onto its lessons, with no chapters', async () => {

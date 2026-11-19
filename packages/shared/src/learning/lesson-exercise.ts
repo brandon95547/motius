@@ -12,7 +12,7 @@ import { DEFAULT_PLAYABLE_RANGE } from './scale-exercise.js'
  * keeps score. Each is built from the keys the player has, like the others.
  */
 
-export const LESSON_EXERCISES = ['two-black-key-groups'] as const
+export const LESSON_EXERCISES = ['two-black-key-groups', 'three-black-key-groups'] as const
 export type LessonExerciseId = (typeof LESSON_EXERCISES)[number]
 
 export interface LessonExerciseOptions {
@@ -23,63 +23,104 @@ export interface LessonExerciseOptions {
 const MIDDLE_C = 60
 
 /**
- * Every group of two black keys, from the bottom of the keyboard to the top:
- * the left hand up to middle C, then the right hand on from there.
- *
- * As the primer books teach it, before a single note has a name. The groups
- * are the landmarks the white keys are found by, so the student finds every
- * one, with fingers 2 and 3 of one hand pressed together — 3 and 2 in the left
- * hand, which is the same two fingers mirrored. Going up the keyboard is going
- * up in pitch, which is the other thing the walk teaches: low on the left,
- * high on the right, and the hand that plays each half.
+ * A group of black keys: its pitch classes, low to high, their names, and the
+ * fingers each hand takes it with — low key first.
  */
-function twoBlackKeyGroups(range: NoteRange): Exercise {
-  const groups: (readonly [number, number])[] = []
-  for (let c = Math.floor(range.low / 12) * 12; c <= range.high; c += 12) {
-    const pair = [c + 1, c + 3] as const
-    if (pair[0] >= range.low && pair[1] <= range.high) groups.push(pair)
-  }
-  const handFor = (pair: readonly [number, number]): Hand => (pair[0] < MIDDLE_C ? 'left' : 'right')
+interface BlackKeyGroup {
+  readonly id: LessonExerciseId
+  readonly title: string
+  readonly pitchClasses: readonly number[]
+  readonly names: readonly string[]
+  readonly fingers: Readonly<Record<Hand, readonly number[]>>
+}
 
-  const steps: ExerciseStep[] = groups.map((pair, index) => {
-    const hand = handFor(pair)
-    const fingers = hand === 'left' ? [3, 2] : [2, 3]
+/**
+ * Fingering guide (`~/sites/piano knowledge`): Verbalis, *Natural Fingering*,
+ * stage 1 "black keys first" (pp. 203–204), the one source that fingers these
+ * groups — LH 4-3 and 4-3-2, RH 3-4 and 2-3-4, the long fingers keeping the
+ * arm balanced toward the little-finger side; the left hand going up and the
+ * right hand coming down, each group pressed as a block. Alfred Level 1 (p. 10)
+ * likewise plays the groups as clusters, before any note has a name.
+ */
+const TWO: BlackKeyGroup = {
+  id: 'two-black-key-groups',
+  title: 'Two-black-key groups',
+  pitchClasses: [1, 3],
+  names: ['C♯', 'D♯'],
+  fingers: { left: [4, 3], right: [3, 4] },
+}
+const THREE: BlackKeyGroup = {
+  id: 'three-black-key-groups',
+  title: 'Three-black-key groups',
+  pitchClasses: [6, 8, 10],
+  names: ['F♯', 'G♯', 'A♯'],
+  fingers: { left: [4, 3, 2], right: [2, 3, 4] },
+}
+
+/**
+ * Every group of one kind on the keyboard, each pressed as a block: the left
+ * hand climbs from the bottom of the keyboard to middle C, then the right hand
+ * comes down from the top to meet it. Each hand moves only toward the middle,
+ * the way the guide has a beginner find the groups; together the two walks
+ * cover the whole keyboard, so every group is found, and the hand that plays
+ * each half of the keyboard is the one on that side.
+ */
+function blackKeyGroups(kind: BlackKeyGroup, range: NoteRange): Exercise {
+  const groups: number[][] = []
+  for (let octave = Math.floor(range.low / 12) * 12; octave <= range.high; octave += 12) {
+    const group = kind.pitchClasses.map((pc) => octave + pc)
+    if (group[0]! >= range.low && group[group.length - 1]! <= range.high) groups.push(group)
+  }
+  const handFor = (group: readonly number[]): Hand => (group[0]! < MIDDLE_C ? 'left' : 'right')
+  // Left hand going up, then right hand coming down.
+  const order = [
+    ...groups.filter((group) => handFor(group) === 'left'),
+    ...groups.filter((group) => handFor(group) === 'right').reverse(),
+  ]
+
+  const steps: ExerciseStep[] = order.map((group, index) => {
+    const hand = handFor(group)
+    const fingers = kind.fingers[hand]
     // Said once, where the hand that plays changes: on the first group of each.
-    const first = index === 0 || handFor(groups[index - 1]!) !== hand
+    const first = index === 0 || handFor(order[index - 1]!) !== hand
     const cue = first
-      ? `${hand === 'left' ? 'Left' : 'Right'} hand, fingers ${fingers.join(' and ')}`
+      ? hand === 'left'
+        ? `Left hand, fingers ${fingers.join('-')}, going up`
+        : `Right hand, fingers ${fingers.join('-')}, coming down`
       : undefined
     return {
-      id: `group-${pair[0]}`,
-      notes: pair,
+      id: `group-${group[0]}`,
+      notes: group,
       fingers: fingers.map((finger) => ({ finger, hand })),
-      label: 'C♯ + D♯',
-      noteLabels: ['C♯', 'D♯'],
+      label: kind.names.join(' + '),
+      noteLabels: kind.names,
       ...(cue && { cue }),
     }
   })
   const hands = (['left', 'right'] as const).filter((hand) =>
-    groups.some((pair) => handFor(pair) === hand),
+    groups.some((group) => handFor(group) === hand),
   )
 
   return {
-    id: 'lesson:two-black-key-groups',
+    id: `lesson:${kind.id}`,
     kind: 'exercise',
-    title: 'Two-black-key groups',
-    subtitle: 'Both hands · low to high',
+    title: kind.title,
+    subtitle: 'Left hand up · right hand down',
     steps,
-    pitchClasses: [1, 3],
+    pitchClasses: kind.pitchClasses,
     rootPitchClass: null,
-    pitchNames: { 1: 'C♯', 3: 'D♯' },
+    pitchNames: Object.fromEntries(kind.pitchClasses.map((pc, i) => [pc, kind.names[i]!])),
     notes: steps.flatMap((step) => step.notes),
     // Written with every sharp printed: the lesson is in no key.
     keyFifths: null,
     facts: [{ label: 'Groups', value: String(groups.length) }],
+    // From a published method (see above), not a scale system: `derived` is
+    // the nearest of the sources a fingering can name.
     fingerings: hands.map((hand) => ({
       hand,
-      fingers: hand === 'left' ? [3, 2] : [2, 3],
+      fingers: kind.fingers[hand],
       source: 'derived',
-      perStep: 2,
+      perStep: kind.pitchClasses.length,
     })),
     defaultBpm: 60,
     stepsAre: 'groups',
@@ -94,6 +135,8 @@ export function buildLessonExercise(
   const range = options.range ?? DEFAULT_PLAYABLE_RANGE
   switch (id) {
     case 'two-black-key-groups':
-      return twoBlackKeyGroups(range)
+      return blackKeyGroups(TWO, range)
+    case 'three-black-key-groups':
+      return blackKeyGroups(THREE, range)
   }
 }

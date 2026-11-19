@@ -33,6 +33,10 @@ Before writing any control, look in `apps/web/src/ui/`. If what you need is ther
 - `src/components/`: the app's frame (top bar, stage, settings).
 - `packages/shared/`: anything the API and the web app both need, and every exercise builder (`learning/`).
 
+## Lessons and fingering
+
+Before writing or changing a lesson, read the fingering guide and apply it: `~/sites/piano knowledge/topics/fingering-rulebook.md`, with the book notes in `by-book/` for the detail. It is kept outside this repo, which is public, because it is drawn from published books. A lesson's fingers (which hand, which finger, which keys) must match what the guide says; say in the lesson's code comment which part of the guide it follows. Scales, chords and arpeggios take their fingers from the fingering systems in `packages/shared/src/music/`, never from a lesson's own table.
+
 ## Checks
 
 Run them all before committing; CI runs the same on every push:

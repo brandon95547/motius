@@ -35,9 +35,10 @@ export function Stage({ children }: { children?: React.ReactNode }) {
   const staffView = useSongStore((state) => state.staffView)
   const scoreOpen = topic === 'songs' && song !== null
   const sheet = scoreOpen && staffView === 'sheet'
-  // Falling notes need material to fall: an exercise. Free play, and songs until
-  // they have them, keep the staff.
-  const falling = stageView === 'falling' && topic !== 'songs' && hasExercise
+  // Falling notes wherever they were chosen, with or without notes to fall:
+  // the choice holds from screen to screen. Songs keep the staff until they
+  // have them (the bar does not offer falling notes there).
+  const falling = stageView === 'falling' && topic !== 'songs'
 
   return (
     <main className="stage" aria-label="Staff">

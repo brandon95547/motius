@@ -269,9 +269,14 @@ export const CATEGORIES: readonly Category[] = [
                 label: 'Two-black-key groups',
                 exercise: 'two-black-key-groups',
                 about:
-                  'The black keys come in groups of two and three. Find every group of two, from the bottom of the keyboard to the top, and press both keys at once: the left hand with fingers 3 and 2 up to middle C, then the right hand with fingers 2 and 3. The sound climbs as you go right.',
+                  'The black keys come in groups of two and three. Find every group of two and press both keys at once. Start at the bottom with the left hand, fingers 4 and 3, and climb up to middle C. Then start at the top with the right hand, fingers 3 and 4, and come down to meet it. Low notes are on the left, high notes on the right.',
               },
-              'Three-black-key groups',
+              {
+                label: 'Three-black-key groups',
+                exercise: 'three-black-key-groups',
+                about:
+                  'Now the groups of three. Press all three keys at once. The left hand climbs from the bottom up to middle C with fingers 4, 3 and 2; then the right hand comes down from the top with fingers 2, 3 and 4. Between a group of two and a group of three there are always two white keys side by side.',
+              },
               'Recognizing keyboard patterns',
             ],
           },

@@ -1,6 +1,5 @@
 import * as React from 'react'
 import { ON_TIME_MS, stepAtBeat, type ExerciseTimeline } from '@motius/shared'
-import { useMediaQuery } from '@/lib/hooks'
 import { fallingClock, useFallingStore } from '@/state/falling-store'
 import { learningActions, useLearningStore } from '@/state/learning-store'
 
@@ -16,6 +15,11 @@ import { learningActions, useLearningStore } from '@/state/learning-store'
  *   that goes by unplayed is missed, and where each played step was played is
  *   kept, to judge it against its beat.
  * - **Hear**: it goes with the demonstration.
+ *
+ * The music moves whatever the system's motion setting: falling notes are
+ * motion by nature, and the player chose them over the staff, which is the
+ * choice Reduce Motion is there to ask for. (The small flourishes — the flash
+ * of a played note, the glow coming up — still keep to the setting.)
  *
  * Paused, it stands still, and goes on from exactly there. Dragged, it moves to
  * wherever it is let go, and the run goes on from the step there (the score
@@ -46,7 +50,6 @@ export function useFallingClock(
   const mode = useLearningStore((state) => state.mode)
   const status = useLearningStore((state) => state.session.status)
   const demoing = useLearningStore((state) => state.demoStepIndex !== null)
-  const still = useMediaQuery('(prefers-reduced-motion: reduce)')
   // Practice's clock: the beat it was at, and when.
   const origin = React.useRef({ beat: 0, ms: 0 })
   const moving = React.useRef(false)
@@ -158,7 +161,7 @@ export function useFallingClock(
       if (learning.demoStepIndex !== null) {
         const from = starts[learning.demoStepIndex] ?? 0
         const to = starts[learning.demoStepIndex + 1] ?? from
-        now = still ? from : Math.min(Math.max(now, from) + elapsed, to)
+        now = Math.min(Math.max(now, from) + elapsed, to)
       } else if (!paused && !moving.current && learning.session.status === 'running') {
         if (learning.mode === 'practice') {
           now = origin.current.beat + Math.max(0, Date.now() - origin.current.ms) / beatMs
@@ -175,7 +178,7 @@ export function useFallingClock(
           }
         } else {
           const due = starts[at] ?? 0
-          now = now >= due ? now : still ? due : Math.min(now + elapsed, due)
+          now = now >= due ? now : Math.min(now + elapsed, due)
         }
 
         // Where each step was played, on the music's clock.
@@ -200,7 +203,7 @@ export function useFallingClock(
     }
     frame = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame)
-  }, [starts, status, demoing, beatMs, still, place, goTo])
+  }, [starts, status, demoing, beatMs, place, goTo])
 
   return React.useMemo(
     () => ({

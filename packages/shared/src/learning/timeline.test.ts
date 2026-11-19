@@ -22,8 +22,8 @@ describe('an exercise laid out in time', () => {
     const groups = timelineOf(buildLessonExercise('two-black-key-groups'))
     const first = groups.notes.filter((note) => note.step === 0)
     expect(first).toEqual([
-      { step: 0, note: 37, start: 0, beats: 1, hand: 'left', finger: 3 },
-      { step: 0, note: 39, start: 0, beats: 1, hand: 'left', finger: 2 },
+      { step: 0, note: 37, start: 0, beats: 1, hand: 'left', finger: 4 },
+      { step: 0, note: 39, start: 0, beats: 1, hand: 'left', finger: 3 },
     ])
     expect(groups.stepStarts).toEqual([0, 1, 2, 3, 4, 5])
   })

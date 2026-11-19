@@ -23,8 +23,8 @@ import { sizeEverything } from './layout-size'
 // Four beats shown in a field 400 high: a hundred pixels a beat.
 sizeEverything({ width: 1200, height: 400 })
 
-// Asked for no motion, the notes step to where they are due on the next frame
-// instead of falling there over a beat: where they end up is what is pinned.
+// With the system asking for less motion — as the player's does — the notes
+// still fall: falling notes were chosen, and falling is what they are.
 const motion = globalThis.matchMedia
 beforeEach(() => {
   globalThis.matchMedia = ((query: string) => ({
@@ -93,7 +93,7 @@ describe('falling notes', () => {
     // Labeled as the keys are: the note's name by default, its finger if asked.
     expect(first.textContent).toBe('C♯')
     act(() => learning().setKeyLabels('fingers'))
-    expect(notes()[0]!.textContent).toBe('3')
+    expect(notes()[0]!.textContent).toBe('4')
     act(() => learning().setKeyLabels('notes'))
     // A beat apart, each a beat long.
     expect(notes().map((note) => note.style.getPropertyValue('--start'))).toEqual([
@@ -111,6 +111,8 @@ describe('falling notes', () => {
   })
 
   it('falls to the keys in Learn and waits there until the step is played, then falls on', async () => {
+    // Quick, so the fall from one group to the next takes a quarter of a second.
+    act(() => learning().setTargetBpm(240))
     render(<FallingNotes />)
     act(() => learning().start())
     await frame()
@@ -122,12 +124,29 @@ describe('falling notes', () => {
     // Half a group is not the group: still waiting.
     expect(track().style.transform).toBe('translateY(0px)')
     press(39)
+    // Falling, not stepping, even with Reduce Motion on: partway after a frame.
+    await frame()
+    await frame()
+    const partway = Number(/translateY\(([-\d.]+)px\)/.exec(track().style.transform)![1])
+    expect(partway).toBeGreaterThan(0)
+    expect(partway).toBeLessThan(100)
     await waitFor(() => expect(track().style.transform).toBe('translateY(100px)'))
     const now = notes().filter((note) => note.dataset.now === 'true')
     expect(now.map((note) => note.textContent)).toEqual(['C♯', 'D♯'])
     // The keys they fall to are asked for in the hand's color.
     expect(learning().annotations[49]).toMatchObject({ role: 'target', hand: 'left' })
     expect(notes().filter((note) => note.dataset.done === 'true')).toHaveLength(2)
+  })
+
+  it('stays up with nothing written to fall: the lanes, and a glow over every key held', () => {
+    act(() => learning().setLesson(null))
+    render(<FallingNotes />)
+    expect(document.querySelector('.falling')).not.toBeNull()
+    expect(document.querySelectorAll('.falling__lane').length).toBeGreaterThan(0)
+    expect(notes()).toHaveLength(0)
+    act(() => useKeyboardStore.getState().noteOn(42, 80, 'pointer'))
+    expect(document.querySelectorAll('.falling__glow[data-free="true"]')).toHaveLength(1)
+    act(() => learning().setLesson('two-black-key-groups'))
   })
 
   it('lights a note played right, and the line above its key, for as long as it is held', () => {
@@ -162,11 +181,12 @@ describe('falling notes', () => {
     await frame()
     expect(timing(0)).toBe('on-time')
 
-    // The second goes by unplayed, the third is played late.
+    // The second goes by unplayed, the third — the right hand's first, at the
+    // top of the keyboard — is played late.
     clock.mockReturnValue(6 * beatMs + 300)
     await waitFor(() => expect(learning().session.missedSteps).toEqual([1]))
-    press(61)
-    press(63)
+    press(85)
+    press(87)
     await frame()
     expect(timing(2)).toBe('late')
     const second = notes().filter((note) => note.style.getPropertyValue('--start') === '1')
@@ -270,7 +290,7 @@ describe('falling notes', () => {
     })
     for (const [low, high] of [
       [49, 51],
-      [61, 63],
+      [85, 87],
     ]) {
       press(low!)
       press(high!)

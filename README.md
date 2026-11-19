@@ -57,15 +57,18 @@ any time, and ticking the box there turns it back on. A run's
 end offers Again and Next lesson. A lesson not written yet has no introduction,
 only a Coming soon tag in the stage's corner.
 
-There are 534 lessons in the nine outlines. One is written: **Two-black-key
-groups**, taught as the primer books teach it, before any note has a name. Its
-introduction says what to do, and the bar has Explore, Learn and Practice as an area
-does: Explore lights every group of two black keys, Learn walks them from the
-bottom of the keyboard to the top — the left hand with fingers 3 and 2 up to
-middle C, then the right hand with 2 and 3, both keys pressed together — and
-Practice takes the lights away and counts a three-black-key group as a mistake.
-A written lesson names its exercise in the outline, and the exercise is built
-in `packages/shared/src/learning/lesson-exercise.ts`.
+There are 534 lessons in the nine outlines. Two are written: **Two-black-key
+groups** and **Three-black-key groups**, taught before any note has a name and
+fingered as the fingering guide has them (Verbalis, _Natural Fingering_, stage
+1): every group pressed as a block, the left hand climbing from the bottom of
+the keyboard to middle C with 4-3 (4-3-2 for three), then the right hand coming
+down from the top with 3-4 (2-3-4). Each introduction says what to do, and the
+bar has Explore, Learn and Practice as an area does: Explore lights every group,
+Learn walks them, and Practice takes the lights away and counts a key of the
+other kind of group as a mistake. A written lesson names its exercise in the
+outline, and the exercise is built in
+`packages/shared/src/learning/lesson-exercise.ts`. Lessons are written against
+the fingering guide kept outside this repo (see `CLAUDE.md`).
 
 The rest are not written yet: each says so, and the keys are free to play
 meanwhile. Each has the address it will keep —
