@@ -82,6 +82,13 @@ describe('falling notes', () => {
     expect(first.style.width).toBe(`${csharp.widthPercent}%`)
     expect(first.dataset.hand).toBe('left')
     expect(first.dataset.black).toBe('true')
+    // A lane line up from every white key's edge, stronger where an octave begins.
+    const whites = buildLayout(useViewStore.getState().window).whiteKeys
+    const lanes = [...document.querySelectorAll<HTMLElement>('.falling__lane')]
+    expect(lanes).toHaveLength(whites.length - 1)
+    expect(lanes.filter((lane) => lane.dataset.octave === 'true')).toHaveLength(
+      whites.slice(1).filter((key) => key.note % 12 === 0).length,
+    )
     // Labeled as the keys are: the note's name by default, its finger if asked.
     expect(first.textContent).toBe('C♯')
     act(() => learning().setKeyLabels('fingers'))
@@ -204,5 +211,34 @@ describe('falling notes', () => {
     }
     await waitFor(() => expect(learning().session.stepIndex).toBe(1))
     expect(document.querySelector('.falling__loop')).not.toBeNull()
+  })
+
+  it('starts again from the top on Again after a run, and after Stop and Start', async () => {
+    act(() => learning().setMode('practice'))
+    const beatMs = 60_000 / learning().targetBpm
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(0)
+    render(<FallingNotes />)
+    act(() => learning().start())
+    await frame()
+    // Let every group go by: the run ends, all missed.
+    clock.mockReturnValue(40 * beatMs)
+    await waitFor(() => expect(learning().session.status).toBe('complete'))
+
+    // Again: a fresh run from the first group, with its lead-in, nothing missed.
+    clock.mockReturnValue(50 * beatMs)
+    act(() => learning().start())
+    await frame()
+    await frame()
+    expect(learning().session).toMatchObject({ status: 'running', stepIndex: 0 })
+    expect(learning().session.missedSteps).toEqual([])
+    expect(track().style.transform).toBe('translateY(-400px)')
+
+    // Paused, stopped, started: running, not paused.
+    act(() => useFallingStore.getState().setPaused(true))
+    act(() => learning().reset())
+    act(() => learning().start())
+    await frame()
+    expect(useFallingStore.getState().paused).toBe(false)
+    expect(learning().session.missedSteps).toEqual([])
   })
 })

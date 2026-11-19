@@ -136,7 +136,8 @@
   --c-fall-left: var(--c-area-arpeggios);
   --c-fall-ink: var(--c-bar);
   --c-fall-edge: rgb(0 0 0 / 0.18);
-  --c-fall-rule: rgb(0 0 0 / 0.07);
+  --c-fall-rule: rgb(0 0 0 / 0.1); /* a lane line at each C */
+  --c-fall-lane: rgb(0 0 0 / 0.045); /* a lane line at every other white key */
   --c-fall-flash: rgb(255 255 255 / 0.85);
   --c-fall-line: rgb(0 0 0 / 0.22); /* the line the notes are played at */
   --c-fall-loop: rgb(255 255 255 / 0.22); /* the stretch being looped */
@@ -332,6 +333,12 @@
    a field, where muted text mostly lives — the Bible's stays there. */
 :root[data-color-theme='dark-concert'] {
   --c-stage: #101114;
+  /* Falling notes' rulings on a dark stage: light, not dark. */
+  --c-fall-rule: rgb(255 255 255 / 0.11);
+  --c-fall-lane: rgb(255 255 255 / 0.05);
+  --c-fall-line: rgb(255 255 255 / 0.3);
+  --c-fall-loop: rgb(255 255 255 / 0.07);
+  --c-fall-loop-edge: rgb(255 255 255 / 0.3);
   --c-paper: #22252b;
   --c-ink: #e8eaf0;
   --c-ink-line: #737a86;
@@ -3065,10 +3072,13 @@ button.area-card:hover .area-card__go {
 .falling:active {
   cursor: grabbing;
 }
-.falling__octave {
+.falling__lane {
   position: absolute;
   inset-block: 0;
   width: 1px;
+  background-color: var(--c-fall-lane);
+}
+.falling__lane[data-octave='true'] {
   background-color: var(--c-fall-rule);
 }
 .falling__track {

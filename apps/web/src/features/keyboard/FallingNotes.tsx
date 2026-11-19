@@ -149,17 +149,18 @@ export function FallingNotes() {
       onPointerCancel={onPointerUp}
       onWheel={onWheel}
     >
-      {/* An octave marker at every C, as the field's only ruling. */}
-      {layout.whiteKeys
-        .filter((key) => key.note % 12 === 0)
-        .map((key) => (
-          <span
-            key={key.note}
-            className="falling__octave"
-            aria-hidden
-            style={{ left: `${key.leftPercent}%` }}
-          />
-        ))}
+      {/* A faint lane line up from the edge of every white key, so a bar can be
+          followed down to its key; a little stronger at each C, where an
+          octave begins. */}
+      {layout.whiteKeys.slice(1).map((key) => (
+        <span
+          key={key.note}
+          className="falling__lane"
+          data-octave={key.note % 12 === 0}
+          aria-hidden
+          style={{ left: `${key.leftPercent}%` }}
+        />
+      ))}
       <div ref={trackRef} className="falling__track" aria-hidden>
         {loop && (
           <span
