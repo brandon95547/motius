@@ -26,11 +26,24 @@ import {
 export const AUTO_SPAN = 'auto'
 
 /**
- * What the stage shows above the keys: the music written out, the notes
- * falling toward the keys that play them, or nothing.
+ * What the stage shows above the keys: the music written out, or the notes
+ * falling toward the keys that play them. Chosen from the bar, and kept: on
+ * every screen, and the next time the app is opened.
  */
-export const STAGE_VIEWS = ['staff', 'falling', 'off'] as const
+export const STAGE_VIEWS = ['staff', 'falling'] as const
 export type StageView = (typeof STAGE_VIEWS)[number]
+
+const STAGE_VIEW_KEY = 'motius.stage-view'
+
+function storedStageView(): StageView {
+  try {
+    const value = globalThis.localStorage?.getItem(STAGE_VIEW_KEY)
+    return STAGE_VIEWS.find((view) => view === value) ?? 'staff'
+  } catch {
+    // Private browsing, or storage disabled: the staff, as the app first opens.
+    return 'staff'
+  }
+}
 
 interface ViewState {
   /** A span id from KEYBOARD_SPANS, or AUTO_SPAN. */
@@ -51,13 +64,20 @@ interface ViewState {
 export const useViewStore = create<ViewState>((set) => ({
   spanId: AUTO_SPAN,
   follow: true,
-  stageView: 'staff',
+  stageView: storedStageView(),
   window: windowForSpan(DEFAULT_SPAN, STANDARD_RANGES[DEFAULT_SPAN.keyCount].low),
   autoSpanLabel: DEFAULT_SPAN.label,
 
   setSpanId: (spanId) => set({ spanId }),
   setFollow: (follow) => set({ follow }),
-  setStageView: (stageView) => set({ stageView }),
+  setStageView: (stageView) => {
+    try {
+      globalThis.localStorage?.setItem(STAGE_VIEW_KEY, stageView)
+    } catch {
+      // Not kept past this visit, which is all that is lost.
+    }
+    set({ stageView })
+  },
   setWindow: (update) =>
     set((state) => ({ window: typeof update === 'function' ? update(state.window) : update })),
   shiftOctave: (octaves) => set((state) => ({ window: shiftWindow(state.window, octaves) })),

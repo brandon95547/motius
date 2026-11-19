@@ -51,7 +51,7 @@ export function Stage({ children }: { children?: React.ReactNode }) {
       </div>
 
       {falling && <FallingNotes />}
-      {stageView !== 'off' && !falling && (
+      {!falling && (
         <div className={cn('staff-panel', sheet && 'staff-panel--sheet')}>
           {/* Whatever has notes to read gets them written out: a song its
               score, a scale the scale. Only a topic with nothing written —

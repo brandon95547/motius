@@ -18,7 +18,7 @@ import { EngineChip } from '@/audio/EngineChip'
 import { InstrumentSelect } from '@/features/instruments/InstrumentSelect'
 import { KEYBOARD_SPANS, canShift } from '@/features/keyboard/keyboard-layout'
 import { useLearningStore, type KeyLabels } from '@/state/learning-store'
-import { AUTO_SPAN, useViewStore, type StageView } from '@/state/view-store'
+import { AUTO_SPAN, useViewStore } from '@/state/view-store'
 import { BACKDROPS, isBackdropChoice, useBackdropStore } from '@/state/backdrop-store'
 import { COLOR_THEMES, isColorTheme, useThemeStore } from '@/state/theme-store'
 import { useCurrentSong, useSongStore, type FingeringDensity } from '@/state/song-store'
@@ -281,9 +281,11 @@ function KeyboardSection() {
   )
 }
 
+/**
+ * How a song's score is laid out and fingered. What is above the keys — the
+ * staff or falling notes — is chosen on the bar, beside this panel's button.
+ */
 function StaffSection() {
-  const stageView = useViewStore((state) => state.stageView)
-  const setStageView = useViewStore((state) => state.setStageView)
   const topic = useLearningStore((state) => state.topic)
   const song = useCurrentSong()
   const staffView = useSongStore((state) => state.staffView)
@@ -291,59 +293,37 @@ function StaffSection() {
   const fingering = useSongStore((state) => state.fingering)
   const setFingering = useSongStore((state) => state.setFingering)
   const scoreOpen = topic === 'songs' && song !== null
+  if (!scoreOpen) return null
 
   return (
-    <Section title="Above the keys">
-      <Field
-        label="Show"
-        hint={
-          stageView === 'falling'
-            ? topic === 'songs'
-              ? 'Songs keep the staff for now; falling notes come to them next.'
-              : 'Notes fall to the keys that play them, in each hand’s color with the finger on them.'
-            : undefined
-        }
-      >
-        <SegmentedControl<StageView>
-          label="Above the keys"
-          value={stageView}
-          onChange={setStageView}
-          options={[
-            { value: 'staff', label: 'Staff' },
-            { value: 'falling', label: 'Falling notes' },
-            { value: 'off', label: 'Nothing' },
-          ]}
-        />
-      </Field>
+    <Section title="Staff">
       {/* Only where there is a score to lay out and fingering to print. A scale
           is one line of notes with its fingering on the keys. */}
-      {stageView !== 'off' && scoreOpen && (
-        <>
-          <Field label="Score layout">
-            <SegmentedControl
-              label="Score layout"
-              value={staffView}
-              onChange={setStaffView}
-              options={[
-                { value: 'sheet', label: 'Sheet' },
-                { value: 'flow', label: 'Flow' },
-              ]}
-            />
-          </Field>
-          <Field label="Fingering on the staff">
-            <SegmentedControl<FingeringDensity>
-              label="Fingering on the staff"
-              value={fingering}
-              onChange={setFingering}
-              options={[
-                { value: 'all', label: 'All' },
-                { value: 'hints', label: 'Key' },
-                { value: 'off', label: 'Off' },
-              ]}
-            />
-          </Field>
-        </>
-      )}
+      <>
+        <Field label="Score layout">
+          <SegmentedControl
+            label="Score layout"
+            value={staffView}
+            onChange={setStaffView}
+            options={[
+              { value: 'sheet', label: 'Sheet' },
+              { value: 'flow', label: 'Flow' },
+            ]}
+          />
+        </Field>
+        <Field label="Fingering on the staff">
+          <SegmentedControl<FingeringDensity>
+            label="Fingering on the staff"
+            value={fingering}
+            onChange={setFingering}
+            options={[
+              { value: 'all', label: 'All' },
+              { value: 'hints', label: 'Key' },
+              { value: 'off', label: 'Off' },
+            ]}
+          />
+        </Field>
+      </>
     </Section>
   )
 }

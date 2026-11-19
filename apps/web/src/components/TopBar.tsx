@@ -1,5 +1,6 @@
 import * as React from 'react'
 import {
+  ArrowDownToLine,
   AudioWaveform,
   BookOpen,
   ChevronRight,
@@ -9,6 +10,7 @@ import {
   Flame,
   Gauge,
   Hand,
+  Music,
   LayoutGrid,
   MoreVertical,
   Palette,
@@ -28,6 +30,7 @@ import { useRecordingStore } from '@/state/recording-store'
 import { useCurrentSong } from '@/state/song-store'
 import { BACKDROPS, useBackdropStore } from '@/state/backdrop-store'
 import { COLOR_THEMES, useThemeStore } from '@/state/theme-store'
+import { useViewStore } from '@/state/view-store'
 import { findCategory, pagesUnder } from '@/features/areas/areas'
 import { LessonsButton } from '@/features/areas/Lessons'
 import { OptionsButton } from '@/components/OptionsDrawer'
@@ -289,6 +292,42 @@ function BackdropMenu({ className }: { className?: string }) {
   )
 }
 
+/**
+ * What is above the keys: the staff, or falling notes. Beside Settings, on
+ * every screen with keys, at every width — the one place it is chosen. The
+ * icon is the choice that is up. Songs have only the staff so far.
+ */
+function StageViewMenu() {
+  const view = useViewStore((state) => state.stageView)
+  const setView = useViewStore((state) => state.setStageView)
+  const songs = useLearningStore((state) => state.topic === 'songs')
+  const Icon = view === 'falling' ? ArrowDownToLine : Music
+  return (
+    <ActionMenu
+      label={view === 'falling' ? 'Above the keys: falling notes' : 'Above the keys: staff'}
+      icon={<Icon size={18} aria-hidden />}
+      actions={[
+        {
+          id: 'staff',
+          label: 'Staff',
+          icon: <Music size={16} />,
+          checked: view === 'staff',
+          onSelect: () => setView('staff'),
+        },
+        {
+          id: 'falling',
+          label: 'Falling notes',
+          icon: <ArrowDownToLine size={16} />,
+          checked: view === 'falling',
+          disabled: songs,
+          title: songs ? 'Songs keep the staff for now' : undefined,
+          onSelect: () => setView('falling'),
+        },
+      ]}
+    />
+  )
+}
+
 function Utilities({ area }: { area: string | null }) {
   const recording = useRecordingStore((state) => state.status)
   const page = usePageStore((state) => state.page)
@@ -387,6 +426,7 @@ function Utilities({ area }: { area: string | null }) {
           <ProgressIcon size={18} aria-hidden />
         </button>
       )}
+      {(page === 'area' || page === 'lesson') && <StageViewMenu />}
       <button
         type="button"
         className="bar-icon-button bar-sm"

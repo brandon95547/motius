@@ -11,6 +11,7 @@ import { CATEGORIES, findCategory, type CategoryId, type Section } from '@/featu
 import { useLearningStore } from '@/state/learning-store'
 import { pageActions, usePageStore, usePageSync } from '@/state/page-store'
 import { usePanelStore } from '@/state/panel-store'
+import { useViewStore } from '@/state/view-store'
 
 /**
  * The dashboard and the pages under it.
@@ -1298,5 +1299,26 @@ describe('the menu', () => {
 
     fireEvent.click(menu.getByRole('menuitemradio', { name: 'Dashboard' }))
     await waitFor(() => expect(usePageStore.getState().page).toBe('dashboard'))
+  })
+
+  it('chooses what is above the keys beside Settings, on screens with keys, and keeps it', async () => {
+    render(<Pages />)
+    expect(screen.queryByRole('button', { name: /^Above the keys/ })).toBeNull()
+    act(() => pageActions.openArea('scales'))
+    await at('#/scales')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Above the keys: staff' }))
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Falling notes' }))
+    expect(useViewStore.getState().stageView).toBe('falling')
+    expect(globalThis.localStorage.getItem('motius.stage-view')).toBe('falling')
+    expect(screen.getByRole('button', { name: 'Above the keys: falling notes' })).toBeDefined()
+
+    // Still the choice on a lesson's stage.
+    act(() => {
+      globalThis.location.hash = '#/piano-foundations/keyboard-layout'
+    })
+    await at('#/piano-foundations/keyboard-layout')
+    expect(screen.getByRole('button', { name: 'Above the keys: falling notes' })).toBeDefined()
+    act(() => useViewStore.getState().setStageView('staff'))
   })
 })
