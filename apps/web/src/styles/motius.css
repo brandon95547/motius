@@ -138,6 +138,9 @@
   --c-fall-edge: rgb(0 0 0 / 0.18);
   --c-fall-rule: rgb(0 0 0 / 0.07);
   --c-fall-flash: rgb(255 255 255 / 0.85);
+  --c-fall-line: rgb(0 0 0 / 0.22); /* the line the notes are played at */
+  --c-fall-loop: rgb(255 255 255 / 0.22); /* the stretch being looped */
+  --c-fall-loop-edge: rgb(0 0 0 / 0.25);
 
   /* --- Keys: light and shade -----------------------------------------------
      The bevels and shadows that make a flat key read as a real one, and the
@@ -788,6 +791,42 @@
     inset 0 6px 0 var(--ds-accent-hover),
     inset 0 -3px 0 var(--c-key-bevel-lit),
     0 0 26px -4px var(--ds-accent-hover);
+}
+
+/* With falling notes up, the key a note is falling to is asked for in the
+   color of its hand, as the note is; and a key pressed when it was due lights
+   in that color. */
+.piano-key[data-hit],
+.piano-key[data-hand] {
+  --hand: var(--c-fall-right);
+}
+.piano-key[data-hit='left'],
+.piano-key[data-hand='left']:not([data-hit]) {
+  --hand: var(--c-fall-left);
+}
+.keybed .piano-key--white[data-role='target'][data-hand]:not([data-active='true']) {
+  background-color: var(--hand);
+  box-shadow:
+    inset 0 -4px 0 var(--c-fall-edge),
+    0 0 22px -4px var(--hand);
+}
+.keybed .piano-key--black[data-role='target'][data-hand]:not([data-active='true']) {
+  background-color: var(--hand);
+  box-shadow:
+    inset 0 -3px 0 var(--c-key-bevel-lit),
+    0 0 22px -6px var(--hand);
+}
+.keybed .piano-key--white[data-active='true'][data-hit]:not([data-role='wrong']) {
+  background-color: var(--hand);
+  box-shadow:
+    inset 0 -4px 0 var(--c-fall-edge),
+    0 0 26px -2px var(--hand);
+}
+.keybed .piano-key--black[data-active='true'][data-hit]:not([data-role='wrong']) {
+  background-color: var(--hand);
+  box-shadow:
+    inset 0 -3px 0 var(--c-key-bevel-lit),
+    0 0 26px -4px var(--hand);
 }
 
 /* A wrong note. Muted rather than alarming: it is a correction, not a fault,
@@ -3018,7 +3057,13 @@ button.area-card:hover .area-card__go {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  pointer-events: none;
+  /* Tapped to pause, dragged through the music: the field owns its gestures. */
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+.falling:active {
+  cursor: grabbing;
 }
 .falling__octave {
   position: absolute;
@@ -3032,6 +3077,7 @@ button.area-card:hover .area-card__go {
   will-change: transform;
 }
 .falling__note {
+  --hand: var(--c-fall-right);
   position: absolute;
   bottom: calc(var(--start) * var(--beat));
   display: flex;
@@ -3040,7 +3086,7 @@ button.area-card:hover .area-card__go {
   height: max(8px, calc(var(--length) * var(--beat) - 3px));
   padding-bottom: 4px;
   border-radius: var(--radius-sm);
-  background-color: var(--c-fall-right);
+  background-color: var(--hand);
   box-shadow: inset 0 0 0 1px var(--c-fall-edge);
   color: var(--c-fall-ink);
   font-size: var(--text-label);
@@ -3049,8 +3095,9 @@ button.area-card:hover .area-card__go {
   /* Fades as slowly as the hit flash, so the flash is seen at full strength. */
   transition: opacity var(--duration-slow) var(--ease-standard);
 }
-.falling__note[data-hand='left'] {
-  background-color: var(--c-fall-left);
+.falling__note[data-hand='left'],
+.falling__glow[data-hand='left'] {
+  --hand: var(--c-fall-left);
 }
 .falling__note[data-now='true'] {
   background-color: var(--c-now);
@@ -3085,6 +3132,67 @@ button.area-card:hover .area-card__go {
 .falling__note[data-missed='true'] {
   opacity: 0.35;
   box-shadow: inset 0 0 0 2px var(--ds-danger);
+}
+/* Pressed when it was due, and still held: lit, whatever else it is, until
+   the key comes up. */
+.falling__note[data-lit='true'] {
+  opacity: 1;
+  box-shadow:
+    inset 0 0 0 2px var(--c-fall-flash),
+    0 0 18px 2px var(--hand);
+}
+.falling__loop {
+  position: absolute;
+  inset-inline: 0;
+  bottom: calc(var(--start) * var(--beat));
+  height: calc(var(--length) * var(--beat));
+  border-block: 1px dashed var(--c-fall-loop-edge);
+  background-color: var(--c-fall-loop);
+}
+.falling__line {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 2px;
+  background-color: var(--c-fall-line);
+}
+/* Light where a note meets its key, on the keyboard's top edge, while a key
+   played right is held: white at the edge, in the hand's color above it,
+   fading out a little way up. */
+.falling__glow {
+  --hand: var(--c-fall-right);
+  position: absolute;
+  bottom: 0;
+  height: 56px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background-image: linear-gradient(
+    to top,
+    var(--c-fall-flash),
+    color-mix(in srgb, var(--hand) 60%, transparent) 30%,
+    transparent
+  );
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .falling__glow {
+    animation: fade-in var(--duration-fast) var(--ease-standard);
+  }
+}
+.falling-controls {
+  position: absolute;
+  top: 12px;
+  left: clamp(12px, 2.5vw, 36px);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: default;
+}
+.falling-controls__loop {
+  gap: 4px;
+  height: auto;
+  padding-block: 3px;
 }
 /* How a step went in Practice, ringed in its own color. */
 .falling__note[data-timing='on-time'] {

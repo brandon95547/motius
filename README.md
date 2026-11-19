@@ -110,12 +110,23 @@ dashboard, those pages and stages and the bar along the bottom are all drawn.
 - **Falling notes**, the other choice for above the keys (Settings ▸ Above the
   keys: Staff, Falling notes or Nothing). Each note is a bar in its key's
   column, as wide as the key, as long as it is held, in its hand's color (right
-  green, left blue) with its finger on it, reaching the keys on its beat. In
-  Learn the next notes come down to the keys and wait until they are played; in
-  Practice they fall at the tempo after a four-beat lead-in, in time with the
-  click, and each step is ringed on time or early/late (within 150 ms is on
-  time); with Hear they fall with the demonstration. Every exercise and lesson
-  has them; songs keep the staff until they do too.
+  green, left blue), labeled as the keys are (Key labels: note name, degree or
+  finger), reaching the keys on its beat. The key a note falls to is asked for
+  in its hand's color.
+  - **Learn** is wait mode: the notes fall at the tempo and stop at the keys
+    until they are played.
+  - **Practice**: they fall at the tempo after a four-beat lead-in, in time with
+    the click. Each step is ringed on time (within 150 ms) or early/late, and
+    one that goes by unplayed is missed and the run moves on.
+  - **Hear**: they fall with the demonstration.
+  - A note pressed right lights its bar and its key in the hand's color while
+    held, each key of a chord as it goes down, with a white glow on the
+    keyboard's top edge above it; a played step flashes.
+  - **Tap the notes or press Space** to pause and go on; Practice goes on with
+    a two-beat count-in. **Drag or scroll** them to move through the music
+    (a run is paused, and goes on from the step it is left at). While still,
+    **Loop from here / to here** loops a stretch.
+  - Every exercise and lesson has them; songs keep the staff for now.
 
 ### Learning a scale
 

@@ -39,6 +39,7 @@ import {
   type ScaleSpec,
   type SessionState,
   type LessonExerciseId,
+  type Hand,
 } from '@motius/shared'
 
 /**
@@ -108,12 +109,19 @@ interface Chosen extends Specs {
   lesson: LessonExerciseId | null
 }
 
+export interface Hit {
+  readonly step: number
+  readonly hand?: Hand
+}
+
 export type KeyRole = 'scale' | 'root' | 'upcoming' | 'target' | 'wrong'
 
 export interface KeyAnnotation {
   readonly role: KeyRole
   /** Recommended finger, 1-5. Never a claim about which finger was used. */
   readonly finger?: number
+  /** The hand that plays it, where the exercise says: falling notes color its key by it. */
+  readonly hand?: Hand
   /** `Thumb under` — shown only on the key it applies to, while it is current. */
   readonly cue?: string
   /** The spelled note name, e.g. `E♭`. */
@@ -202,6 +210,13 @@ interface LearningState {
    * to the topic it is on.
    */
   songAnnotations: Readonly<Record<number, KeyAnnotation>>
+  /**
+   * Keys pressed when they were right: which step they were part of and the
+   * hand that plays them. A key is lit as a hit while it is still held (the
+   * keyboard store says which are), so the falling note and its key can show
+   * the player got it — each key of a chord as it goes down.
+   */
+  hits: Readonly<Record<number, Hit>>
 
   setTopic: (topic: LearningTopic) => void
   /** Puts a lesson's exercise up, or none. A new lesson ends the run. */
@@ -229,6 +244,8 @@ interface LearningState {
   noteOn: (note: number) => void
   /** The step being waited on went by unplayed: the run moves on without it. */
   missStep: () => void
+  /** Go to a step, the score starting again from there: the music was moved. */
+  seekStep: (step: number) => void
   expireWrongNotes: () => void
 }
 
@@ -332,6 +349,7 @@ function buildAnnotations(
         role:
           ahead < 0 ? 'scale' : ahead === 0 ? 'target' : ahead <= LOOKAHEAD ? 'upcoming' : 'scale',
         finger: ahead < 0 ? undefined : step.fingers[i]?.finger,
+        hand: step.fingers[i]?.hand,
         // The finger's own cue, not the step's: with both hands on a step only
         // one of them is crossing, and the cue belongs on that hand's key.
         cue: ahead === 0 ? step.fingers[i]?.cue : undefined,
@@ -400,6 +418,7 @@ export const useLearningStore = create<LearningState>((set, get) => {
     return {
       exercise,
       session,
+      hits: {},
       demoStepIndex: null,
       annotations: buildAnnotations(exercise, mode, session),
     }
@@ -466,6 +485,7 @@ export const useLearningStore = create<LearningState>((set, get) => {
     keyLabels: 'notes',
     showStructure: false,
     songAnnotations: {},
+    hits: {},
 
     setTopic: (topic) =>
       set((state) => ({ topic, ...rebuild(topic, state, state.mode, IDLE_SESSION) })),
@@ -511,6 +531,7 @@ export const useLearningStore = create<LearningState>((set, get) => {
         )
         return {
           session,
+          hits: {},
           // Starting a run ends the demonstration: one head at a time, and from
           // here the position that matters is the player's.
           demoStepIndex: null,
@@ -521,6 +542,7 @@ export const useLearningStore = create<LearningState>((set, get) => {
     reset: () =>
       set((state) => ({
         session: IDLE_SESSION,
+        hits: {},
         demoStepIndex: null,
         annotations: buildAnnotations(state.exercise, state.mode, IDLE_SESSION, null),
       })),
@@ -577,15 +599,30 @@ export const useLearningStore = create<LearningState>((set, get) => {
     noteOn: (note) => {
       const state = get()
       if (state.session.status !== 'running') return
+      const step = state.exercise?.steps[state.session.stepIndex]
+      const index = step?.notes.indexOf(note) ?? -1
+      // Right, it is marked with its step and hand; wrong, any mark the key had
+      // from an earlier press goes, so a held wrong note never shows as right.
+      let hits = state.hits
+      if (index >= 0)
+        hits = {
+          ...hits,
+          [note]: { step: state.session.stepIndex, hand: step!.fingers[index]?.hand },
+        }
+      else if (hits[note]) {
+        hits = { ...hits }
+        delete (hits as Record<number, Hit>)[note]
+      }
       const session = sessionReducer(
         state.session,
         { type: 'noteOn', note, at: Date.now() },
         state.exercise,
       )
-      if (session === state.session) return
+      if (session === state.session && hits === state.hits) return
 
       set({
         session,
+        hits,
         annotations: buildAnnotations(state.exercise, state.mode, session, state.demoStepIndex),
         // Auto tempo moves the target only at the end of a run, and only on
         // evidence: a clean pass at or above the current target earns a nudge
@@ -594,6 +631,21 @@ export const useLearningStore = create<LearningState>((set, get) => {
         ...(session.status === 'complete' && state.autoTempo
           ? { targetBpm: nextTargetBpm(state.targetBpm, session, state.exercise) }
           : {}),
+      })
+    },
+
+    seekStep: (step) => {
+      const state = get()
+      const session = sessionReducer(
+        state.session,
+        { type: 'seek', step, at: Date.now() },
+        state.exercise,
+      )
+      if (session === state.session) return
+      set({
+        session,
+        hits: {},
+        annotations: buildAnnotations(state.exercise, state.mode, session, state.demoStepIndex),
       })
     },
 

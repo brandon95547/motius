@@ -2,6 +2,7 @@ import * as React from 'react'
 import { noteName, pitchClass } from '@motius/shared'
 import { useKeyboardStore } from '@/state/keyboard-store'
 import { useLearningStore, type KeyLabels } from '@/state/learning-store'
+import { useViewStore } from '@/state/view-store'
 import type { KeyGeometry } from './keyboard-layout'
 
 /**
@@ -52,6 +53,11 @@ export const PianoKey = React.memo(function PianoKey({
   const annotation = useLearningStore((state) =>
     state.topic === 'songs' ? state.songAnnotations[note] : state.annotations[note],
   )
+  // Pressed when it was due, and still held: lit in the color of the hand that
+  // plays it, as its falling note is. Only with falling notes up, whose colors
+  // these are.
+  const hit = useLearningStore((state) => state.hits[note])
+  const falling = useViewStore((state) => state.stageView === 'falling')
   const label = noteName(note)
   // Middle C is the one landmark every player navigates from.
   const isAnchor = note === 60
@@ -91,6 +97,8 @@ export const PianoKey = React.memo(function PianoKey({
       data-note={note}
       data-active={active ? 'true' : undefined}
       data-role={annotation?.role}
+      data-hit={active && falling && hit ? (hit.hand ?? 'right') : undefined}
+      data-hand={falling ? annotation?.hand : undefined}
       data-group={annotation?.group}
       className={black ? 'piano-key piano-key--black' : 'piano-key piano-key--white'}
       style={style}

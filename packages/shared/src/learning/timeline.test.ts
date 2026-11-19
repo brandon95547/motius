@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildLessonExercise } from './lesson-exercise.js'
 import { buildScaleExercise, DEFAULT_SCALE_SPEC } from './scale-exercise.js'
-import { timelineOf, timingOf } from './timeline.js'
+import { stepAtBeat, timelineOf, timingOf } from './timeline.js'
 
 /**
  * The timeline falling notes are drawn from: every note at its beat, as long as
@@ -26,6 +26,14 @@ describe('an exercise laid out in time', () => {
       { step: 0, note: 39, start: 0, beats: 1, hand: 'left', finger: 2 },
     ])
     expect(groups.stepStarts).toEqual([0, 1, 2, 3, 4, 5])
+  })
+
+  it('finds the step at a beat, or the next, and never past the last', () => {
+    const groups = timelineOf(buildLessonExercise('two-black-key-groups'))
+    expect(stepAtBeat(groups, -3)).toBe(0)
+    expect(stepAtBeat(groups, 2)).toBe(2)
+    expect(stepAtBeat(groups, 2.4)).toBe(3)
+    expect(stepAtBeat(groups, 99)).toBe(4)
   })
 
   it('calls a step on time within the margin, and early or late past it', () => {

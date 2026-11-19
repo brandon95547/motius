@@ -275,4 +275,20 @@ describe('selectors', () => {
     expect(state.missedSteps).toHaveLength(exercise.steps.length)
     expect(accuracy(state)).toBe(0)
   })
+
+  it('goes to a step when the music is moved, starting the score again from there', () => {
+    const state = run(
+      [
+        { type: 'noteOn', note: 0, at: 100 },
+        { type: 'miss', at: 900 },
+        { type: 'seek', step: 4, at: 2000 },
+      ],
+      started(),
+    )
+    expect(state).toMatchObject({ status: 'running', stepIndex: 4, completedSteps: 4, mistakes: 0 })
+    expect(state.missedSteps).toEqual([])
+    expect(state.startedAt).toBe(2000)
+    // A run not started has nowhere to go.
+    expect(run([{ type: 'seek', step: 4, at: 0 }]).status).toBe('idle')
+  })
 })

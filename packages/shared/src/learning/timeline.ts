@@ -54,6 +54,15 @@ export function timelineOf(exercise: Exercise): ExerciseTimeline {
   return { notes, stepStarts }
 }
 
+/** The step at a beat, or the first one after it; the last if the beat is past the end. */
+export function stepAtBeat(timeline: ExerciseTimeline, beat: number): number {
+  const { stepStarts } = timeline
+  const steps = stepStarts.length - 1
+  if (steps < 1) return 0
+  const index = stepStarts.findIndex((start) => start >= beat - 1e-6)
+  return Math.max(0, Math.min(index < 0 ? steps - 1 : index, steps - 1))
+}
+
 /** How a step was played against when it was due. */
 export type Timing = 'early' | 'on-time' | 'late'
 

@@ -1,53 +1,57 @@
 import * as React from 'react'
-import { ON_TIME_MS, timelineOf, timingOf, type Timing } from '@motius/shared'
-import { useElementSize, useMediaQuery } from '@/lib/hooks'
-import { learningActions, useLearningStore } from '@/state/learning-store'
+import { pitchClass, timelineOf, timingOf, type Timing } from '@motius/shared'
+import { useElementSize } from '@/lib/hooks'
+import { useFallingStore } from '@/state/falling-store'
+import { useKeyboardStore } from '@/state/keyboard-store'
+import { useLearningStore } from '@/state/learning-store'
 import { useViewStore } from '@/state/view-store'
+import { FallingControls } from './FallingControls'
 import { buildLayout, type KeyGeometry } from './keyboard-layout'
+import { useFallingClock } from './use-falling-clock'
 
 /**
  * The exercise as notes falling toward the keys that play them.
  *
  * Each note is a bar in its key's column, as wide as the key (a black key's
  * narrower and off-centre, as the key is), as long as the note is held, and
- * in its hand's color with the finger on it. Bars fall at a steady speed and
+ * in its hand's color with its label on it — the note's name, its degree or
+ * its finger, whichever the keys are labeled with. Bars fall at a steady speed and
  * reach the top of the keys on their beat; notes that sound together arrive
  * together. The rules every falling-notes app keeps, so a player who has used
- * one can read this one.
+ * one can read this one. How they move is `useFallingClock`'s.
  *
- * How they fall follows the mode:
- * - **Explore**: still, the first notes waiting at the keys.
- * - **Learn** (wait mode): they fall at the tempo and stop when a note reaches
- *   the keys, until it is played; then they fall on to the next.
- * - **Practice**: they fall at the tempo from Start, after a four-beat lead-in
- *   in time with the click, and wait for no one. A step played is ringed on
- *   time, or early or late; one that goes by unplayed is missed, and the run
- *   moves on without it.
- * - **Hear**: they fall with the demonstration.
+ * What the player gets back, as those apps give it:
+ * - a note pressed when it is due lights its bar, and its key in the bar's
+ *   color, for as long as it is held, each key of a chord as it goes down; and
+ *   the line at the keys glows above it;
+ * - in Practice each played step is ringed on time, or early or late, and one
+ *   that went by unplayed is marked missed.
  *
- * A step played flashes at the keys. The whole field moves as one: a single
- * transform on the track, written once a frame, so a frame costs a composite
- * and no layout, and no React render.
+ * And what the player can do to it: tap it (or press Space) to pause and go
+ * on; drag it, or scroll it, to move through the music; and loop a stretch,
+ * from the controls shown while it is still.
  */
 
 /** How many beats of music the field shows above the keys. */
 const BEATS_SHOWN = 4
-/** Practice starts this many beats before the first note reaches the keys. */
-const LEAD_IN = 4
+/** A press that moves less than this is a tap, not a drag. */
+const TAP_SLOP_PX = 6
 
 export function FallingNotes() {
   const exercise = useLearningStore((state) => state.exercise)
   const mode = useLearningStore((state) => state.mode)
   const session = useLearningStore((state) => state.session)
-  const demoing = useLearningStore((state) => state.demoStepIndex !== null)
+  const hits = useLearningStore((state) => state.hits)
   const bpm = useLearningStore((state) => state.targetBpm)
+  // What a bar says is what the keys say: one setting, Key labels, for both.
+  const keyLabels = useLearningStore((state) => state.keyLabels)
+  const held = useKeyboardStore((state) => state.active)
+  const loop = useFallingStore((state) => state.loop)
+  const paused = useFallingStore((state) => state.paused)
+  const playedAt = useFallingStore((state) => state.playedAt)
   const keyWindow = useViewStore((state) => state.window)
   const [fieldRef, size] = useElementSize<HTMLDivElement>()
   const trackRef = React.useRef<HTMLDivElement>(null)
-  // The beat at the keys right now. Kept across frames, never rendered.
-  const nowRef = React.useRef(0)
-  // Without motion the notes step to where they are due instead of falling there.
-  const still = useMediaQuery('(prefers-reduced-motion: reduce)')
 
   const layout = React.useMemo(() => buildLayout(keyWindow), [keyWindow])
   const keys = React.useMemo(() => {
@@ -59,83 +63,91 @@ export function FallingNotes() {
 
   const beatPx = size.height / BEATS_SHOWN
   const beatMs = 60_000 / Math.max(1, bpm)
-  const running = session.status === 'running'
-  const flowing = mode === 'practice' && running
-  const runStart = session.startedAt
+  const clock = useFallingClock(trackRef, timeline, beatPx, beatMs)
 
-  // Practice keeps the click's time: its first beat is the run's first.
+  // Space pauses and goes on, as it does in every player — but not from a
+  // control that Space presses, or a field it types into.
   React.useEffect(() => {
-    if (flowing && runStart !== null) learningActions.syncPulse()
-  }, [flowing, runStart])
-
-  React.useEffect(() => {
-    const track = trackRef.current
-    if (!track || !timeline) return
-    const starts = timeline.stepStarts
-    const place = (beats: number) => {
-      nowRef.current = beats
-      track.style.transform = `translateY(${beats * beatPx}px)`
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.code !== 'Space' || event.repeat) return
+      if ((event.target as Element | null)?.closest?.('button, input, select, textarea, [role]'))
+        return
+      event.preventDefault()
+      clock.togglePause()
     }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [clock])
 
-    if (!running && !demoing) {
-      // Waiting to begin: Practice with its lead-in above, so Start does not
-      // jump; a finished run where it ended.
-      if (session.status === 'idle') place(mode === 'practice' ? -LEAD_IN : 0)
-      else place(nowRef.current)
-      return
-    }
-
-    let frame = 0
-    let last = performance.now()
-    const tick = (time: number) => {
-      const elapsed = (time - last) / beatMs
-      last = time
-      const state = useLearningStore.getState()
-      const at = state.session.stepIndex
-      let now = nowRef.current
-
-      if (flowing && runStart !== null) {
-        now = (Date.now() - runStart) / beatMs - LEAD_IN
-        // Gone by: the next step is due, and a margin more, and this one is
-        // still unplayed. The run moves on without it.
-        const passed = (starts[at + 1] ?? starts[at]! + 1) + ON_TIME_MS / beatMs
-        if (state.session.status === 'running' && now > passed) state.missStep()
-      } else if (state.demoStepIndex !== null) {
-        const from = starts[state.demoStepIndex] ?? 0
-        const to = starts[state.demoStepIndex + 1] ?? from
-        now = still ? from : Math.min(Math.max(now, from) + elapsed, to)
-      } else {
-        // Wait mode: fall to the step being asked for, and stop there.
-        const due = starts[at] ?? 0
-        now = still ? due : Math.min(now + elapsed, due)
-      }
-      place(now)
-      frame = requestAnimationFrame(tick)
-    }
-    frame = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(frame)
-  }, [timeline, beatPx, beatMs, flowing, runStart, running, demoing, mode, session.status, still])
+  // A tap pauses; a drag moves through the music, the notes under the finger.
+  const press = React.useRef<{ y: number; moved: boolean } | null>(null)
+  const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (useLearningStore.getState().demoStepIndex !== null) return
+    press.current = { y: event.clientY, moved: false }
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }
+  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const at = press.current
+    if (!at || beatPx <= 0) return
+    const dy = event.clientY - at.y
+    if (!at.moved && Math.abs(dy) < TAP_SLOP_PX) return
+    at.moved = true
+    at.y = event.clientY
+    clock.moveBy(dy / beatPx)
+  }
+  const onPointerUp = () => {
+    const at = press.current
+    press.current = null
+    if (!at) return
+    if (at.moved) clock.settle()
+    else clock.togglePause()
+  }
+  // A scroll moves through the music too, settling once it stops.
+  const settleTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const onWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    if (beatPx <= 0 || useLearningStore.getState().demoStepIndex !== null) return
+    clock.moveBy(event.deltaY / beatPx)
+    globalThis.clearTimeout(settleTimer.current)
+    settleTimer.current = globalThis.setTimeout(clock.settle, 200)
+  }
 
   if (!exercise || !timeline) return null
 
+  const labelOf = (note: { note: number; finger?: number }) =>
+    keyLabels === 'notes'
+      ? exercise.pitchNames[pitchClass(note.note)]
+      : keyLabels === 'degrees'
+        ? exercise.pitchDegrees?.[pitchClass(note.note)]
+        : keyLabels === 'fingers'
+          ? note.finger
+          : undefined
+
   const missed = new Set(session.missedSteps)
-  // How each step played in Practice went: against when it reached the keys.
+  // How each step played in Practice went, against its beat.
   const timings = new Map<number, Timing>()
-  if (mode === 'practice' && runStart !== null)
-    session.stepTimes.forEach((playedAt, step) => {
-      if (missed.has(step)) return
-      const due = runStart + ((timeline.stepStarts[step] ?? 0) + LEAD_IN) * beatMs
-      timings.set(step, timingOf(playedAt, due))
-    })
+  if (mode === 'practice')
+    for (const [step, beat] of Object.entries(playedAt)) {
+      const due = timeline.stepStarts[Number(step)] ?? 0
+      timings.set(Number(step), timingOf(beat * beatMs, due * beatMs))
+    }
+  const running = session.status === 'running'
   const passed = running || session.status === 'complete' ? session.completedSteps : 0
   const waitingOn = mode === 'learn' && running ? session.stepIndex : null
+  // Keys pressed when they were due, and still held.
+  const lit = (note: number, step: number) => held[note] !== undefined && hits[note]?.step === step
+  const glowing = Object.entries(hits).filter(([note]) => held[Number(note)] !== undefined)
 
   return (
     <div
       ref={fieldRef}
       className="falling"
-      aria-hidden
+      data-paused={paused}
       style={{ '--beat': `${beatPx}px` } as React.CSSProperties}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+      onWheel={onWheel}
     >
       {/* An octave marker at every C, as the field's only ruling. */}
       {layout.whiteKeys
@@ -144,10 +156,17 @@ export function FallingNotes() {
           <span
             key={key.note}
             className="falling__octave"
+            aria-hidden
             style={{ left: `${key.leftPercent}%` }}
           />
         ))}
-      <div ref={trackRef} className="falling__track">
+      <div ref={trackRef} className="falling__track" aria-hidden>
+        {loop && (
+          <span
+            className="falling__loop"
+            style={{ '--start': loop.from, '--length': loop.to - loop.from } as React.CSSProperties}
+          />
+        )}
         {timeline.notes.map((note, index) => {
           const key = keys.get(note.note)
           if (!key) return null
@@ -160,6 +179,7 @@ export function FallingNotes() {
               data-done={note.step < passed && !missed.has(note.step)}
               data-missed={missed.has(note.step)}
               data-now={note.step === waitingOn}
+              data-lit={lit(note.note, note.step)}
               data-timing={timings.get(note.step)}
               style={
                 {
@@ -170,11 +190,27 @@ export function FallingNotes() {
                 } as React.CSSProperties
               }
             >
-              {note.finger}
+              {labelOf(note)}
             </span>
           )
         })}
       </div>
+      {/* The line the notes are played at, glowing above each key played right. */}
+      <span className="falling__line" aria-hidden />
+      {glowing.map(([note, hit]) => {
+        const key = keys.get(Number(note))
+        if (!key) return null
+        return (
+          <span
+            key={`${note}:${hit.step}`}
+            className="falling__glow"
+            aria-hidden
+            data-hand={hit.hand}
+            style={{ left: `${key.leftPercent}%`, width: `${key.widthPercent}%` }}
+          />
+        )
+      })}
+      <FallingControls timeline={timeline} />
     </div>
   )
 }

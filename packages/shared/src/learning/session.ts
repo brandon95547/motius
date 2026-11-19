@@ -72,6 +72,11 @@ export type SessionEvent =
   | { type: 'expireWrong'; before: number }
   /** The step being waited on has gone by unplayed, as the tempo moved on. */
   | { type: 'miss'; at: number }
+  /**
+   * Go to a step: the music was moved to another place (dragged through, or
+   * looped back). The score starts again from there, as a run of its own.
+   */
+  | { type: 'seek'; step: number; at: number }
 
 /**
  * How long a wrong note stays lit. Long enough to notice mid-phrase, short
@@ -95,6 +100,18 @@ export function sessionReducer(
       const kept = Object.entries(state.wrongNotes).filter(([, at]) => at >= event.before)
       if (kept.length === Object.keys(state.wrongNotes).length) return state
       return { ...state, wrongNotes: Object.fromEntries(kept.map(([n, at]) => [Number(n), at])) }
+    }
+
+    case 'seek': {
+      if (state.status === 'idle' || !exercise) return state
+      const step = Math.max(0, Math.min(event.step, exercise.steps.length - 1))
+      return {
+        ...IDLE_SESSION,
+        status: 'running',
+        stepIndex: step,
+        completedSteps: step,
+        startedAt: event.at,
+      }
     }
 
     case 'miss': {

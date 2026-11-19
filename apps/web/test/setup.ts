@@ -14,3 +14,7 @@ globalThis.matchMedia ??= ((query: string) => ({
   dispatchEvent: () => false,
   onchange: null,
 })) as unknown as typeof globalThis.matchMedia
+
+// Pointer capture: a drag keeps its element, which jsdom has no notion of.
+Element.prototype.setPointerCapture ??= () => {}
+Element.prototype.releasePointerCapture ??= () => {}
