@@ -17,16 +17,16 @@ import { learningActions, useLearningStore } from '@/state/learning-store'
  *   kept, to judge it against its beat.
  * - **Hear**: it goes with the demonstration.
  *
- * Paused, it stands still. Dragged, it moves to wherever it is let go, and the
- * run goes on from the step there (the score starting again, as from a new
- * place). Practice goes on from a pause with a count-in: the music steps back
- * two beats and comes down again, so the next note is not already at the keys.
- * A loop sends the music back to its start whenever it reaches its end.
+ * Paused, it stands still, and goes on from exactly there. Dragged, it moves to
+ * wherever it is let go, and the run goes on from the step there (the score
+ * starting again, as from a new place). A loop sends the music back to its
+ * start whenever it reaches its end, two beats before it, so its first note
+ * falls in rather than appearing at the keys.
  */
 
 /** Practice starts this many beats before the first note reaches the keys. */
 export const LEAD_IN = 4
-/** Practice goes on from a pause, a drag or a loop this many beats back. */
+/** A loop going round comes back in this many beats before its start. */
 const COUNT_IN = 2
 
 export interface FallingClock {
@@ -118,6 +118,17 @@ export function useFallingClock(
     runFrom(practice ? starts[step]! - LEAD_IN : starts[step]!)
   }, [status, mode, starts, stepAt, runFrom])
 
+  // Going on after a pause, from anywhere that paused it (a tap, Space, the
+  // bar's button): Practice's clock picks up exactly where the music stood.
+  const paused = useFallingStore((state) => state.paused)
+  const wasPaused = React.useRef(paused)
+  React.useEffect(() => {
+    const resumed = wasPaused.current && !paused
+    wasPaused.current = paused
+    const { session, mode: now } = useLearningStore.getState()
+    if (resumed && session.status === 'running' && now === 'practice') runFrom(fallingClock.now)
+  }, [paused, runFrom])
+
   // A loop that ends with the exercise: the run is complete, and goes round.
   const loop = useFallingStore((state) => state.loop)
   React.useEffect(() => {
@@ -152,9 +163,16 @@ export function useFallingClock(
         if (learning.mode === 'practice') {
           now = origin.current.beat + Math.max(0, Date.now() - origin.current.ms) / beatMs
           // Gone by: the next step is due, and a margin more, and this one is
-          // still unplayed.
-          const passed = (starts[at + 1] ?? starts[at]! + 1) + ON_TIME_MS / beatMs
-          if (now > passed) learning.missStep()
+          // still unplayed. Every step that has, at once: a frame that comes
+          // late (a busy page, a tab in the background) must not leave the run
+          // catching up a step a frame.
+          for (let step = at; ; step++) {
+            const session = useLearningStore.getState().session
+            if (session.status !== 'running' || session.stepIndex !== step) break
+            const passed = (starts[step + 1] ?? starts[step]! + 1) + ON_TIME_MS / beatMs
+            if (now <= passed) break
+            learning.missStep()
+          }
         } else {
           const due = starts[at] ?? 0
           now = now >= due ? now : still ? due : Math.min(now + elapsed, due)
@@ -209,11 +227,9 @@ export function useFallingClock(
       togglePause: () => {
         if (useLearningStore.getState().session.status !== 'running') return
         const falling = useFallingStore.getState()
-        if (falling.paused && useLearningStore.getState().mode === 'practice')
-          runFrom(fallingClock.now - COUNT_IN)
         falling.setPaused(!falling.paused)
       },
     }),
-    [place, last, stepAt, runFrom],
+    [place, last, stepAt],
   )
 }

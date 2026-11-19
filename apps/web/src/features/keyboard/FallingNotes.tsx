@@ -65,18 +65,54 @@ export function FallingNotes() {
   const beatMs = 60_000 / Math.max(1, bpm)
   const clock = useFallingClock(trackRef, timeline, beatPx, beatMs)
 
-  // Space pauses and goes on, as it does in every player — but not from a
-  // control that Space presses, or a field it types into.
+  // Space pauses and goes on during a run, as it does in every player — even
+  // with focus left on a button the mouse just pressed (Start, say, which is
+  // Stop while a run goes, and would end it). Not in a field Space types into,
+  // nor inside a menu or a dialog, nor on a control reached by the keyboard:
+  // there Space presses what it is on, as a keyboard user expects.
   React.useEffect(() => {
+    let taken = false
+    // How focus last moved: a press of the mouse or a finger, or a key (Tab,
+    // an arrow). Space is the keyboard's on a control the keyboard went to.
+    let byPointer = true
+    const onPointerDown = () => {
+      byPointer = true
+    }
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.code !== 'Space' || event.repeat) return
-      if ((event.target as Element | null)?.closest?.('button, input, select, textarea, [role]'))
+      if (event.code !== 'Space') {
+        byPointer = false
         return
+      }
+      if (event.repeat) return
+      if (useLearningStore.getState().session.status !== 'running') return
+      const target = event.target as Element | null
+      if (
+        target?.closest?.(
+          'input, select, textarea, [contenteditable], [role="dialog"], [role="menu"]',
+        )
+      )
+        return
+      if (target?.closest?.('button, [role]') && !byPointer) return
+      // Taken before the button sees it: a button presses on Space's release.
       event.preventDefault()
+      event.stopPropagation()
+      taken = true
       clock.togglePause()
     }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.code !== 'Space' || !taken) return
+      taken = false
+      event.preventDefault()
+      event.stopPropagation()
+    }
+    document.addEventListener('pointerdown', onPointerDown, true)
+    document.addEventListener('keydown', onKeyDown, true)
+    document.addEventListener('keyup', onKeyUp, true)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown, true)
+      document.removeEventListener('keydown', onKeyDown, true)
+      document.removeEventListener('keyup', onKeyUp, true)
+    }
   }, [clock])
 
   // A tap pauses; a drag moves through the music, the notes under the finger.

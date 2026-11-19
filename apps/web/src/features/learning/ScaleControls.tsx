@@ -43,10 +43,13 @@ import {
 import { cn } from '@/lib/cn'
 import { Combobox, Field, SegmentedControl, Select, Switch } from '@/ui/Controls'
 import { Divider } from '@/ui/Display'
+import { BarButton } from '@/ui/BarButton'
 import { BarTabs } from '@/ui/BarTabs'
 import { TempoField } from '@/ui/TempoField'
 import { useMidi } from '@/midi/MidiProvider'
+import { useFallingStore } from '@/state/falling-store'
 import { useLearningStore } from '@/state/learning-store'
+import { useViewStore } from '@/state/view-store'
 import { panelActions } from '@/state/panel-store'
 import { useMetronome } from '@/audio/use-metronome'
 import { playSoundEffect, stopSoundEffect } from '@/audio/sound-effects'
@@ -688,12 +691,39 @@ export function DemoButton() {
  * already yours — so there the button is off, and says why. It keeps its place
  * rather than giving it up: the mode tabs sit to its left, and a button that
  * came and went would slide them out from under the press that changed them.
+ *
+ * With falling notes the music moves, and can stand still: during a run the
+ * button is Pause and Go on, as a player's is, and going back to the start is
+ * its own button beside it.
  */
 export function StartButton() {
   const mode = useLearningStore((state) => state.mode)
   const running = useLearningStore((state) => state.session.status === 'running')
   const start = useLearningStore((state) => state.start)
   const reset = useLearningStore((state) => state.reset)
+  const playable = useLearningStore((state) => state.topic !== 'songs' && state.exercise !== null)
+  const fallingView = useViewStore((state) => state.stageView === 'falling')
+  const falling = playable && fallingView
+  const paused = useFallingStore((state) => state.paused)
+  const setPaused = useFallingStore((state) => state.setPaused)
+
+  if (falling && running)
+    return (
+      <>
+        <BarButton
+          look="icon"
+          label="Back to the start"
+          icon={<RotateCcw size={18} aria-hidden />}
+          onClick={reset}
+        />
+        <BarButton
+          look="start"
+          label={paused ? 'Go on' : 'Pause'}
+          icon={paused ? <Play size={18} aria-hidden /> : <Pause size={18} aria-hidden />}
+          onClick={() => setPaused(!paused)}
+        />
+      </>
+    )
 
   return (
     <StartStopButton
@@ -727,25 +757,19 @@ export function StartStopButton({
   unavailable?: string
 }) {
   return running ? (
-    <button
-      type="button"
-      className="bar-start bar-start--icon bar-start--stop"
-      aria-label="Stop"
-      title="Stop"
+    <BarButton
+      look="stop"
+      label="Stop"
+      icon={<RotateCcw size={18} aria-hidden />}
       onClick={onStop}
-    >
-      <RotateCcw size={18} aria-hidden />
-    </button>
+    />
   ) : (
-    <button
-      type="button"
-      className="bar-start bar-start--icon"
-      aria-label={unavailable ?? 'Start'}
-      title={unavailable ?? 'Start'}
+    <BarButton
+      look="start"
+      label={unavailable ?? 'Start'}
+      icon={<Play size={18} aria-hidden />}
       disabled={unavailable !== undefined}
       onClick={onStart}
-    >
-      <Play size={18} aria-hidden />
-    </button>
+    />
   )
 }

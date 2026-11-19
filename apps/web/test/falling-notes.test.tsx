@@ -1,6 +1,7 @@
-import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { FallingNotes } from '@/features/keyboard/FallingNotes'
+import { StartButton } from '@/features/learning/ScaleControls'
 import { buildLayout } from '@/features/keyboard/keyboard-layout'
 import { fallingClock, useFallingStore } from '@/state/falling-store'
 import { useKeyboardStore } from '@/state/keyboard-store'
@@ -183,6 +184,71 @@ describe('falling notes', () => {
     expect(useFallingStore.getState().paused).toBe(false)
   })
 
+  it('pauses on Space even with focus left on a button the mouse pressed, without pressing it', () => {
+    const stop = vi.fn()
+    render(
+      <>
+        <FallingNotes />
+        <button type="button" onClick={stop}>
+          Stop
+        </button>
+      </>,
+    )
+    act(() => learning().start())
+    const button = screen.getByRole('button', { name: 'Stop' })
+    fireEvent.pointerDown(button)
+    button.focus()
+    fireEvent.keyDown(button, { code: 'Space', key: ' ' })
+    fireEvent.keyUp(button, { code: 'Space', key: ' ' })
+    expect(useFallingStore.getState().paused).toBe(true)
+    expect(stop).not.toHaveBeenCalled()
+    expect(learning().session.status).toBe('running')
+
+    // Reached by Tab, the button is the keyboard's: Space is left to press it.
+    fireEvent.keyDown(button, { code: 'Tab', key: 'Tab' })
+    fireEvent.keyDown(button, { code: 'Space', key: ' ' })
+    expect(useFallingStore.getState().paused).toBe(true)
+  })
+
+  it('goes on from exactly where it was paused, not from the top', async () => {
+    act(() => learning().setMode('practice'))
+    const beatMs = 60_000 / learning().targetBpm
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(0)
+    const stop = vi.fn()
+    render(
+      <>
+        <FallingNotes />
+        <button type="button" onClick={stop}>
+          Stop
+        </button>
+      </>,
+    )
+    act(() => learning().start())
+    await frame()
+    // Into the run, three beats: the first two groups gone by, the third coming.
+    clock.mockReturnValue(7 * beatMs)
+    await frame()
+    const at = learning().session.stepIndex
+    const paused = fallingClock.now
+    expect(at).toBeGreaterThan(0)
+
+    const button = screen.getByRole('button', { name: 'Stop' })
+    fireEvent.pointerDown(button)
+    button.focus()
+    fireEvent.keyDown(button, { code: 'Space', key: ' ' })
+    fireEvent.keyUp(button, { code: 'Space', key: ' ' })
+    clock.mockReturnValue(30 * beatMs)
+    await frame()
+    expect(fallingClock.now).toBe(paused)
+
+    fireEvent.keyDown(button, { code: 'Space', key: ' ' })
+    fireEvent.keyUp(button, { code: 'Space', key: ' ' })
+    await frame()
+    expect(stop).not.toHaveBeenCalled()
+    expect(learning().session.stepIndex).toBe(at)
+    expect(fallingClock.now).toBeCloseTo(paused, 5)
+  })
+
   it('moves through the music when dragged, and asks for the step it is left at', () => {
     render(<FallingNotes />)
     act(() => learning().start())
@@ -240,5 +306,24 @@ describe('falling notes', () => {
     await frame()
     expect(useFallingStore.getState().paused).toBe(false)
     expect(learning().session.missedSteps).toEqual([])
+  })
+
+  it('makes the bar’s button Pause and Go on during a run, with the way back to the start beside it', () => {
+    act(() => useViewStore.getState().setStageView('falling'))
+    render(<StartButton />)
+    const start = screen.getByRole('button', { name: 'Start' })
+    fireEvent.click(start)
+    expect(learning().session.status).toBe('running')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Pause' }))
+    expect(useFallingStore.getState().paused).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Go on' }))
+    expect(useFallingStore.getState().paused).toBe(false)
+    expect(learning().session.status).toBe('running')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to the start' }))
+    expect(learning().session.status).toBe('idle')
+    expect(screen.getByRole('button', { name: 'Start' })).toBeDefined()
+    act(() => useViewStore.getState().setStageView('staff'))
   })
 })
