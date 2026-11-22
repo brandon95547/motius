@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { buildLessonExercise } from './lesson-exercise.js'
-import { buildScaleExercise, DEFAULT_SCALE_SPEC } from './scale-exercise.js'
-import { stepAtBeat, timelineOf, timingOf } from './timeline.js'
+import { buildLessonExercise } from './lesson-builders.js'
+import { buildScaleExercise } from './scale-exercise.js'
+import { buildSong, type SongNote } from '../songs/song.js'
+import { songTimeline, stepAtBeat, timelineOf, timingOf } from './timeline.js'
+import { DEFAULT_SCALE_SPEC } from './practice-defaults.js'
 
 /**
  * The timeline falling notes are drawn from: every note at its beat, as long as
@@ -41,5 +43,60 @@ describe('an exercise laid out in time', () => {
     expect(timingOf(1140, 1000)).toBe('on-time')
     expect(timingOf(800, 1000)).toBe('early')
     expect(timingOf(1200, 1000)).toBe('late')
+  })
+})
+
+describe('a song laid out in time', () => {
+  // 120 BPM: a beat is half a second.
+  const note = (
+    pitch: number,
+    startMs: number,
+    hand: 'left' | 'right',
+    finger?: number,
+  ): SongNote => ({
+    note: pitch,
+    velocity: 80,
+    startMs,
+    durationMs: 500,
+    hand,
+    role: 'keyboard',
+    ...(finger !== undefined && { finger }),
+  })
+  const notes = [note(60, 0, 'right', 1), note(48, 0, 'left', 5), note(62, 500, 'right', 2)]
+  const song = (sections?: { startMs: number; fromMs: number; toMs: number }[]) =>
+    buildSong({
+      id: 's',
+      title: 'S',
+      bpm: 120,
+      beatsPerMeasure: 4,
+      notes,
+      source: 'musicxml',
+      handsInferred: false,
+      ...(sections && { sections }),
+    })
+
+  it('puts each note at its beat with its hand and finger, a chord one step', () => {
+    const { notes: timed, stepStarts } = songTimeline(song())
+    expect(stepStarts.slice(0, 2)).toEqual([0, 1])
+    expect(timed.map((n) => [n.step, n.note, n.start, n.beats, n.hand, n.finger])).toEqual([
+      [0, 48, 0, 1, 'left', 5],
+      [0, 60, 0, 1, 'right', 1],
+      [1, 62, 1, 1, 'right', 2],
+    ])
+  })
+
+  it('plays a repeat where it is heard: the same notes again, later', () => {
+    const repeated = songTimeline(
+      song([
+        { startMs: 0, fromMs: 0, toMs: 1000 },
+        { startMs: 1000, fromMs: 0, toMs: 1000 },
+      ]),
+    )
+    expect(repeated.stepStarts.slice(0, 4)).toEqual([0, 1, 2, 3])
+    expect(repeated.notes.filter((n) => n.note === 62).map((n) => n.start)).toEqual([1, 3])
+  })
+
+  it('takes only the hand that is played', () => {
+    expect(songTimeline(song(), 'left').notes.map((n) => n.note)).toEqual([48])
   })
 })

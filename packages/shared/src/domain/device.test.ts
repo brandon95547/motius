@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { deviceConfigSchema, fingerprintDevice, DEFAULT_DEVICE_CONFIG } from './device.js'
+import { deviceConfigSchema } from './device-schemas.js'
+import { fingerprintDevice, DEFAULT_DEVICE_CONFIG } from './device.js'
 
 describe('fingerprintDevice', () => {
   it('is stable across the port-index suffix browsers append', () => {

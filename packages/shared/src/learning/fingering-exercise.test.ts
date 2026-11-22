@@ -3,14 +3,14 @@ import { isBlackKey } from '../midi/notes.js'
 import { stepBeats } from './exercise.js'
 import {
   buildFingeringExercise,
-  DEFAULT_FINGERING_DRILL_SPEC,
   FINGERING_DRILLS,
   FINGERING_DRILL_DESCRIPTIONS,
   FINGERING_DRILL_LABELS,
   fingeringDrillHands,
   type FingeringDrill,
-  type FingeringDrillSpec,
 } from './fingering-exercise.js'
+import { DEFAULT_FINGERING_DRILL_SPEC } from './practice-defaults.js'
+import type { FingeringDrillSpec } from './practice-specs.js'
 
 /**
  * The fingering exercises.

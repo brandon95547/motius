@@ -1,6 +1,6 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { collectionSchema, instrumentSchema } from '@motius/shared'
+import { instrumentSchema, instrumentsSchema } from '@motius/shared'
 import { INSTRUMENTS, DEFAULT_INSTRUMENT_ID, findInstrument } from '../data/instruments.js'
 import { AppError } from '../errors.js'
 
@@ -11,11 +11,7 @@ export const instrumentRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: {
         tags: ['instruments'],
         summary: 'The playable piano catalog',
-        response: {
-          200: collectionSchema(instrumentSchema).extend({
-            defaultInstrumentId: z.string(),
-          }),
-        },
+        response: { 200: instrumentsSchema },
       },
     },
     async () => ({ items: [...INSTRUMENTS], defaultInstrumentId: DEFAULT_INSTRUMENT_ID }),

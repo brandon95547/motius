@@ -1,5 +1,7 @@
+import { existsSync } from 'node:fs'
+import path from 'node:path'
 import { buildApp } from './app.js'
-import { loadConfig } from './config.js'
+import { APP_ROOT, loadConfig } from './config.js'
 
 /**
  * Process entry point. Everything testable lives in `buildApp`; this file owns
@@ -8,19 +10,13 @@ import { loadConfig } from './config.js'
  */
 
 /**
- * How long a graceful shutdown gets before the process leaves anyway.
- *
- * A close that never resolves is worse than an abrupt exit. The process stays
- * alive holding the listening socket, so the *next* start dies with
- * EADDRINUSE — and what the operator sees is not "shutdown is slow" but "the
- * API will not come back up", which sends them looking in entirely the wrong
- * place. In development the same thing happens every time a watcher restarts
- * the server; in production it is a container that has to be SIGKILLed.
- *
- * Five seconds is long enough for any request this API serves to finish and
- * short enough to stay under a typical orchestrator's kill grace period.
+ * The project's `.env`, at the root of the repository, where there is one
+ * (copied from `.env.example` there): one file for the API and the web app.
+ * Node's own reader, so no dependency. What the environment already sets wins,
+ * so a production server's own variables are never overridden by a stray file.
  */
-const SHUTDOWN_TIMEOUT_MS = 5_000
+const envFile = path.resolve(APP_ROOT, '..', '..', '.env')
+if (existsSync(envFile)) process.loadEnvFile(envFile)
 
 const config = loadConfig()
 const app = await buildApp(config)
@@ -31,10 +27,10 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
 
     const deadline = setTimeout(() => {
       app.log.error(
-        `close did not finish within ${SHUTDOWN_TIMEOUT_MS}ms — exiting and releasing the port`,
+        `close did not finish within ${config.shutdownTimeoutMs}ms — exiting and releasing the port`,
       )
       process.exit(1)
-    }, SHUTDOWN_TIMEOUT_MS)
+    }, config.shutdownTimeoutMs)
     // Unref'd so the timer itself never holds the process open once close wins.
     deadline.unref()
 
@@ -56,7 +52,11 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
 
 try {
   await app.listen({ port: config.port, host: config.host })
-  app.log.info(`Motius API ready — docs at http://localhost:${config.port}/docs`)
+  app.log.info(
+    config.isProduction
+      ? 'Motius API ready'
+      : `Motius API ready — docs at http://localhost:${config.port}/docs`,
+  )
 } catch (error) {
   if ((error as NodeJS.ErrnoException)?.code === 'EADDRINUSE') {
     // Worth naming outright. The usual causes are a second `npm run dev` and a

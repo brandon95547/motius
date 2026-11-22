@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Database from 'better-sqlite3'
 import type { FastifyInstance } from 'fastify'
 import { songCategoryChoiceSchema } from '@motius/shared'
@@ -78,6 +78,25 @@ describe('song categories', () => {
     expect(await changed()).toEqual([
       { songId: 'satie-gnossienne-no-1', genre: null, moods: ['dreamy'] },
     ])
+  })
+
+  it('skips a row whose moods are corrupt, says so once, and mends it on the next change', async () => {
+    const warn = vi.spyOn(app.log, 'warn')
+    app.db
+      .prepare(
+        `INSERT INTO song_categories (song_id, genre, moods, updated_at) VALUES (?, ?, ?, '2026-01-01')`,
+      )
+      .run('greensleeves', 'classical', '["dreamy"')
+    await change('pachelbel-canon-in-d', { genre: 'classical' })
+    expect(await changed()).toEqual([
+      { songId: 'pachelbel-canon-in-d', genre: 'classical', moods: null },
+    ])
+    await changed()
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(warn.mock.calls[0]![0]).toMatchObject({ table: 'song_categories', id: 'greensleeves' })
+
+    const mended = await change('greensleeves', { genre: 'folk' })
+    expect(mended.json()).toEqual({ songId: 'greensleeves', genre: 'folk', moods: null })
   })
 })
 

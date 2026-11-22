@@ -18,7 +18,7 @@ import { click as playClick } from '@/audio/click'
  * Plays a song through the same engine and the same keyboard the player uses.
  *
  * Scheduled on a timer against a wall clock rather than queued up front: the
- * tempo, the part and the loop can all change mid-phrase, and a queue built at
+ * tempo and the part can both change mid-phrase, and a queue built at
  * the start would have to be torn down and rebuilt on every one of them.
  *
  * The clock here is the performance's, not the page's. A song's notes are in
@@ -75,8 +75,9 @@ export function useSongPlayback(song: Song | null) {
   const part = useSongStore((state) => state.part)
   const tempoScale = useSongStore((state) => state.tempoScale)
   const metronome = useSongStore((state) => state.metronome)
-  const setPlaying = useSongStore((state) => state.setPlaying)
-  const seek = useSongStore((state) => state.seek)
+  const mode = useSongStore((state) => state.mode)
+  const setPlayhead = useSongStore((state) => state.setPlayhead)
+  const end = useSongStore((state) => state.end)
 
   const audioRef = React.useRef(audio)
   audioRef.current = audio
@@ -91,8 +92,8 @@ export function useSongPlayback(song: Song | null) {
 
   // Everything the tick reads goes through a ref: it runs forty times a second
   // and must not be rebuilt every time a control moves.
-  const live = React.useRef({ song, part, tempoScale, metronome, leaves, repeats })
-  live.current = { song, part, tempoScale, metronome, leaves, repeats }
+  const live = React.useRef({ song, part, tempoScale, metronome, mode, leaves, repeats })
+  live.current = { song, part, tempoScale, metronome, mode, leaves, repeats }
 
   /**
    * The keys that are down, each with the number of the strike holding it.
@@ -137,6 +138,10 @@ export function useSongPlayback(song: Song | null) {
     let originScale = live.current.tempoScale
     let cursor = originSong
     let lastBeat = -1
+    /** Where this run last put the playhead: anything else there was put by someone else. */
+    let placed = originSong
+    /** The song has ended: a look still to come before this run is torn down does nothing. */
+    let over = false
 
     /** A timer that takes itself off the list when it fires. */
     const after = (delayMs: number, run: () => void) => {
@@ -244,16 +249,28 @@ export function useSongPlayback(song: Song | null) {
         part: hands,
         tempoScale: scale,
         metronome: click,
+        mode: working,
         leaves: lets,
         repeats: struckAgain,
       } = live.current
-      if (!current) return
+      if (!current || over) return
 
       // A change of tempo starts the count again from where the song has got
       // to. Counted from the beginning at the new tempo, the playhead would
       // jump to where the song would have been had it always gone that fast —
       // forward into a burst of notes, or back into a silence.
       const wall = performance.now()
+      // Moved from outside — back to the start, a drag of the slider, Practice
+      // starting again — the run goes on from there, with nothing of the old
+      // place left sounding.
+      const stored = useSongStore.getState().positionMs
+      if (stored !== placed) {
+        silence()
+        originSong = stored
+        originWall = wall
+        cursor = stored
+        lastBeat = -1
+      }
       if (scale !== originScale) {
         originSong += (wall - originWall) * originScale
         originWall = wall
@@ -262,16 +279,19 @@ export function useSongPlayback(song: Song | null) {
       const at = originSong + (wall - originWall) * scale
 
       if (at >= playDuration(current)) {
+        over = true
         silence()
-        setPlaying(false)
-        seek(0)
+        end()
         return
       }
+      // Practice leaves the part being played to the player: only what goes
+      // with it sounds — the other instruments, the drums.
+      const practising = working === 'practice'
 
       // Everything due before the look after next, each on its own timer.
       const horizon = Math.max(cursor, at + LOOKAHEAD_MS * scale)
       for (const window of scoreWindows(current, cursor, horizon))
-        for (const note of notesBetween(current, window.fromMs, window.toMs, hands)) {
+        for (const note of notesBetween(current, window.fromMs, window.toMs, hands, practising)) {
           const delayMs = Math.max(0, (note.startMs + window.offsetMs - at) / scale)
           const promisedSound = promise(note, delayMs, scale)
           // Struck again only if the part that does it is being played.
@@ -280,7 +300,8 @@ export function useSongPlayback(song: Song | null) {
           after(delayMs, () => strike(note, scale, promisedSound, lets?.get(note), again))
         }
 
-      if (click) {
+      // Practice counts you in, click or no click: its lead-in is before the start.
+      if (click || at < 0) {
         const beat = Math.floor(at / (60000 / current.bpm))
         if (beat !== lastBeat) {
           lastBeat = beat
@@ -289,7 +310,8 @@ export function useSongPlayback(song: Song | null) {
       }
 
       cursor = horizon
-      seek(at)
+      placed = at
+      setPlayhead(at)
     }
     // Once now, so the note the song starts on is not kept waiting for the
     // first tick, and then on every tick after.
@@ -300,7 +322,7 @@ export function useSongPlayback(song: Song | null) {
       window.clearInterval(timer)
       silence()
     }
-  }, [playing, song, silence, setPlaying, seek])
+  }, [playing, song, silence, end, setPlayhead])
 
   // Dropping a hand mid-phrase must not leave that hand ringing.
   React.useEffect(() => {
@@ -318,11 +340,17 @@ export function useSongPlayback(song: Song | null) {
  * The hand filter applies to the keyboard part only. Practising the left hand
  * of a song does not mean silencing its drummer.
  */
-function notesBetween(song: Song, from: number, to: number, part: SongPart): SongNote[] {
+function notesBetween(
+  song: Song,
+  from: number,
+  to: number,
+  part: SongPart,
+  withoutKeys = false,
+): SongNote[] {
   return song.notes.filter(
     (note) =>
       note.startMs >= from &&
       note.startMs < to &&
-      (part === 'both' || note.role !== 'keyboard' || note.hand === part),
+      (note.role !== 'keyboard' || (!withoutKeys && (part === 'both' || note.hand === part))),
   )
 }

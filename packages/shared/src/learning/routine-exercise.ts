@@ -1,7 +1,6 @@
-import { z } from 'zod'
-import type { NoteRange } from '../domain/device.js'
+import type { NoteRange } from '../domain/device-schemas.js'
 import { CADENCE_VOICINGS, cadenceFingers, type CadenceChord } from '../music/cadences.js'
-import { KEY_MODE_LABELS, KEY_MODES, keyTriads, type KeyMode } from '../music/chords.js'
+import { KEY_MODE_LABELS, keyTriads, type KeyMode } from '../music/chords.js'
 import { scaleFingering, type Hand } from '../music/fingering.js'
 import type { FingeringSystemId } from '../music/fingering-system.js'
 import { accidentalFor, makePitch, normalisePitchClass, type Pitch } from '../music/pitch.js'
@@ -20,13 +19,9 @@ import type {
   ExerciseStep,
   StepFinger,
 } from './exercise.js'
-import {
-  DEFAULT_PLAYABLE_RANGE,
-  HAND_LABELS,
-  movementCue,
-  SCALE_HANDS,
-  type ScaleHands,
-} from './scale-exercise.js'
+import { HAND_LABELS, movementCue, SCALE_HANDS, type ScaleHands } from './scale-exercise.js'
+import { DEFAULT_PLAYABLE_RANGE } from './practice-defaults.js'
+import type { RoutineSpec } from './practice-specs.js'
 
 /**
  * The practice routines: ways of working a scale and its chords that are not
@@ -102,25 +97,6 @@ export function routineHands(routine: Routine): readonly ScaleHands[] {
 
 /** Whether major or minor changes anything. A triad chain is built on a note, not in a key. */
 export const routineHasMode = (routine: Routine): boolean => routine !== 'triad-chain'
-
-export const routineSpecSchema = z.object({
-  kind: z.literal('exercise'),
-  rootPitchClass: z.number().int().min(0).max(11),
-  /** Which of the key's names it is written under. See `ScaleSpec.tonic`. */
-  tonic: z.string().optional(),
-  mode: z.enum(KEY_MODES),
-  hand: z.enum(SCALE_HANDS),
-  routine: z.enum(ROUTINES),
-})
-export type RoutineSpec = z.infer<typeof routineSpecSchema>
-
-export const DEFAULT_ROUTINE_SPEC: RoutineSpec = {
-  kind: 'exercise',
-  rootPitchClass: 0,
-  mode: 'major',
-  hand: 'right',
-  routine: 'blocked',
-}
 
 export interface RoutineExerciseOptions {
   readonly fingering?: FingeringSystemId

@@ -1,15 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { isBlackKey, noteName } from '../midi/notes.js'
 import { KEY_MODES, keyChord, keyTriads } from '../music/chords.js'
-import {
-  buildArpeggioExercise,
-  buildChordExercise,
-  chordStylesFor,
-  DEFAULT_ARPEGGIO_SPEC,
-  DEFAULT_CHORD_SPEC,
-  type ArpeggioSpec,
-  type ChordSpec,
-} from './chord-exercise.js'
+import { buildArpeggioExercise, buildChordExercise, chordStylesFor } from './chord-exercise.js'
+import { DEFAULT_ARPEGGIO_SPEC, DEFAULT_CHORD_SPEC } from './practice-defaults.js'
+import type { ArpeggioSpec, ChordSpec } from './practice-specs.js'
 
 const chords = (spec: Partial<ChordSpec> = {}) =>
   buildChordExercise({ ...DEFAULT_CHORD_SPEC, ...spec })
@@ -468,7 +462,7 @@ describe('the chords of the key, as an exercise', () => {
     expect(both.steps[3]!.cue).toBeUndefined()
   })
 
-  it('lights the whole key in Explore, not one chord', () => {
+  it('lights the whole key in Listen, not one chord', () => {
     expect(key().pitchClasses).toHaveLength(7)
   })
 

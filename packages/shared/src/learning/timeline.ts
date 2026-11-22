@@ -1,4 +1,6 @@
 import type { Hand } from '../music/fingering.js'
+import { playedStepTimes } from '../songs/performance.js'
+import { songSteps, type Song } from '../songs/song.js'
 import { stepBeats, type Exercise } from './exercise.js'
 
 /**
@@ -54,6 +56,35 @@ export function timelineOf(exercise: Exercise): ExerciseTimeline {
   return { notes, stepStarts }
 }
 
+/**
+ * A song laid out the same way, so falling notes draw it as they draw an
+ * exercise: in beats of the tempo it is written at, in the order it is played
+ * (a repeat where it is heard), one step for each step Learn walks, with each
+ * note's hand and finger. Only the keyboard part the player plays: both hands,
+ * or one.
+ */
+export function songTimeline(song: Song, part: 'both' | Hand = 'both'): ExerciseTimeline {
+  const beatMs = 60_000 / song.bpm
+  const steps = songSteps(song, part)
+  const notes: TimedNote[] = []
+  const stepStarts: number[] = []
+  playedStepTimes(song, steps).forEach((played, step) => {
+    stepStarts.push(played.startMs / beatMs)
+    for (const note of steps[played.index]!.notes)
+      notes.push({
+        step,
+        note: note.note,
+        start: (note.startMs + played.offsetMs) / beatMs,
+        beats: note.durationMs / beatMs,
+        hand: note.hand,
+        ...(note.finger !== undefined && { finger: note.finger }),
+      })
+  })
+  const last = notes.reduce((end, note) => Math.max(end, note.start + note.beats), 0)
+  stepStarts.push(Math.max(last, stepStarts[stepStarts.length - 1] ?? 0))
+  return { notes, stepStarts }
+}
+
 /** The step at a beat, or the first one after it; the last if the beat is past the end. */
 export function stepAtBeat(timeline: ExerciseTimeline, beat: number): number {
   const { stepStarts } = timeline
@@ -71,6 +102,12 @@ export type Timing = 'early' | 'on-time' | 'late'
  * BPM, the margin a teacher lets pass without comment.
  */
 export const ON_TIME_MS = 150
+
+/** Practice starts this many beats before the first note is due, so it can be come in on. */
+export const LEAD_IN_BEATS = 4
+
+/** A song's Practice lead-in, in milliseconds of the song at its written tempo. */
+export const leadInMs = (song: Pick<Song, 'bpm'>) => (LEAD_IN_BEATS * 60_000) / song.bpm
 
 export function timingOf(playedAt: number, dueAt: number): Timing {
   const off = playedAt - dueAt

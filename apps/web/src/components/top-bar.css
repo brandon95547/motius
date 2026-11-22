@@ -1,0 +1,497 @@
+/* ============================================================================
+   THE PRACTICE SCREEN
+   Three bands that fill the viewport and never scroll it: the bar with every
+   setting, the stage with the music, the keys along the bottom. Everything
+   else is a panel over them.
+   ========================================================================= */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  background-color: var(--c-stage);
+}
+
+/* ---- The bar ------------------------------------------------------------- */
+.top-bar {
+  position: relative;
+  z-index: var(--z-bar);
+  flex: none;
+  background-color: var(--c-bar);
+  color: var(--c-bar-fg);
+  box-shadow: var(--shadow-bar);
+}
+.top-bar__row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 64px;
+  padding-inline: 8px;
+  min-width: 0;
+}
+@media (min-width: 40rem) {
+  .top-bar__row {
+    gap: 10px;
+    padding-inline: 16px 18px;
+  }
+}
+/* The way home: a button that looks like the name it is. */
+.top-bar__brand {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  margin-right: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+.top-bar__brand:focus-visible {
+  outline: 2px solid var(--ds-focus-ring);
+  outline-offset: 4px;
+}
+/* The mark: three keys in a ring, white on the bar. As tall as the bar's
+   controls, since the gaps between the keys close up much smaller. */
+.top-bar__logo {
+  display: block;
+  flex: none;
+  width: auto;
+  height: 44px;
+}
+.top-bar__name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+/* A dot of a theme's own color, beside its name in the palette's menu. Set
+   down and in from the corner of the mark's slot, which is cut for a 16px
+   icon, so the dot is on the label's center line. */
+.theme-swatch {
+  display: block;
+  width: 14px;
+  height: 14px;
+  margin: 3px 1px 0;
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.28);
+}
+
+/* Where you are, on the dashboard and the pages under it: the page's name, and
+   before it the pages it is under, each a way back. It is the page's heading,
+   in the bar's own voice — the size of the brand beside it, a weight lighter.
+   It gives way before anything else on the bar: the steps back fold first, and
+   then the name is cut short. */
+.top-bar__trail {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-left: 8px;
+  /* On a crowded bar the trail is cut short rather than drawn over the
+     controls beside it; the margin keeps a focused crumb's ring. */
+  overflow: clip;
+  overflow-clip-margin: 6px;
+}
+.top-bar__title {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--c-bar-fg);
+}
+.top-bar__crumb {
+  /* A step back gives way before the page's own name loses a pixel: cut
+     short, it is still a way back. */
+  flex: 0 9999 auto;
+  min-width: 2.5rem;
+  min-height: 32px;
+  overflow: hidden;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--c-bar-fg-muted);
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+.top-bar__crumb:hover {
+  color: var(--c-bar-fg);
+}
+.top-bar__crumb:focus-visible {
+  outline: 2px solid var(--ds-focus-ring);
+  outline-offset: 4px;
+  border-radius: var(--radius-sm);
+}
+.top-bar__crumb-mark {
+  flex: none;
+  color: var(--c-bar-fg-muted);
+}
+@media (pointer: coarse) {
+  .top-bar__crumb {
+    min-height: 44px;
+  }
+}
+/* The unit leads with its books, the same as the way back to it at the end of
+   a section's last lesson. Where the trail folds, the unit's name goes and the
+   books stay: the one step back that is on the bar wherever a lesson is. */
+.top-bar__crumb--unit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 24px;
+}
+.top-bar__crumb-icon {
+  flex: none;
+}
+.top-bar__crumb-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (pointer: coarse) {
+  .top-bar__crumb--unit {
+    min-width: 44px;
+  }
+}
+/* Too narrow for the whole way down, the steps furthest up go first: three
+   back, then two, then the page's own name and the step above it as the way
+   back. The widths are where the longest way
+   down there is stops fitting, measured. */
+@media (max-width: 89.999rem) {
+  .top-bar__crumb:not(.top-bar__crumb--unit, [data-up='1'], [data-up='2'], [data-up='3']),
+  .top-bar__crumb:not(.top-bar__crumb--unit, [data-up='1'], [data-up='2'], [data-up='3'])
+    + .top-bar__crumb-mark {
+    display: none;
+  }
+}
+@media (max-width: 75.999rem) {
+  .top-bar__crumb:not(.top-bar__crumb--unit, [data-up='1'], [data-up='2']),
+  .top-bar__crumb:not(.top-bar__crumb--unit, [data-up='1'], [data-up='2']) + .top-bar__crumb-mark {
+    display: none;
+  }
+}
+@media (max-width: 63.999rem) {
+  .top-bar__crumb:not(.top-bar__crumb--unit, [data-up='1']),
+  .top-bar__crumb:not(.top-bar__crumb--unit, [data-up='1']) + .top-bar__crumb-mark {
+    display: none;
+  }
+  .top-bar__crumb--unit:not([data-up='1']) .top-bar__crumb-label {
+    display: none;
+  }
+}
+/* A lesson's bar also has its playing controls in pills, so its trail gives
+   way sooner: under 100rem the unit is its books and the section the way
+   back, under 90rem the books and the lesson's name are left, and under 60rem
+   only the books: the lesson's name is in the lessons list and its dialog.
+   Measured with Recognizing keyboard patterns, among the longest names. */
+@media (max-width: 99.999rem) {
+  .top-bar__trail--lesson .top-bar__crumb-label {
+    display: none;
+  }
+}
+@media (max-width: 89.999rem) {
+  .top-bar__trail--lesson .top-bar__crumb:not(.top-bar__crumb--unit),
+  .top-bar__trail--lesson .top-bar__crumb:not(.top-bar__crumb--unit) + .top-bar__crumb-mark {
+    display: none;
+  }
+}
+@media (max-width: 59.999rem) {
+  .top-bar__trail--lesson .top-bar__title,
+  .top-bar__trail--lesson .top-bar__crumb-mark {
+    display: none;
+  }
+}
+@media (max-width: 55.999rem) {
+  .top-bar__row {
+    gap: 6px;
+  }
+}
+
+/* The song that is open, after the options button. It shrinks before anything
+   else on the bar does, and is cut short with an ellipsis when it has to. */
+.top-bar__now {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-left: 12px;
+  overflow: hidden;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--c-bar-fg);
+}
+/* "Playing", in italics: it is said about the name, and is not part of it. */
+.top-bar__now-verb,
+.top-bar__now-prompt {
+  font-weight: 500;
+  color: var(--c-bar-fg-muted);
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+/* Choose a song is a button: it opens the chooser. */
+.top-bar__now-prompt:hover {
+  color: var(--c-bar-fg);
+}
+.top-bar__now-verb {
+  /* Two spaces' worth past the one already between the words: a margin,
+     since a run of spaces in the markup collapses to one. */
+  margin-right: 0.5em;
+  font-style: italic;
+}
+/* The bar's controls in pills, one for each kind of thing: the mode, the
+   tempo, what acts on the music, and the tools. Where you are is text. A pill is a step
+   lighter than the bar with a hairline round it, and what is in it stands on
+   it without a surface of its own. */
+.bar-group {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  height: 48px;
+  padding: 4px;
+  border: 1px solid var(--c-bar-line);
+  border-radius: var(--radius-pill);
+  background-color: var(--c-bar-raised);
+}
+.bar-group .tempo-field {
+  background-color: transparent;
+}
+.bar-group--tempo .tempo-field {
+  padding-left: 10px;
+}
+/* A phone's bar has no room for the pills' edges: the groups are just their
+   buttons there, as the bar was before it had pills. */
+@media (max-width: 39.999rem) {
+  .bar-group {
+    height: auto;
+    padding: 0;
+    border: 0;
+    background-color: transparent;
+  }
+}
+/* The cap that opens a section's lessons, on the bar and in the menu: violet. */
+.lessons-icon {
+  color: var(--c-lessons);
+}
+/* The account, last on the bar: the person's picture in a circle, or their
+   initials. */
+.account-button {
+  overflow: hidden;
+}
+.account-button__picture {
+  display: block;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-pill);
+  object-fit: cover;
+}
+.account-button__initials {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-pill);
+  background-color: var(--ds-accent);
+  color: var(--ds-accent-fg);
+  font-size: var(--text-ui);
+  font-weight: 600;
+}
+.top-bar__spacer {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.top-bar__cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: inherit;
+}
+
+.bar-icon-button:focus-visible,
+.bar-options:focus-visible,
+.bar-tabs__tab:focus-visible,
+.bar-start:focus-visible {
+  outline: 2px solid var(--c-bar-fg);
+  outline-offset: 2px;
+}
+.bar-icon-button {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-pill);
+  color: var(--c-bar-fg);
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+.bar-icon-button:hover:not(:disabled) {
+  background-color: var(--c-bar-hover);
+}
+.bar-icon-button[aria-pressed='true'],
+.bar-icon-button[aria-expanded='true'],
+.bar-icon-button--on {
+  background-color: var(--c-bar-pressed);
+}
+/* Lit: a switch that is on, or a menu whose choice is something other than
+   nothing — the background film playing. */
+.bar-icon-button[aria-pressed='true'],
+.bar-icon-button--on {
+  color: var(--c-bar-on);
+}
+.bar-icon-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* The same controls inside a panel, where the bar's white-on-charcoal would be
+   white on a dark sheet with no edge. */
+.bar-icon-button--panel {
+  border: 1px solid var(--ds-border-interactive);
+  color: var(--ds-fg);
+}
+
+/* The bar's controls that are more than an icon — the options button, the mode
+   tabs, the tempo, Record — are surfaces standing on the bar: one step lighter
+   than it, and square-shouldered like Start, where a bare icon's hover is
+   round. The Bible's rule for a field, on the bar's own colours. */
+.bar-options {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-lg);
+  background-color: var(--c-bar-control);
+  color: var(--c-bar-fg);
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+.bar-options:hover {
+  background-color: var(--c-bar-control-hover);
+}
+/* Open, it is filled: the button that opened the panel is the one that shuts it. */
+.bar-options[aria-expanded='true'] {
+  background-color: var(--ds-accent);
+  color: var(--ds-accent-fg);
+}
+.bar-options[aria-expanded='true']:hover {
+  background-color: var(--ds-accent-hover);
+}
+
+/* Listen · Learn · Practice. Icons until there is room for the words — the
+   words are still there for a screen reader, clipped rather than removed. */
+.bar-tabs {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  height: 48px;
+  padding: 4px;
+  border: 1px solid var(--c-bar-line);
+  border-radius: var(--radius-pill);
+  background-color: var(--c-bar-raised);
+}
+.bar-tabs__tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  color: var(--c-bar-fg-muted);
+  font-size: 0.875rem;
+  font-weight: 550;
+  white-space: nowrap;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+.bar-tabs__tab:hover {
+  background-color: var(--c-bar-hover);
+  color: var(--c-bar-fg);
+}
+.bar-tabs__tab[aria-checked='true'],
+.bar-tabs__tab[aria-checked='true']:hover {
+  background-color: var(--ds-accent);
+  color: var(--ds-accent-fg);
+}
+.bar-tabs__icon {
+  display: inline-flex;
+}
+.bar-tabs__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+/* Under a finger a tab is as tall as the Bible's 44px. In width it stays at
+   its own 40: neighbours with no gap between them have no room for an overlay
+   to grow into. */
+@media (pointer: coarse) {
+  .bar-tabs__tab::after {
+    content: '';
+    position: absolute;
+    inset: -5px 0;
+  }
+}
+@media (min-width: 60rem) {
+  .bar-tabs__tab {
+    width: auto;
+    padding-inline: 13px;
+  }
+  .bar-tabs__icon {
+    display: none;
+  }
+  .bar-tabs__label {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+  }
+}
+
+/* ♪ 72 ⇅ — the tempo, typed over or stepped. */
+.tempo-field {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  height: 40px;
+  padding-left: 9px;
+  border-radius: var(--radius-lg);
+  background-color: var(--c-bar-control);
+  color: var(--c-bar-fg);
+  /* The arrows are square to the field's own corners. */
+  overflow: hidden;
+}
+.tempo-field:focus-within {
+  box-shadow: inset 0 0 0 2px var(--c-bar-fg);
+}
+.tempo-field__icon {
+  display: inline-flex;
+  color: var(--c-bar-fg-muted);
+}
+.tempo-field__value {
+  width: 3.4ch;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: var(--text-ui);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  outline: none;
+}
+/* Sixteen pixels under a finger, or a phone zooms the page to the field. */
+@media (pointer: coarse) {
+  .tempo-field__value {
+    font-size: 1rem;
+  }
+}

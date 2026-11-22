@@ -4,7 +4,7 @@ import { importMusicXml } from '@/features/songs/import-musicxml'
 import { beamsIn } from '@/features/staff/beams'
 import { measureScore, place } from '@/features/staff/score'
 import { STAFF_BANDS, STAFF_HEIGHT } from '@/features/staff/staff-frame'
-import { staffOf } from '@/features/staff/StaffNotes'
+import { staffOf } from '@/features/staff/chord-layout'
 
 /**
  * A hand written on the other hand's staff.

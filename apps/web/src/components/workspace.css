@@ -1,0 +1,33 @@
+/* ---- The workspace, and the options over it --------------------------------
+   The stage and the keys, as one box, so that the area's options can lie over
+   its left edge without either of them giving up any width. */
+.workspace {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+/* The Bible's small drawer — 20rem, 16px of padding — and never the whole
+   width: the strip of staff left showing is what says the panel is over the
+   workspace and not instead of it. */
+.options-drawer {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  z-index: var(--z-panel);
+  display: flex;
+  flex-direction: column;
+  width: 20rem;
+  max-width: calc(100% - 2.5rem);
+  border-right: 1px solid var(--ds-border);
+  background-color: var(--ds-surface-overlay);
+  color: var(--ds-fg);
+  box-shadow: var(--ds-shadow-4);
+  outline: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .options-drawer {
+    animation: drawer-in-left 220ms var(--ease-emphasized) both;
+  }
+}

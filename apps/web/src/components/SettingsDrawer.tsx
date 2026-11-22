@@ -16,17 +16,13 @@ import { Divider } from '@/ui/Display'
 import { useAudio } from '@/audio/AudioProvider'
 import { EngineChip } from '@/audio/EngineChip'
 import { InstrumentSelect } from '@/features/instruments/InstrumentSelect'
-import { KEYBOARD_SPANS, canShift } from '@/features/keyboard/keyboard-layout'
+import { KEYBOARD_SPANS, canShift } from '@/lib/keyboard-layout'
 import { useLearningStore, type KeyLabels } from '@/state/learning-store'
 import { AUTO_SPAN, useViewStore } from '@/state/view-store'
-import { BACKDROPS, isBackdropChoice, useBackdropStore } from '@/state/backdrop-store'
-import { COLOR_THEMES, isColorTheme, useThemeStore } from '@/state/theme-store'
 import { useCurrentSong, useSongStore, type FingeringDensity } from '@/state/song-store'
 import { panelActions, usePanelStore } from '@/state/panel-store'
-import { RecordButton } from '@/features/recording/RecordControls'
 import { useMidi } from '@/midi/MidiProvider'
-import { MetronomeToggle, TempoControl } from '@/features/learning/ScaleControls'
-import { SongMetronomeToggle, SongTempoControl } from '@/features/songs/SongControls'
+import { PanelTempo } from '@/components/PlayControls'
 
 /**
  * How the instrument sounds and how it is shown — everything that changes the
@@ -37,10 +33,14 @@ import { SongMetronomeToggle, SongTempoControl } from '@/features/songs/SongCont
  * needs to be on screen while playing; one click away is close enough, and the
  * screen goes to the staff and the keys.
  *
- * The practice and song sections repeat controls that are in the bar on a wide
- * screen — the tempo, the metronome, Record. On a narrow one the bar folds them
- * away, and this is where they land — so they are here at every width rather
- * than appearing and disappearing.
+ * Settings that hold on every screen are here on every screen — the sound,
+ * the keyboard, the fingering system. What belongs to one kind of music shows
+ * with it: a song's staff, an exercise's auto tempo.
+ *
+ * The tempo and the metronome live on the bar. Where the bar folds one away on
+ * a narrow screen, it lands here, and only there (`panel-only-*`, beside the
+ * bar's `bar-*`): one place for each at every width. Record folds into the
+ * bar's menu instead.
  */
 export function SettingsDrawer({
   instruments,
@@ -55,7 +55,8 @@ export function SettingsDrawer({
 }) {
   const open = usePanelStore((state) => state.panel === 'settings')
   const close = usePanelStore((state) => state.close)
-  const topic = useLearningStore((state) => state.topic)
+  const songs = useLearningStore((state) => state.topic === 'songs')
+  const song = useCurrentSong()
 
   return (
     <Drawer
@@ -72,22 +73,34 @@ export function SettingsDrawer({
           catalogueFailed={catalogueFailed}
         />
         <Divider />
-        <AppearanceSection />
-        <Divider />
         <KeyboardSection />
         <Divider />
-        <StaffSection />
-        <Divider />
-        {/* A song brings its own fingering, from its file or worked out for
-            its notes. A system is about the material a method book prints. */}
-        {topic !== 'songs' && (
+        {songs && song && (
           <>
-            <FingeringSection />
+            <StaffSection />
             <Divider />
           </>
         )}
-        {topic !== 'songs' ? <PracticeSection /> : <SongSection />}
+        {/* A song with no fingering in its file is fingered by the same
+            system, so it is chosen here wherever you are. */}
+        <FingeringSection />
         <Divider />
+        {!songs ? (
+          <>
+            <PracticeSection />
+            <Divider />
+          </>
+        ) : (
+          song && (
+            // Only its tempo and click, and only where the bar has folded them.
+            <div className="panel-only-mid flex flex-col gap-6">
+              <Section title="Song">
+                <PanelTempo />
+              </Section>
+              <Divider />
+            </div>
+          )
+        )}
         <Section title="Keyboard & MIDI" description={<MidiLine />}>
           <Button
             variant="outlined"
@@ -101,50 +114,6 @@ export function SettingsDrawer({
         </Section>
       </div>
     </Drawer>
-  )
-}
-
-/**
- * The color theme and the film behind the music: the same choices the bar's
- * two icons offer, here for a bar too narrow to show them. Lists rather than
- * rows of segments — the names do not fit side by side on a phone, and there
- * is room for more of them.
- */
-function AppearanceSection() {
-  const theme = useThemeStore((state) => state.theme)
-  const setTheme = useThemeStore((state) => state.setTheme)
-  const backdrop = useBackdropStore((state) => state.backdrop)
-  const setBackdrop = useBackdropStore((state) => state.setBackdrop)
-  return (
-    <Section title="Appearance">
-      <Field label="Color theme" htmlFor="color-theme">
-        <Select
-          id="color-theme"
-          size="sm"
-          className="min-w-[9rem]"
-          value={theme}
-          onChange={(event) => {
-            if (isColorTheme(event.target.value)) setTheme(event.target.value)
-          }}
-          options={COLOR_THEMES.map((option) => ({ value: option.id, label: option.label }))}
-        />
-      </Field>
-      <Field label="Background video" htmlFor="backdrop">
-        <Select
-          id="backdrop"
-          size="sm"
-          className="min-w-[9rem]"
-          value={backdrop}
-          onChange={(event) => {
-            if (isBackdropChoice(event.target.value)) setBackdrop(event.target.value)
-          }}
-          options={[
-            { value: 'none', label: 'None' },
-            ...BACKDROPS.map((option) => ({ value: option.id, label: option.label })),
-          ]}
-        />
-      </Field>
-    </Section>
   )
 }
 
@@ -286,14 +255,10 @@ function KeyboardSection() {
  * staff or falling notes — is chosen on the bar, beside this panel's button.
  */
 function StaffSection() {
-  const topic = useLearningStore((state) => state.topic)
-  const song = useCurrentSong()
   const staffView = useSongStore((state) => state.staffView)
   const setStaffView = useSongStore((state) => state.setStaffView)
   const fingering = useSongStore((state) => state.fingering)
   const setFingering = useSongStore((state) => state.setFingering)
-  const scoreOpen = topic === 'songs' && song !== null
-  if (!scoreOpen) return null
 
   return (
     <Section title="Staff">
@@ -370,41 +335,13 @@ function PracticeSection() {
   const setAutoTempo = useLearningStore((state) => state.setAutoTempo)
   return (
     <Section title="Practice">
-      <Field label="Target tempo">
-        <div className="flex items-center gap-2 coarse:gap-3">
-          <TempoControl panel />
-          <MetronomeToggle className="bar-icon-button--panel" />
-        </div>
-      </Field>
+      <PanelTempo />
       <Switch
         label="Auto tempo"
         description="Raises the target after a clean run at this speed, and eases off after a scrappy one."
         checked={autoTempo}
         onChange={setAutoTempo}
       />
-      <Field label="Recording">
-        <div className="flex items-center gap-2">
-          <RecordButton className="bar-icon-button--panel" />
-          <span className="text-body-sm text-[var(--ds-fg-secondary)]">
-            Record what you play, then export it.
-          </span>
-        </div>
-      </Field>
-    </Section>
-  )
-}
-
-function SongSection() {
-  const song = useCurrentSong()
-  if (!song) return null
-  return (
-    <Section title="Song">
-      <Field label="Tempo">
-        <div className="flex items-center gap-2 coarse:gap-3">
-          <SongTempoControl panel />
-          <SongMetronomeToggle className="bar-icon-button--panel" />
-        </div>
-      </Field>
     </Section>
   )
 }

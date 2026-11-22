@@ -5,7 +5,8 @@ import { importMusicXml } from '@/features/songs/import-musicxml'
 import { clefsAt, measureScore, place } from '@/features/staff/score'
 import { Step } from '@/features/staff/score-parts'
 import { CLEF_CHANGE_WIDTH, STEP, yOn } from '@/features/staff/staff-frame'
-import { clefShift, KeySignature, placementOf } from '@/features/staff/StaffNotes'
+import { clefShift, placementOf } from '@/features/staff/chord-layout'
+import { KeySignature } from '@/features/staff/StaffNotes'
 
 afterEach(cleanup)
 

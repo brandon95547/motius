@@ -1,9 +1,10 @@
 import * as React from 'react'
-import { noteName, pitchClass } from '@motius/shared'
+import { noteName, pitchClass, pitchName } from '@motius/shared'
 import { useKeyboardStore } from '@/state/keyboard-store'
 import { useLearningStore, type KeyLabels } from '@/state/learning-store'
 import { useViewStore } from '@/state/view-store'
-import type { KeyGeometry } from './keyboard-layout'
+import { useKeyAnnotation } from './key-annotations'
+import type { KeyGeometry } from '@/lib/keyboard-layout'
 
 /**
  * One key.
@@ -47,12 +48,7 @@ export const PianoKey = React.memo(function PianoKey({
 }: PianoKeyProps) {
   const { note, black } = geometry
   const active = useKeyboardStore((state) => state.active[note])
-  // One subscription per key, to that key's own entry. A note event rebuilds
-  // the map but leaves every other entry referentially identical, so only the
-  // keys that actually changed re-render.
-  const annotation = useLearningStore((state) =>
-    state.topic === 'songs' ? state.songAnnotations[note] : state.annotations[note],
-  )
+  const annotation = useKeyAnnotation(note)
   // Pressed when it was due, and still held: lit in the color of the hand that
   // plays it, as its falling note is. Only with falling notes up, whose colors
   // these are.
@@ -66,14 +62,19 @@ export const PianoKey = React.memo(function PianoKey({
    * The one thing written on this key, if anything.
    *
    * Degrees exist only for keys the exercise knows about, and fingers are drawn
-   * in their own layer above the keys rather than written here. Otherwise the
-   * key carries its note name, or the octave marker that says where you are.
+   * in their own layer above the keys rather than written here. With the labels
+   * on notes, every white key carries its name (the black keys' are above the
+   * keyboard, `NoteNamesAbove`): the exercise's spelling where it names the key
+   * by a letter, its own letter otherwise, and on a C the octave marker that
+   * says where you are.
    */
   const keyText = ((): { text: string; anchor?: boolean } | null => {
     if (keyLabels === 'off' || keyLabels === 'fingers') return null
     if (keyLabels === 'degrees') return annotation?.degree ? { text: annotation.degree } : null
-    if (annotation?.label) return { text: annotation.label }
-    return pitchClass(note) === 0 ? { text: label, anchor: isAnchor } : null
+    const spelled = annotation?.label && /^[A-G]/.test(annotation.label) ? annotation.label : null
+    if (spelled) return { text: spelled }
+    if (pitchClass(note) === 0) return { text: label, anchor: isAnchor }
+    return black ? null : { text: pitchName(note) }
   })()
 
   const style: React.CSSProperties = black

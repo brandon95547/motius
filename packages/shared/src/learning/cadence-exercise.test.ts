@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { noteName } from '../midi/notes.js'
 import { cadenceFingers } from '../music/cadences.js'
 import { KEY_MODES } from '../music/chords.js'
-import { buildCadenceExercise, DEFAULT_CADENCE_SPEC, type CadenceSpec } from './cadence-exercise.js'
+import { buildCadenceExercise } from './cadence-exercise.js'
+import { DEFAULT_CADENCE_SPEC } from './practice-defaults.js'
+import type { CadenceSpec } from './practice-specs.js'
 
 const cadence = (spec: Partial<CadenceSpec> = {}) =>
   buildCadenceExercise({ ...DEFAULT_CADENCE_SPEC, ...spec })

@@ -13,17 +13,17 @@ import { stepBeats, type Exercise, type ExerciseStep } from './exercise.js'
  * builders.
  */
 
-export const LEARNING_MODES = ['explore', 'learn', 'practice'] as const
+export const LEARNING_MODES = ['listen', 'learn', 'practice'] as const
 export type LearningMode = (typeof LEARNING_MODES)[number]
 
 export const LEARNING_MODE_LABELS: Record<LearningMode, string> = {
-  explore: 'Explore',
+  listen: 'Listen',
   learn: 'Learn',
   practice: 'Practice',
 }
 
 export const LEARNING_MODE_DESCRIPTIONS: Record<LearningMode, string> = {
-  explore: 'Every note of the scale is lit. Play freely and listen to how it sits.',
+  listen: 'Every note is lit. Press Play to hear it, or play freely and listen to how it sits.',
   learn: 'One note at a time, with the recommended finger. Wrong notes flash and do not advance.',
   practice: 'The guidance goes away. Play it through while Motius keeps score.',
 }
@@ -49,7 +49,23 @@ export interface SessionState {
    * run's progress is where the music is, and against its accuracy.
    */
   readonly missedSteps: readonly number[]
+  /** The key of a step that asks to be held, and since when it has been. */
+  readonly holding: { readonly note: number; readonly since: number } | null
+  /** What the last near miss wants instead — a right key played too loud, too soft, or let go too soon. */
+  readonly feedback: { readonly kind: StepFeedback; readonly at: number } | null
 }
+
+export type StepFeedback = 'softer' | 'louder' | 'longer'
+
+/**
+ * How hard soft and loud are, in MIDI velocity (1 to 127). Between them is
+ * neither: a press there is told which way to go. Wide enough apart that a
+ * player has to mean it, close enough to the middle that any keyboard reaches.
+ */
+export const STEP_DYNAMICS = { softAtMost: 64, loudAtLeast: 82 } as const
+
+/** A long note counts once it has been held this share of its length: no one holds to the millisecond. */
+export const HOLD_SHARE = 0.85
 
 export const IDLE_SESSION: SessionState = {
   status: 'idle',
@@ -62,12 +78,18 @@ export const IDLE_SESSION: SessionState = {
   completedAt: null,
   stepTimes: [],
   missedSteps: [],
+  holding: null,
+  feedback: null,
 }
 
 export type SessionEvent =
   | { type: 'start'; at: number }
   | { type: 'reset' }
-  | { type: 'noteOn'; note: number; at: number }
+  | { type: 'noteOn'; note: number; at: number; velocity?: number }
+  /** A key let go: a long note let go before its time is played again. */
+  | { type: 'noteOff'; note: number; at: number }
+  /** Time passing while a long note is held, at the run's tempo: it counts once held long enough. */
+  | { type: 'tick'; at: number; beatMs: number }
   /** Drops wrong-note flashes older than `before`. Keeps the state pure. */
   | { type: 'expireWrong'; before: number }
   /** The step being waited on has gone by unplayed, as the tempo moved on. */
@@ -83,6 +105,29 @@ export type SessionEvent =
  * enough not to still be red when the right note arrives.
  */
 export const WRONG_NOTE_FLASH_MS = 550
+
+/** The step being waited on is played: on to the next, or the run is over. */
+function advance(state: SessionState, exercise: Exercise, at: number): SessionState {
+  const stepIndex = state.stepIndex + 1
+  const done = stepIndex >= exercise.steps.length
+  return {
+    ...state,
+    stepIndex: done ? state.stepIndex : stepIndex,
+    satisfied: [],
+    holding: null,
+    completedSteps: state.completedSteps + 1,
+    stepTimes: [...state.stepTimes, at],
+    status: done ? 'complete' : 'running',
+    completedAt: done ? at : null,
+  }
+}
+
+/** Whether a press is as loud as the step asks; which way to go if not. */
+function dynamicMiss(step: ExerciseStep, velocity: number | undefined): StepFeedback | null {
+  if (!step.dynamic || velocity === undefined) return null
+  if (step.dynamic === 'soft') return velocity <= STEP_DYNAMICS.softAtMost ? null : 'softer'
+  return velocity >= STEP_DYNAMICS.loudAtLeast ? null : 'louder'
+}
 
 export function sessionReducer(
   state: SessionState,
@@ -126,6 +171,7 @@ export function sessionReducer(
         // Kept in step with the steps, so `stepTimes[n]` is still step n's.
         stepTimes: [...state.stepTimes, event.at],
         missedSteps: [...state.missedSteps, state.stepIndex],
+        holding: null,
         status: done ? 'complete' : 'running',
         completedAt: done ? event.at : null,
       }
@@ -150,23 +196,43 @@ export function sessionReducer(
       // playing the right note.
       if (state.satisfied.includes(event.note)) return state
 
+      // The right key at the wrong loudness: a slip, and a word on which way.
+      const miss = dynamicMiss(step, event.velocity)
+      if (miss)
+        return { ...state, mistakes: state.mistakes + 1, feedback: { kind: miss, at: event.at } }
+
       const satisfied = [...state.satisfied, event.note]
       // Distinct keys, not notes listed: where two hands meet on one note —
       // the first and last of a scale in contrary motion — there is one key to
       // press, and counting it twice would wait for ever on the second.
       if (satisfied.length < new Set(step.notes).size) return { ...state, satisfied }
 
-      const stepIndex = state.stepIndex + 1
-      const done = stepIndex >= exercise.steps.length
+      // A long note is pressed, and counts once it has been held (`tick`).
+      if (step.hold) return { ...state, satisfied, holding: { note: event.note, since: event.at } }
+
+      return advance({ ...state, feedback: null }, exercise, event.at)
+    }
+
+    case 'noteOff': {
+      if (state.status !== 'running' || !exercise || state.holding?.note !== event.note)
+        return state
+      // Let go too soon: the long note is played again.
       return {
         ...state,
-        stepIndex: done ? state.stepIndex : stepIndex,
         satisfied: [],
-        completedSteps: state.completedSteps + 1,
-        stepTimes: [...state.stepTimes, event.at],
-        status: done ? 'complete' : 'running',
-        completedAt: done ? event.at : null,
+        holding: null,
+        mistakes: state.mistakes + 1,
+        feedback: { kind: 'longer', at: event.at },
       }
+    }
+
+    case 'tick': {
+      if (state.status !== 'running' || !exercise || !state.holding) return state
+      const step = exercise.steps[state.stepIndex]
+      if (!step) return state
+      const needed = stepBeats(step) * event.beatMs * HOLD_SHARE
+      if (event.at - state.holding.since < needed) return state
+      return advance({ ...state, feedback: null }, exercise, event.at)
     }
   }
 }
@@ -197,6 +263,40 @@ export function accuracy(state: SessionState): number {
   const attempts = state.completedSteps + state.mistakes
   if (attempts === 0) return 1
   return (state.completedSteps - state.missedSteps.length) / attempts
+}
+
+/**
+ * What an exercise's steps are called, in the plural: "notes", or "chords" for
+ * steps of solid chords; an exercise that says what its steps are is taken at
+ * its word ("groups").
+ */
+export function stepsCalled(exercise: Exercise): string {
+  return (
+    exercise.stepsAre ??
+    ((exercise.kind === 'chord' || exercise.kind === 'progression') &&
+    exercise.steps.every((step) => step.noteLabels)
+      ? 'chords'
+      : 'notes')
+  )
+}
+
+/**
+ * How a finished run went, in a line: "8 notes · 100% accuracy · clean", or
+ * with its mistakes and the steps missed.
+ */
+export function runSummary(exercise: Exercise, state: SessionState): string {
+  const unit = stepsCalled(exercise)
+  const count = (n: number, one: string, many: string) =>
+    n > 0 ? `${n} ${n === 1 ? one : many}` : null
+  const faults =
+    [
+      count(state.mistakes, 'mistake', 'mistakes'),
+      count(state.missedSteps.length, 'missed', 'missed'),
+    ]
+      .filter(Boolean)
+      .join(' · ') || 'clean'
+  const percent = Math.round(accuracy(state) * 100)
+  return `${exercise.steps.length} ${unit} · ${percent}% accuracy · ${faults}`
 }
 
 export function progress(exercise: Exercise | null, state: SessionState): number {

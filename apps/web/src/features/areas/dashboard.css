@@ -1,0 +1,287 @@
+/* ---- The dashboard ------------------------------------------------------
+   Drawn to the mock (new dashboard.png, 2026-10-12). The practice room behind
+   it all; each place a plain dark card, three to a row; a serif for the names,
+   and each place in its own accent — the icon and the ring round the arrow. It
+   scrolls, the one page that may: there are no keys along the bottom to keep
+   in view, only the bar that leads to the other places. */
+.dashboard {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  /* The same above as below, so that what is centred in it is centred in the
+     room. */
+  padding: 40px clamp(16px, 2.5vw, 36px);
+  /* The room, darkened toward the bottom where the cards sit. The image stays
+     put as the page scrolls: it is the background of the scroller itself. */
+  background:
+    var(--dash-room-fade),
+    var(--dash-room-dim),
+    var(--dash-room-picture) left center / cover no-repeat,
+    var(--c-dash-room);
+  color: var(--c-dash-ink);
+  /* The room at the size the screen draws it: a phone's copy, a tablet's, and
+     the full picture from a laptop up. It is dimmed under the cards, so a
+     phone is given the small copy rather than one sharp enough for its
+     density. */
+  --dash-room-picture: url('@/assets/dashboard/room-800.webp');
+}
+@media (min-width: 48rem) {
+  .dashboard {
+    --dash-room-picture: url('@/assets/dashboard/room-1280.webp');
+  }
+}
+@media (min-width: 80rem) {
+  .dashboard {
+    --dash-room-picture: url('@/assets/dashboard/room.webp');
+  }
+}
+/* Narrower than this the first card lands on the light columns at the
+   picture's left edge, and its outline all but vanishes there. So the left of
+   the room is shaded. */
+@media (max-width: 79.999rem) {
+  .dashboard {
+    background:
+      var(--dash-room-side-shade),
+      var(--dash-room-fade),
+      var(--dash-room-dim),
+      var(--dash-room-picture) left center / cover no-repeat,
+      var(--c-dash-room);
+  }
+}
+.dashboard__inner {
+  /* A card's width where there are three to a row, and the space between two. */
+  --card-gap: 24px;
+  --card-column: calc((76rem - 2 * var(--card-gap)) / 3);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  /* Three cards across, as the mock has them. */
+  max-width: 76rem;
+  /* And in the middle of the room top to bottom, for as long as there is room.
+     By its margins and not by centring the column: a page taller than the
+     window then starts at its top and scrolls, where a centred one would have
+     its first row above the top of the scroller and out of reach. */
+  margin: auto;
+}
+/* Fewer than three places are in the middle, and four are two by two: each
+   card the width it has three to a row, not stretched to fill one. */
+.dashboard__inner:has(> .area-grid--pairs) {
+  max-width: calc(2 * var(--card-column) + var(--card-gap));
+}
+.dashboard__inner:has(> .area-grid--one) {
+  max-width: var(--card-column);
+}
+.area-grid {
+  display: grid;
+  /* Never more than three across: a fourth would need 84.5rem, and the page is 76. */
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+  /* Wider than the Bible's 12–16px between cards, as the mock has them. */
+  gap: var(--card-gap);
+}
+/* Two or four of anything: one column, then two. Left to fill by itself the
+   grid makes three and one, and the one looks like an afterthought. */
+.area-grid--one,
+.area-grid--pairs {
+  grid-template-columns: 1fr;
+}
+@media (min-width: 44rem) {
+  .area-grid--pairs {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* A place's accent, one of the nine there are: on its card, and on its
+   section's lessons beside the stage. */
+[data-accent='songs'] {
+  --accent: var(--c-area-songs);
+}
+[data-accent='scales'] {
+  --accent: var(--c-area-scales);
+}
+[data-accent='chords'] {
+  --accent: var(--c-area-chords);
+}
+[data-accent='arpeggios'] {
+  --accent: var(--c-area-arpeggios);
+}
+[data-accent='progressions'] {
+  --accent: var(--c-area-progressions);
+}
+[data-accent='exercises'] {
+  --accent: var(--c-area-exercises);
+}
+[data-accent='rose'] {
+  --accent: var(--c-area-rose);
+}
+[data-accent='teal'] {
+  --accent: var(--c-area-teal);
+}
+[data-accent='pink'] {
+  --accent: var(--c-area-pink);
+}
+
+.area-card {
+  width: 100%;
+  /* The Bible's comfortable card: 24px against a 16px radius. */
+  padding: 24px;
+  border: 1px solid var(--c-dash-card-edge);
+  border-radius: var(--radius-xl);
+  background-color: var(--c-dash-card);
+  color: var(--c-dash-ink);
+  text-align: left;
+  box-shadow: var(--shadow-dash-card);
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    transform 200ms var(--ease-standard),
+    box-shadow 200ms var(--ease-standard);
+}
+/* The card that opens a place. Its number and its icon across the top; its
+   name the full width under them; then the line about it, where it has one,
+   with the arrow in the corner beside it. Whatever height a taller neighbor
+   gives it goes to the last row, so the arrow stays in the corner. */
+button.area-card {
+  display: grid;
+  grid-template:
+    'number icon' auto
+    'name name' auto
+    'text go' 1fr
+    / minmax(0, 1fr) auto;
+  column-gap: 16px;
+}
+button.area-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: var(--shadow-dash-card-hover);
+  transform: translateY(-3px);
+}
+button.area-card:active {
+  transform: translateY(0);
+}
+button.area-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+/* Where the card comes on its page. One color on every card: the number is
+   the order, and the accent is the place. */
+.area-card__number {
+  grid-area: number;
+  /* On the icon's line: the two are the card's top row. */
+  align-self: center;
+  font-size: 1.5rem;
+  font-weight: 300;
+  line-height: 1;
+  color: var(--c-dash-number);
+}
+.area-card__icon {
+  display: grid;
+  grid-area: icon;
+  place-items: center;
+  /* The icon alone, in the card's colour: no tile behind it, and no room of a
+     tile's height either, so the card's top padding is the card's padding.
+     As wide as the arrow's room under it, so the two sit on one line. */
+  width: 44px;
+  color: var(--accent);
+}
+.area-card__name {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1.15;
+}
+/* Under the icon and not beside it: the longest names run the card's width,
+   and one that stopped at the icon would wrap. As far under the number as the
+   line about it is under it. */
+button.area-card .area-card__name {
+  grid-area: name;
+  margin-top: 12px;
+}
+.area-card__description {
+  /* Where the mock's lines break. */
+  max-width: 16.5rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  text-wrap: pretty;
+  color: var(--c-dash-body);
+}
+button.area-card .area-card__description {
+  grid-area: text;
+  margin-top: 12px;
+}
+.area-card__go {
+  display: grid;
+  grid-area: go;
+  align-self: end;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  /* As far under the name as the line about it is. On a lesson's card there
+     is no line, and the arrow would otherwise sit against the name. */
+  margin-top: 12px;
+  /* No ring and no colour of its own: the arrow, on the card. */
+  border-radius: var(--radius-pill);
+  color: var(--c-dash-ink);
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+button.area-card:hover .area-card__go {
+  background-color: var(--c-bar-hover);
+}
+
+/* The page of a place with nothing in it yet: one card, the width of the
+   others, in the middle of where they would be. What is in it is stacked. */
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: min(100%, var(--card-column));
+  margin-inline: auto;
+}
+.placeholder .area-card__name {
+  margin-top: 16px;
+}
+.placeholder__rule {
+  width: 20px;
+  height: 2px;
+  margin-top: 12px;
+  border-radius: 1px;
+  background-color: var(--accent);
+}
+.placeholder .area-card__description {
+  margin-top: 12px;
+}
+.placeholder__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--c-dash-quiet);
+}
+.placeholder__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  margin-top: 18px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--c-dash-body);
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+.placeholder__back:hover {
+  color: var(--c-dash-ink);
+}
+.placeholder__back:focus-visible {
+  outline: 2px solid var(--ds-focus-ring);
+  outline-offset: 4px;
+  border-radius: var(--radius-sm);
+}
+@media (pointer: coarse) {
+  .placeholder__back {
+    min-height: 44px;
+  }
+}

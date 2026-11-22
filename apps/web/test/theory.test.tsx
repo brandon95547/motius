@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { ScaleTheoryDialog } from '@/features/learning/ScaleTheoryDialog'
+import { ScaleTheoryDialog } from '@/features/theory/ScaleTheoryDialog'
 import { FundamentalsDrawer } from '@/features/theory/FundamentalsDrawer'
 import { KeyTheoryDrawer } from '@/features/theory/KeyTheoryDrawer'
 import { useLearningStore } from '@/state/learning-store'

@@ -30,8 +30,9 @@ describe('sound effects', () => {
   it('fetches and decodes every effect once, up front', async () => {
     await preloadSoundEffects()
     await preloadSoundEffects()
-    expect(fetchMock).toHaveBeenCalledOnce()
-    expect(audio.decodeAudioData).toHaveBeenCalledOnce()
+    // One fetch and one decode for each effect — the success, the badge and the gold badge — however often asked.
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(audio.decodeAudioData).toHaveBeenCalledTimes(3)
   })
 
   it('plays from the decoded buffer, with no fetch at the moment it plays', async () => {

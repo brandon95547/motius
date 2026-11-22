@@ -1,67 +1,34 @@
 import * as React from 'react'
-import { ArrowRight, Info, ListTree } from 'lucide-react'
+import { lessonAbout } from '@motius/shared'
+import { ArrowRight, Check, GraduationCap, Info, Lightbulb, Trophy } from 'lucide-react'
 import { BarButton } from '@/ui/BarButton'
 import { Button } from '@/ui/Button'
 import { Checkbox } from '@/ui/Controls'
 import { Dialog } from '@/ui/Dialog'
 import { Drawer } from '@/ui/Drawer'
+import { bestOf, percent, useScoredRuns, type Played } from '@/state/history-store'
+import { introHidden, showIntroNextTime } from '@/state/lesson-intros'
 import { useLearningStore } from '@/state/learning-store'
 import { panelActions, usePanelStore } from '@/state/panel-store'
-import { pageActions, usePageStore } from '@/state/page-store'
-import {
-  COMING_SOON,
-  findCategory,
-  lessonAt,
-  lessonsOf,
-  pagesUnder,
-  type Category,
-  type Lesson,
-  type Section,
-} from './areas'
+import { COMING_SOON, type Lesson, type Section } from '@/lib/outline/outline'
+import { FingerNumbers } from './FingerNumbers'
+import { resultsActions } from './results-store'
+import { chapterOf, closeLessons, go, keyOf, SectionProgress, useHere } from './lesson-here'
+import { remindThenRun } from '@/state/hands-reminder'
 
 /**
  * A section's stage: a written lesson's introduction in a dialog, and the
- * section's lessons in a sheet from the left, opened from the bar.
+ * section's lessons in a sheet from the right, opened from the bar's tools.
  *
  * The stage is where a section opens, so a player is two choices from the
  * dashboard to the keys however deep the outline goes. The topics under the
  * section are the list's chapters, not pages of cards to get through first.
  * The list slides in over the stage rather than standing beside it, so the
  * staff and the keys keep the whole width. A written lesson says what it asks
- * and plays in Explore, Learn and Practice from the bar; one not written yet
- * says so, and the keys are free to play.
+ * and plays in Listen, Learn and Practice from the bar; one not written yet
+ * says so, and the keys are free to play. How a run of it went is in
+ * `LessonResults`.
  */
-
-interface Here {
-  readonly category: Category
-  readonly section: Section
-  readonly lessons: readonly Lesson[]
-  /** Where the lesson that is up comes in them. */
-  readonly index: number
-}
-
-/** The section whose stage is up, its lessons, and which of them is up. */
-function useHere(): Here | null {
-  const category = findCategory(usePageStore((state) => state.category))
-  const path = usePageStore((state) => state.path)
-  const section = category ? pagesUnder(category, path)[0] : undefined
-  if (!category || !section) return null
-  const lessons = lessonsOf(section)
-  return { category, section, lessons, index: lessonAt(lessons, path) }
-}
-
-const close = () => {
-  if (usePanelStore.getState().panel === 'lessons') panelActions.close()
-}
-
-const go = (here: Here, lesson: Lesson | undefined) => {
-  if (!lesson) return
-  close()
-  pageActions.openLesson(here.category, lesson.path)
-}
-
-/** What a run of lessons is under: the topics between the section and them. */
-const chapterOf = (lesson: Lesson) => lesson.topics.map((topic) => topic.label).join(' › ')
 
 /**
  * The lessons a chapter at a time, in the outline's order. Where a section has
@@ -81,26 +48,23 @@ function chapters(section: Section, lessons: readonly Lesson[]) {
 }
 
 /**
- * The bar's way into the section's lessons, on its left where an area has its
- * options: the sheet comes in from that side, under it.
+ * The bar's way into the section's lessons: a cap, in the tools beside About
+ * this lesson. The sheet comes in from the right, the side it is opened from.
  */
-export function LessonsButton() {
+export function LessonsButton({ className }: { className?: string }) {
   const here = useHere()
   const open = usePanelStore((state) => state.panel === 'lessons')
   if (!here) return null
-  const label = `${here.section.label} lessons`
   return (
-    <button
-      type="button"
-      className="bar-options"
+    <BarButton
+      className={className}
+      look="icon"
+      label={`${here.section.label} lessons`}
+      icon={<GraduationCap size={18} className="lessons-icon" aria-hidden />}
       aria-haspopup="dialog"
       aria-expanded={open}
-      aria-label={label}
-      title={label}
       onClick={() => (open ? panelActions.close() : panelActions.open('lessons'))}
-    >
-      <ListTree size={18} aria-hidden />
-    </button>
+    />
   )
 }
 
@@ -108,16 +72,17 @@ export function LessonsButton() {
 export function LessonsDrawer() {
   const here = useHere()
   const open = usePanelStore((state) => state.panel === 'lessons')
+  const runs = useScoredRuns()
   if (!here) return null
   const current = here.lessons[here.index]
   const count = here.lessons.length
 
   return (
     <Drawer
-      side="left"
+      side="right"
       fit
       open={open}
-      onClose={close}
+      onClose={closeLessons}
       title={here.section.label}
       description={`${count} ${count === 1 ? 'lesson' : 'lessons'}`}
     >
@@ -138,7 +103,8 @@ export function LessonsDrawer() {
                     <span className="lesson-list__number" aria-hidden>
                       {String(here.lessons.indexOf(lesson) + 1).padStart(2, '0')}
                     </span>
-                    {lesson.lesson.label}
+                    <span className="lesson-list__name">{lesson.lesson.label}</span>
+                    <Best record={bestOf(runs, keyOf(here, lesson))} />
                   </button>
                 </li>
               ))}
@@ -151,54 +117,45 @@ export function LessonsDrawer() {
 }
 
 /**
- * The lessons whose introduction the player has said not to show again, by
- * address, kept on this device.
+ * A lesson's best score beside its name, once it has been played: a summary of
+ * its history, which Progress holds whole.
  */
-const HIDDEN_INTROS_KEY = 'motius.lesson-intros-hidden'
-
-function hiddenIntros(): string[] {
-  try {
-    const stored = JSON.parse(globalThis.localStorage?.getItem(HIDDEN_INTROS_KEY) ?? '[]')
-    return Array.isArray(stored) ? stored.filter((entry) => typeof entry === 'string') : []
-  } catch {
-    return []
-  }
-}
-
-const introHidden = (key: string) => hiddenIntros().includes(key)
-
-/** Keeps the player's answer to Show next time for one lesson. */
-function showIntroNextTime(key: string, show: boolean) {
-  const others = hiddenIntros().filter((entry) => entry !== key)
-  try {
-    globalThis.localStorage?.setItem(
-      HIDDEN_INTROS_KEY,
-      JSON.stringify(show ? others : [...others, key]),
-    )
-  } catch {
-    // Storage off: it shows again next time, which is what the box says by default.
-  }
+function Best({ record }: { record: Played | null }) {
+  if (!record) return null
+  return (
+    <span className="lesson-list__best" data-tabular>
+      <Check size={14} aria-hidden />
+      <span className="sr-only">Best </span>
+      {percent(record.best.accuracy)}
+    </span>
+  )
 }
 
 /**
  * A written lesson's introduction: what it asks, as a teacher would say it
- * before the student starts. The app's own dialog, in the middle of the
- * screen. It goes when it is closed or a run starts — from it or from the bar —
- * and stays gone for that lesson: from then on the staff and the keys are the
- * player's. "Show next time", ticked unless the player unticks it, brings it
- * back on the next visit; unticked, that lesson opens straight on the stage
- * from then on, on this device. "About this lesson" on the bar opens it again
- * whenever it is wanted, its box as the player left it, so ticking it again
- * turns the introduction back on. A lesson not written yet has nothing to say, and is a tag in the
- * corner of the stage that says so.
+ * before the student starts — short. The app's own dialog, in the middle of
+ * the screen. It goes when it is closed or a run starts — from it or from the
+ * bar — and stays gone for that lesson: from then on the staff and the keys
+ * are the player's. "Show lesson instructions next time", ticked unless the player unticks it,
+ * brings it back on the next visit; unticked, that lesson opens straight on
+ * the stage from then on, on this device. "About this lesson" on the bar opens
+ * it again whenever it is wanted, its box as the player left it. A lesson not
+ * written yet has nothing to say, and is a tag in the corner of the stage that
+ * says so.
  *
- * Which lesson is next is not asked here: the list in the sheet is the way to
- * any lesson, and the end of a run is the way on to the next.
+ * The lessons before and after are a step either side of "Lesson 2 of 10"
+ * at its top (`SectionProgress`); the end of a run has its own way on
+ * (`LessonResults`), and the sheet's list goes anywhere.
  */
 export function LessonIntro() {
   const here = useHere()
   const running = useLearningStore((state) => state.session.status !== 'idle')
+  // A run of this lesson finished, and the player still on it: its results are
+  // one click away from here.
+  const finished = useLearningStore((state) => state.session.status === 'complete')
   const [closed, setClosed] = React.useState<string | null>(null)
+  // The exercise on the keys: the introduction is read once it has loaded.
+  const onKeys = useLearningStore((state) => state.exercise !== null)
   const [showNext, setShowNext] = React.useState(true)
   const asked = usePanelStore((state) => state.panel === 'lesson')
   // The lesson's whole address: its category, then the way down to it.
@@ -214,7 +171,9 @@ export function LessonIntro() {
   }, [key, asked])
   if (!here || !key) return null
   const lesson = here.lessons[here.index]!
-  if (!lesson.lesson.about) return null
+  // Content, loaded with the lesson's section: here once its exercise is.
+  const about = lesson.lesson.exercise && onKeys ? lessonAbout(lesson.lesson.exercise) : null
+  if (!about) return null
   const open = asked || (closed !== key && !introHidden(key))
 
   const close = () => {
@@ -222,50 +181,106 @@ export function LessonIntro() {
     setClosed(key)
     if (usePanelStore.getState().panel === 'lesson') panelActions.close()
   }
-  // Explore has nothing to start: the lesson begins in Learn, as a teacher
-  // would begin it, a step at a time.
+  // Listen has no run: the lesson begins in Lesson mode, as a teacher would
+  // begin it, a step at a time.
   const start = () => {
     close()
     const learning = useLearningStore.getState()
-    if (learning.mode === 'explore') learning.setMode('learn')
-    useLearningStore.getState().start()
+    if (learning.mode !== 'learn') learning.setMode('learn')
+    remindThenRun(() => useLearningStore.getState().start())
   }
-  const where = chapterOf(lesson) || here.section.label
 
   return (
     <Dialog
       open={open}
       onClose={close}
+      eyebrow={chapterOf(lesson) || here.section.label}
       title={lesson.lesson.label}
-      description={`${where} · ${here.index + 1} of ${here.lessons.length}`}
       footer={
-        <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-3">
-          <Checkbox label="Show next time" checked={showNext} onChange={setShowNext} />
-          <div className="flex items-center gap-2.5 coarse:gap-3">
+        <div className="flex w-full flex-wrap items-center gap-2.5 coarse:gap-3">
+          <Checkbox
+            label="Show lesson instructions next time"
+            checked={showNext}
+            onChange={setShowNext}
+          />
+          <div className="ml-auto flex items-center gap-2.5 coarse:gap-3">
+            {finished && (
+              <Button
+                variant="outlined"
+                startIcon={<Trophy size={18} />}
+                onClick={() => {
+                  close()
+                  resultsActions.open()
+                }}
+              >
+                See results
+              </Button>
+            )}
             {/* Read again during a run: nothing to start, only to go back to. */}
-            <Button variant={running ? 'filled' : 'outlined'} onClick={close}>
-              {running ? 'Close' : 'Not now'}
-            </Button>
-            {!running && <Button onClick={start}>Start</Button>}
+            {running && !finished ? (
+              <Button onClick={close}>Close</Button>
+            ) : (
+              <Button endIcon={<ArrowRight size={18} />} onClick={start}>
+                Start lesson
+              </Button>
+            )}
           </div>
         </div>
       }
     >
-      <p className="text-body text-[var(--ds-fg-secondary)]">{lesson.lesson.about}</p>
+      <div className="lesson-intro">
+        <SectionProgress here={here} thin />
+        <section className="lesson-intro__part">
+          <h3 className="lesson-intro__heading">Your objective</h3>
+          <p>{about.objective}</p>
+        </section>
+        <section className="lesson-intro__how">
+          <div className="lesson-intro__how-head">
+            <h3 className="lesson-intro__heading">How to play</h3>
+            {/* On every lesson: what the numbers on the keys mean, for whoever looks. */}
+            <FingerNumbers />
+          </div>
+          {about.how.map((line) => (
+            <p key={line.text}>
+              {line.who && <strong>{line.who}: </strong>}
+              {line.text}
+            </p>
+          ))}
+        </section>
+        {about.remember && (
+          <p className="lesson-intro__remember">
+            <Lightbulb size={20} aria-hidden />
+            <span>
+              <strong>Remember: </strong>
+              {about.remember}
+            </span>
+          </p>
+        )}
+      </div>
     </Dialog>
   )
 }
 
 /** The bar's way back to a written lesson's introduction, at any time. */
-export function LessonAboutButton() {
+/** Whether the lesson up has an introduction to open again. */
+export function useHasLessonAbout() {
   const here = useHere()
-  if (!here?.lessons[here.index]?.lesson.about) return null
+  return Boolean(here?.lessons[here.index]?.lesson.exercise)
+}
+
+/** Opens the lesson's introduction again. */
+export const openLessonAbout = () => panelActions.open('lesson')
+
+export function LessonAboutButton({ className }: { className?: string }) {
+  const here = useHere()
+  if (!here?.lessons[here.index]?.lesson.exercise) return null
   return (
     <BarButton
+      className={className}
       look="icon"
       label="About this lesson"
       icon={<Info size={18} aria-hidden />}
-      onClick={() => panelActions.open('lesson')}
+      onClick={openLessonAbout}
     />
   )
 }
@@ -273,25 +288,6 @@ export function LessonAboutButton() {
 /** A lesson not written yet, said in the corner of the stage. */
 export function LessonSoon() {
   const here = useHere()
-  if (!here || here.lessons[here.index]?.lesson.about) return null
+  if (!here || here.lessons[here.index]?.lesson.exercise) return null
   return <span className="stage-pill lesson-soon">{COMING_SOON}</span>
-}
-
-/** On to the next lesson, where there is one: at the end of a run, beside Again. */
-export function NextLessonButton() {
-  const here = useHere()
-  const page = usePageStore((state) => state.page)
-  const after = here?.lessons[here.index + 1]
-  if (page !== 'lesson' || !here || !after) return null
-  return (
-    <button
-      type="button"
-      className="bar-start bar-start--stop"
-      title={after.lesson.label}
-      onClick={() => go(here, after)}
-    >
-      <span className="bar-start__label">Next lesson</span>
-      <ArrowRight size={18} aria-hidden />
-    </button>
-  )
 }

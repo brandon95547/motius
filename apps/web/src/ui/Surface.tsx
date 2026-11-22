@@ -80,3 +80,8 @@ export function Section({
     </section>
   )
 }
+
+/** Settings that go together, in the options panel: a field's gap apart. */
+export function OptionGroup({ children }: { children: React.ReactNode }) {
+  return <div className="flex flex-col gap-3">{children}</div>
+}

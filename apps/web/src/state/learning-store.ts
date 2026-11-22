@@ -1,46 +1,45 @@
 import { create } from 'zustand'
 import {
-  buildArpeggioExercise,
-  buildChordExercise,
-  buildCadenceExercise,
-  buildFingeringExercise,
-  buildLessonExercise,
-  buildRoutineExercise,
-  buildScaleExercise,
   DEFAULT_ARPEGGIO_SPEC,
   DEFAULT_CHORD_SPEC,
   DEFAULT_CADENCE_SPEC,
   DEFAULT_FINGERING_DRILL_SPEC,
   DEFAULT_PROGRESSION_TYPE,
   DEFAULT_ROUTINE_SPEC,
-  DEFAULT_FINGERING_SYSTEM,
   DEFAULT_PLAYABLE_RANGE,
+  DEFAULT_PRACTICE_BPM,
   DEFAULT_SCALE_SPEC,
   IDLE_SESSION,
-  isFingeringSystemId,
-  isInExercise,
-  normalisePitchClass,
-  PIANO_HIGHEST_NOTE,
-  PIANO_LOWEST_NOTE,
-  accuracy,
   sessionReducer,
-  tempo,
   WRONG_NOTE_FLASH_MS,
-  type ArpeggioSpec,
-  type ChordSpec,
-  type Exercise,
-  type FingeringDrillSpec,
   type FingeringSystemId,
   type LearningMode,
   type NoteRange,
-  type CadenceSpec,
-  type ProgressionType,
-  type RoutineSpec,
-  type ScaleSpec,
+  type SessionEvent,
   type SessionState,
-  type LessonExerciseId,
-  type Hand,
 } from '@motius/shared'
+import { loadChunk } from '@/lib/load-chunk'
+import { buildAnnotations } from './learning-annotations'
+import {
+  buildExercise,
+  clampBpm,
+  FINGERING_SYSTEM_KEY,
+  loadFingeringSystem,
+  loadFor,
+  nextTargetBpm,
+} from './learning-exercise'
+import type { Chosen, Hit, LearningState, LearningTopic, SpecKey, Specs } from './learning-types'
+
+export {
+  AVAILABLE_TOPICS,
+  LEARNING_TOPIC_LABELS,
+  LEARNING_TOPICS,
+  type Hit,
+  type KeyAnnotation,
+  type KeyLabels,
+  type KeyRole,
+  type LearningTopic,
+} from './learning-types'
 
 /**
  * The learning session, and the keyboard annotations that come out of it.
@@ -57,351 +56,38 @@ import {
  * chords and progressions arrive they produce the same map.
  */
 
-export const LEARNING_TOPICS = [
-  'songs',
+const initialFingeringSystem = loadFingeringSystem()
+const INITIAL_SPECS = {
+  spec: DEFAULT_SCALE_SPEC,
+  chordSpec: DEFAULT_CHORD_SPEC,
+  arpeggioSpec: DEFAULT_ARPEGGIO_SPEC,
+  progressionType: DEFAULT_PROGRESSION_TYPE,
+  cadenceSpec: DEFAULT_CADENCE_SPEC,
+  routineSpec: DEFAULT_ROUTINE_SPEC,
+  fingeringSpec: DEFAULT_FINGERING_DRILL_SPEC,
+  lesson: null,
+} as const
+// Null until Scales' builder has loaded, which the workspace asks for when it
+// opens (`ready`); where it already has (in the tests), the scale at once.
+const initialExercise = buildExercise(
   'scales',
-  'chords',
-  'arpeggios',
-  'progressions',
-  'exercises',
-  'fingering',
-  // A lesson's stage: nothing to build until lessons are written, so the keys
-  // are clear and the staff writes what is played. It is no area of its own.
-  'lesson',
-] as const
-export type LearningTopic = (typeof LEARNING_TOPICS)[number]
-
-export const LEARNING_TOPIC_LABELS: Record<LearningTopic, string> = {
-  songs: 'Songs',
-  scales: 'Scales',
-  chords: 'Chords',
-  arpeggios: 'Arpeggios',
-  progressions: 'Progressions',
-  exercises: 'Daily Practice',
-  fingering: 'Fingering Exercises',
-  lesson: 'Lesson',
-}
-
-/**
- * The areas: every topic with a builder, each at an address of its own. A
- * lesson's stage is at its lesson's address, not at one of these.
- */
-export const AVAILABLE_TOPICS: readonly LearningTopic[] = LEARNING_TOPICS.filter(
-  (topic) => topic !== 'lesson',
+  INITIAL_SPECS,
+  initialFingeringSystem,
+  DEFAULT_PLAYABLE_RANGE,
 )
 
-/** What each area is set to. One per area, so leaving one and coming back finds it as it was. */
-interface Specs {
-  spec: ScaleSpec
-  chordSpec: ChordSpec
-  arpeggioSpec: ArpeggioSpec
-  /** Progressions has a spec for each of its types; Cadences is the first. */
-  cadenceSpec: CadenceSpec
-  routineSpec: RoutineSpec
-  fingeringSpec: FingeringDrillSpec
-}
-type SpecKey = keyof Specs
-
-/** The settings, and which of them an area with more than one set is using. */
-interface Chosen extends Specs {
-  progressionType: ProgressionType
-  /** What the lesson that is up plays, where it plays anything. */
-  lesson: LessonExerciseId | null
-}
-
-export interface Hit {
-  readonly step: number
-  readonly hand?: Hand
-}
-
-export type KeyRole = 'scale' | 'root' | 'upcoming' | 'target' | 'wrong'
-
-export interface KeyAnnotation {
-  readonly role: KeyRole
-  /** Recommended finger, 1-5. Never a claim about which finger was used. */
-  readonly finger?: number
-  /** The hand that plays it, where the exercise says: falling notes color its key by it. */
-  readonly hand?: Hand
-  /** `Thumb under` — shown only on the key it applies to, while it is current. */
-  readonly cue?: string
-  /** The spelled note name, e.g. `E♭`. */
-  readonly label?: string
-  /** This note's scale degree — `1`, `♭3`. Shown when key labels are set to it. */
-  readonly degree?: string
-  /** Which of the scale's two four-note groups this key belongs to, if either. */
-  readonly group?: 'lower' | 'upper'
-}
-
-/**
- * What the keys say on them. One at a time, on purpose.
- *
- * Note names, degrees and fingers are three answers to three different
- * questions, and printing two of them at once produces a key labelled 4 with a
- * 3 above it — two answers to a question nobody asked together.
- */
-export type KeyLabels = 'off' | 'notes' | 'degrees' | 'fingers'
-
-interface LearningState {
-  topic: LearningTopic
-  mode: LearningMode
-  spec: ScaleSpec
-  chordSpec: ChordSpec
-  arpeggioSpec: ArpeggioSpec
-  /** Which kind of progression the Progressions area is on. */
-  progressionType: ProgressionType
-  cadenceSpec: CadenceSpec
-  routineSpec: RoutineSpec
-  fingeringSpec: FingeringDrillSpec
-  /** What the lesson that is up plays: none for a lesson not written yet. */
-  lesson: LessonExerciseId | null
-  exercise: Exercise | null
-  session: SessionState
-  annotations: Readonly<Record<number, KeyAnnotation>>
-  /** Beats per minute the practice controls are set to. A target, not a metronome. */
-  targetBpm: number
-  /** Let a clean run raise the target and a scrappy one lower it. */
-  autoTempo: boolean
-  /**
-   * A click at the target tempo, for as long as it is on.
-   *
-   * The target used to be "a target, not a metronome": a number to aim at with
-   * nothing to hear it by. The click makes the number something you can play
-   * against. Not tied to a run — you set the pulse, then start when ready.
-   */
-  metronome: boolean
-  /**
-   * Which step the demonstration is sounding, or null when it is not playing.
-   *
-   * Separate from `session.stepIndex` because the two answer different
-   * questions: the session's index is how far the *player* has got and feeds
-   * the score, while this is only where the playback head is. Guidance reads
-   * whichever is live, so the finger that lights up during a demonstration is
-   * the same finger Start would light on that note.
-   */
-  demoStepIndex: number | null
-  /**
-   * Rises each time the click should start again from the first beat of a bar
-   * — when a demonstration begins, so the two come in together.
-   */
-  pulseEpoch: number
-  /**
-   * Whose fingering is recommended.
-   *
-   * Beside the spec, not in it: the spec is the music, and this is one school's
-   * opinion about how to play it. Changing it re-fingers the same notes.
-   */
-  fingeringSystem: FingeringSystemId
-  /**
-   * The keys the player has: a connected keyboard's, or a 61-key instrument's.
-   *
-   * It only ever moves an exercise by octaves — to where the book prints it
-   * when the keyboard reaches that far, and onto the keys there are when it
-   * does not.
-   */
-  playableRange: NoteRange
-  /** View settings. What is drawn on the keys, not what the keys mean. */
-  keyLabels: KeyLabels
-  showStructure: boolean
-  /**
-   * What the keyboard shows while a song is being learned.
-   *
-   * Held beside the scale annotations rather than replacing them, so switching
-   * tabs does not throw away either one. The keyboard reads whichever belongs
-   * to the topic it is on.
-   */
-  songAnnotations: Readonly<Record<number, KeyAnnotation>>
-  /**
-   * Keys pressed when they were right: which step they were part of and the
-   * hand that plays them. A key is lit as a hit while it is still held (the
-   * keyboard store says which are), so the falling note and its key can show
-   * the player got it — each key of a chord as it goes down.
-   */
-  hits: Readonly<Record<number, Hit>>
-
-  setTopic: (topic: LearningTopic) => void
-  /** Puts a lesson's exercise up, or none. A new lesson ends the run. */
-  setLesson: (lesson: LessonExerciseId | null) => void
-  setMode: (mode: LearningMode) => void
-  updateSpec: (patch: Partial<ScaleSpec>) => void
-  updateChordSpec: (patch: Partial<ChordSpec>) => void
-  updateArpeggioSpec: (patch: Partial<ArpeggioSpec>) => void
-  setProgressionType: (type: ProgressionType) => void
-  updateCadenceSpec: (patch: Partial<CadenceSpec>) => void
-  updateRoutineSpec: (patch: Partial<RoutineSpec>) => void
-  updateFingeringSpec: (patch: Partial<FingeringDrillSpec>) => void
-  start: () => void
-  reset: () => void
-  setDemoStep: (index: number | null) => void
-  setFingeringSystem: (system: FingeringSystemId) => void
-  /** Null for no keyboard connected, which is the default range. */
-  setPlayableRange: (range: NoteRange | null) => void
-  setSongAnnotations: (annotations: Record<number, KeyAnnotation>) => void
-  setKeyLabels: (labels: KeyLabels) => void
-  setShowStructure: (show: boolean) => void
-  setTargetBpm: (bpm: number) => void
-  setAutoTempo: (enabled: boolean) => void
-  setMetronome: (enabled: boolean) => void
-  noteOn: (note: number) => void
-  /** The step being waited on went by unplayed: the run moves on without it. */
-  missStep: () => void
-  /** Go to a step, the score starting again from there: the music was moved. */
-  seekStep: (step: number) => void
-  expireWrongNotes: () => void
-}
-
-/** How many notes ahead carry a finger badge in Learn mode. */
-const LOOKAHEAD = 6
-
-function buildExercise(
-  topic: LearningTopic,
-  specs: Chosen,
-  fingering: FingeringSystemId,
-  range: NoteRange,
-): Exercise | null {
-  // One switch, and it is the only place that maps a topic to a builder. A new
-  // area is a case here plus a builder in shared.
-  const options = { fingering, range }
-  switch (topic) {
-    case 'scales':
-      return buildScaleExercise(specs.spec, options)
-    case 'chords':
-      return buildChordExercise(specs.chordSpec, options)
-    case 'arpeggios':
-      return buildArpeggioExercise(specs.arpeggioSpec, options)
-    case 'progressions':
-      // The area's own switch: a new type of progression is a case here.
-      switch (specs.progressionType) {
-        case 'cadences':
-          return buildCadenceExercise(specs.cadenceSpec, options)
-        default:
-          return null
-      }
-    case 'exercises':
-      return buildRoutineExercise(specs.routineSpec, options)
-    case 'fingering':
-      return buildFingeringExercise(specs.fingeringSpec, options)
-    case 'lesson':
-      return specs.lesson ? buildLessonExercise(specs.lesson, { range }) : null
-    default:
-      return null
-  }
-}
-
-const FINGERING_SYSTEM_KEY = 'motius.fingering.system'
-
-function loadFingeringSystem(): FingeringSystemId {
-  try {
-    const stored = window.localStorage.getItem(FINGERING_SYSTEM_KEY)
-    // A system this version does not have — saved by a later one — is the default.
-    return isFingeringSystemId(stored) ? stored : DEFAULT_FINGERING_SYSTEM
-  } catch {
-    return DEFAULT_FINGERING_SYSTEM
-  }
-}
-
-function buildAnnotations(
-  exercise: Exercise | null,
-  mode: LearningMode,
-  session: SessionState,
-  demoStepIndex: number | null = null,
-): Record<number, KeyAnnotation> {
-  const annotations: Record<number, KeyAnnotation> = {}
-  if (!exercise) return annotations
-
-  const nameFor = (note: number) => exercise.pitchNames[normalisePitchClass(note)]
-
-  if (mode === 'explore') {
-    // Every octave, because "the notes of A minor" is a fact about the whole
-    // keyboard, not about the two octaves this exercise happens to walk.
-    for (let note = PIANO_LOWEST_NOTE; note <= PIANO_HIGHEST_NOTE; note++) {
-      if (!isInExercise(exercise, note)) continue
-      annotations[note] = {
-        role: normalisePitchClass(note) === exercise.rootPitchClass ? 'root' : 'scale',
-        label: nameFor(note),
-      }
-    }
-    return annotations
-  }
-
-  if (mode === 'practice') {
-    // The guidance goes away. Only your own mistakes come back.
-    for (const note of Object.keys(session.wrongNotes)) {
-      annotations[Number(note)] = { role: 'wrong' }
-    }
-    return annotations
-  }
-
-  // Learn: the exercise's own notes, in the octaves it actually walks.
-  // The demonstration's playback head stands in for the player's position while
-  // it is running, so the same target, finger and cue appear on the same note.
-  const here = demoStepIndex ?? session.stepIndex
-  exercise.steps.forEach((step, index) => {
-    const ahead = index - here
-    step.notes.forEach((note, i) => {
-      const existing = annotations[note]
-      // A note played twice in a scale keeps the annotation of its earliest
-      // remaining occurrence, which is the one the player is heading for.
-      if (existing && existing.role !== 'scale') return
-      annotations[note] = {
-        // Notes already played keep the quiet wash and lose their badge. The
-        // shape of the scale stays on the keyboard — a keybed that empties out
-        // behind you takes away the very thing you are learning to see.
-        role:
-          ahead < 0 ? 'scale' : ahead === 0 ? 'target' : ahead <= LOOKAHEAD ? 'upcoming' : 'scale',
-        finger: ahead < 0 ? undefined : step.fingers[i]?.finger,
-        hand: step.fingers[i]?.hand,
-        // The finger's own cue, not the step's: with both hands on a step only
-        // one of them is crossing, and the cue belongs on that hand's key.
-        cue: ahead === 0 ? step.fingers[i]?.cue : undefined,
-        label: step.noteLabels?.[i] ?? step.label,
-      }
-    })
-  })
-
-  for (const note of Object.keys(session.wrongNotes)) {
-    annotations[Number(note)] = { role: 'wrong' }
-  }
-
-  return describe(annotations, exercise)
-}
-
-/**
- * Adds the facts a key can be labelled with, whatever the mode decided.
- *
- * Always, rather than when a toolbar switch is on: these are properties of the
- * note, not of the view, and computing them here keeps the toolbar a rendering
- * decision instead of a reason to rebuild every annotation.
- */
-function describe(
-  annotations: Record<number, KeyAnnotation>,
-  exercise: Exercise,
-): Record<number, KeyAnnotation> {
-  const groups = exercise.tetrachordGroups
-
-  for (const [key, annotation] of Object.entries(annotations)) {
-    const note = Number(key)
-    const pitchClass = normalisePitchClass(note)
-    const degree = exercise.pitchDegrees?.[pitchClass]
-    // The tonic both opens the lower group and closes the upper one. It reads
-    // as the start of the scale, so the lower group keeps it.
-    const group = groups?.lower.includes(pitchClass)
-      ? ('lower' as const)
-      : groups?.upper.includes(pitchClass)
-        ? ('upper' as const)
-        : undefined
-
-    if (degree || group) annotations[note] = { ...annotation, degree, group }
-  }
-
-  return annotations
-}
-
-const initialFingeringSystem = loadFingeringSystem()
-const initialExercise = buildScaleExercise(DEFAULT_SCALE_SPEC, {
-  fingering: initialFingeringSystem,
-})
-
 export const useLearningStore = create<LearningState>((set, get) => {
+  /** An event for the run, kept and drawn if it changed anything. */
+  const dispatch = (event: SessionEvent) => {
+    const state = get()
+    const session = sessionReducer(state.session, event, state.exercise)
+    if (session === state.session) return
+    set({
+      session,
+      annotations: buildAnnotations(state.exercise, state.mode, session, state.demoStepIndex),
+    })
+  }
+
   const rebuild = (
     topic: LearningTopic,
     specs: Chosen,
@@ -422,6 +108,26 @@ export const useLearningStore = create<LearningState>((set, get) => {
       demoStepIndex: null,
       annotations: buildAnnotations(exercise, mode, session),
     }
+  }
+
+  /**
+   * Fetches what the exercise as set needs, if it is not here yet — its area's
+   * builder, or its lesson's section — then puts it on the keys, if it is still
+   * the one asked for. Content and code alike, a part at a time, when first used.
+   */
+  const fetchExercise = () => {
+    const asked = get()
+    const pending = loadFor(asked.topic, asked)
+    if (!pending) return
+    void loadChunk(() => pending).then(() => {
+      const state = get()
+      if (
+        state.topic === asked.topic &&
+        state.lesson === asked.lesson &&
+        state.progressionType === asked.progressionType
+      )
+        set(rebuild(state.topic, state, state.mode, IDLE_SESSION))
+    })
   }
 
   /** Changes one area's settings and rebuilds what is on the keys from them. */
@@ -464,18 +170,11 @@ export const useLearningStore = create<LearningState>((set, get) => {
   return {
     topic: 'scales',
     mode: 'learn',
-    spec: DEFAULT_SCALE_SPEC,
-    chordSpec: DEFAULT_CHORD_SPEC,
-    arpeggioSpec: DEFAULT_ARPEGGIO_SPEC,
-    progressionType: DEFAULT_PROGRESSION_TYPE,
-    cadenceSpec: DEFAULT_CADENCE_SPEC,
-    routineSpec: DEFAULT_ROUTINE_SPEC,
-    fingeringSpec: DEFAULT_FINGERING_DRILL_SPEC,
-    lesson: null,
+    ...INITIAL_SPECS,
     exercise: initialExercise,
     session: IDLE_SESSION,
     annotations: buildAnnotations(initialExercise, 'learn', IDLE_SESSION),
-    targetBpm: initialExercise.defaultBpm,
+    targetBpm: initialExercise?.defaultBpm ?? DEFAULT_PRACTICE_BPM,
     autoTempo: false,
     metronome: false,
     demoStepIndex: null,
@@ -487,15 +186,21 @@ export const useLearningStore = create<LearningState>((set, get) => {
     songAnnotations: {},
     hits: {},
 
-    setTopic: (topic) =>
-      set((state) => ({ topic, ...rebuild(topic, state, state.mode, IDLE_SESSION) })),
+    ready: fetchExercise,
 
-    setLesson: (lesson) =>
+    setTopic: (topic) => {
+      set((state) => ({ topic, ...rebuild(topic, state, state.mode, IDLE_SESSION) }))
+      fetchExercise()
+    },
+
+    setLesson: (lesson) => {
       set((state) =>
         state.lesson === lesson
           ? state
           : { lesson, ...rebuild(state.topic, { ...state, lesson }, state.mode, IDLE_SESSION) },
-      ),
+      )
+      fetchExercise()
+    },
 
     setMode: (mode) =>
       // Changing mode ends the run. Half a scale learned with the answers on
@@ -506,7 +211,7 @@ export const useLearningStore = create<LearningState>((set, get) => {
     updateSpec: (patch) => respec('spec', patch),
     updateChordSpec: (patch) => respec('chordSpec', patch),
     updateArpeggioSpec: (patch) => respec('arpeggioSpec', patch),
-    setProgressionType: (progressionType) =>
+    setProgressionType: (progressionType) => {
       // A different kind of progression is a different exercise, so the run
       // ends as it does on leaving for another area. Each type keeps its own
       // settings, and comes back as it was left.
@@ -517,7 +222,9 @@ export const useLearningStore = create<LearningState>((set, get) => {
               progressionType,
               ...rebuild(state.topic, { ...state, progressionType }, state.mode, IDLE_SESSION),
             },
-      ),
+      )
+      fetchExercise()
+    },
     updateCadenceSpec: (patch) => respec('cadenceSpec', patch),
     updateRoutineSpec: (patch) => respec('routineSpec', patch),
     updateFingeringSpec: (patch) => respec('fingeringSpec', patch),
@@ -596,7 +303,7 @@ export const useLearningStore = create<LearningState>((set, get) => {
     setAutoTempo: (autoTempo) => set({ autoTempo }),
     setMetronome: (metronome) => set({ metronome }),
 
-    noteOn: (note) => {
+    noteOn: (note, velocity) => {
       const state = get()
       if (state.session.status !== 'running') return
       const step = state.exercise?.steps[state.session.stepIndex]
@@ -615,7 +322,7 @@ export const useLearningStore = create<LearningState>((set, get) => {
       }
       const session = sessionReducer(
         state.session,
-        { type: 'noteOn', note, at: Date.now() },
+        { type: 'noteOn', note, at: Date.now(), velocity },
         state.exercise,
       )
       if (session === state.session && hits === state.hits) return
@@ -649,19 +356,11 @@ export const useLearningStore = create<LearningState>((set, get) => {
       })
     },
 
-    missStep: () => {
-      const state = get()
-      const session = sessionReducer(
-        state.session,
-        { type: 'miss', at: Date.now() },
-        state.exercise,
-      )
-      if (session === state.session) return
-      set({
-        session,
-        annotations: buildAnnotations(state.exercise, state.mode, session, state.demoStepIndex),
-      })
-    },
+    missStep: () => dispatch({ type: 'miss', at: Date.now() }),
+
+    noteOff: (note) => dispatch({ type: 'noteOff', note, at: Date.now() }),
+
+    holdTick: () => dispatch({ type: 'tick', at: Date.now(), beatMs: 60_000 / get().targetBpm }),
 
     expireWrongNotes: () => {
       const state = get()
@@ -680,25 +379,10 @@ export const useLearningStore = create<LearningState>((set, get) => {
   }
 })
 
-function clampBpm(bpm: number): number {
-  return Math.min(208, Math.max(30, Math.round(bpm)))
-}
-
-const AUTO_TEMPO_STEP = 4
-
-function nextTargetBpm(target: number, session: SessionState, exercise: Exercise | null): number {
-  const score = accuracy(session)
-  const measured = tempo(session, exercise)
-  if (score >= 0.95 && measured !== null && measured >= target * 0.95) {
-    return clampBpm(target + AUTO_TEMPO_STEP)
-  }
-  if (score < 0.85) return clampBpm(target - AUTO_TEMPO_STEP)
-  return target
-}
-
 /** For hot paths and event handlers — no subscription, no re-render. */
 export const learningActions = {
-  noteOn: (note: number) => useLearningStore.getState().noteOn(note),
+  noteOn: (note: number, velocity?: number) => useLearningStore.getState().noteOn(note, velocity),
+  noteOff: (note: number) => useLearningStore.getState().noteOff(note),
   setDemoStep: (index: number | null) => useLearningStore.getState().setDemoStep(index),
   syncPulse: () => useLearningStore.setState((state) => ({ pulseEpoch: state.pulseEpoch + 1 })),
 }

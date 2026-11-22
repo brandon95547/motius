@@ -1,11 +1,13 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
 
-const API_TARGET = process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:5175'
+/** The project's one `.env` is at the root of the repository, for the API and this app alike. */
+const ENV_DIR = path.resolve(import.meta.dirname, '../..')
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  envDir: ENV_DIR,
   plugins: [react(), tailwindcss()],
   resolve: { alias: { '@': path.resolve(import.meta.dirname, './src') } },
   server: {
@@ -18,12 +20,17 @@ export default defineConfig({
     proxy: {
       // Proxying in dev means the browser only ever talks to one origin, so
       // there is no preflight and no CORS surprise between dev and production.
-      '/api': { target: API_TARGET, changeOrigin: true },
+      '/api': {
+        target: loadEnv(mode, ENV_DIR, 'VITE_').VITE_API_PROXY_TARGET ?? 'http://localhost:5175',
+        changeOrigin: true,
+      },
     },
   },
   build: {
     target: 'es2022',
     sourcemap: true,
+    // What each entry and chunk loads, for `npm run check:budgets`.
+    manifest: true,
     rollupOptions: {
       output: {
         // The sample engine pulls in the whole smplr runtime and is only needed
@@ -33,4 +40,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))

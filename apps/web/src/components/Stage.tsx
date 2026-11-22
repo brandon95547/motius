@@ -1,19 +1,20 @@
 import { RotateCcw } from 'lucide-react'
-import { accuracy } from '@motius/shared'
+import { leadInMs, practiceSummary, runSummary } from '@motius/shared'
 import { cn } from '@/lib/cn'
+import { BarButton } from '@/ui/BarButton'
 import { useAudio } from '@/audio/AudioProvider'
 import { EngineChip } from '@/audio/EngineChip'
 import { FallingNotes } from '@/features/keyboard/FallingNotes'
+import { SongFallingNotes } from '@/features/keyboard/SongFallingNotes'
 import { GrandStaff } from '@/features/staff/GrandStaff'
 import { ScaleScore } from '@/features/staff/ScaleScore'
 import { SongScore } from '@/features/staff/SongScore'
 import { SongProgress } from '@/features/songs/SongProgress'
-import { RunMeter } from '@/features/learning/RunMeter'
+import { RunMeter } from '@/ui/RunMeter'
 import { EXERCISE_NOUNS } from '@/features/learning/ScaleControls'
 import { useLearningStore } from '@/state/learning-store'
 import { useCurrentSong, useSongStore } from '@/state/song-store'
 import { useViewStore } from '@/state/view-store'
-import { NextLessonButton } from '@/features/areas/Lessons'
 import { StageBackdrop } from './StageBackdrop'
 
 /**
@@ -36,12 +37,11 @@ export function Stage({ children }: { children?: React.ReactNode }) {
   const scoreOpen = topic === 'songs' && song !== null
   const sheet = scoreOpen && staffView === 'sheet'
   // Falling notes wherever they were chosen, with or without notes to fall:
-  // the choice holds from screen to screen. Songs keep the staff until they
-  // have them (the bar does not offer falling notes there).
-  const falling = stageView === 'falling' && topic !== 'songs'
+  // the choice holds from screen to screen, songs included.
+  const falling = stageView === 'falling'
 
   return (
-    <main className="stage" aria-label="Staff">
+    <main className="stage" aria-label="Staff" data-falling={falling}>
       <StageBackdrop />
       {topic === 'songs' && <SongProgress />}
       {children}
@@ -49,9 +49,10 @@ export function Stage({ children }: { children?: React.ReactNode }) {
       <div className="stage__notices">
         <EngineNotice />
         {topic !== 'songs' && <RunStatus />}
+        {topic !== 'songs' && <WrongHint />}
       </div>
 
-      {falling && <FallingNotes />}
+      {falling && (scoreOpen ? <SongFallingNotes /> : <FallingNotes />)}
       {!falling && (
         <div className={cn('staff-panel', sheet && 'staff-panel--sheet')}>
           {/* Whatever has notes to read gets them written out: a song its
@@ -67,7 +68,7 @@ export function Stage({ children }: { children?: React.ReactNode }) {
         </div>
       )}
 
-      {topic !== 'songs' && <RunComplete />}
+      {topic === 'songs' ? <SongPracticeComplete /> : <RunComplete />}
     </main>
   )
 }
@@ -94,19 +95,53 @@ function EngineNotice() {
   )
 }
 
-/** Where a run has got to, while it runs. The full picture is in the Progress panel. */
+/** Where a run has got to, while it runs. The full picture is in the This run panel. */
 function RunStatus() {
   const session = useLearningStore((state) => state.session)
   const total = useLearningStore((state) => state.exercise?.steps.length ?? 0)
   const what = useLearningStore((state) => EXERCISE_NOUNS[state.exercise?.kind ?? 'scale'])
+  const lesson = useLearningStore((state) => state.topic === 'lesson')
   if (session.status !== 'running') return null
   return (
     <RunMeter
       done={session.completedSteps}
       total={total}
       mistakes={session.mistakes}
-      label={`the ${what}`}
+      label={lesson ? 'the lesson' : `the ${what}`}
+      title={lesson ? 'Lesson progress' : undefined}
     />
+  )
+}
+
+/** What the run says to a right key played otherwise (`session.feedback`). */
+const FEEDBACK_WORDS = {
+  softer: 'Softer',
+  louder: 'Louder',
+  longer: 'Hold it longer',
+} as const
+
+/**
+ * A word for the player, one at a time: while a long note is held, to keep
+ * holding; after a right key played too loud, too soft or let go too soon,
+ * which way to go — said until the step is played; and for a wrong key of a
+ * kind the lesson expects (`Exercise.wrongHints`), a group of three in a
+ * lesson on the twos is "That's three. Look for a pair."
+ */
+function WrongHint() {
+  const text = useLearningStore((state) => {
+    if (state.session.holding) return 'Keep holding'
+    if (state.session.feedback) return FEEDBACK_WORDS[state.session.feedback.kind]
+    const hints = state.exercise?.wrongHints
+    const wrong = Object.entries(state.session.wrongNotes)
+    if (!hints || wrong.length === 0) return null
+    const [note] = wrong.reduce((latest, each) => (each[1] > latest[1] ? each : latest))
+    return hints.find((hint) => hint.pitchClasses.includes(Number(note) % 12))?.text ?? null
+  })
+  if (!text) return null
+  return (
+    <span className="stage-pill" role="status">
+      {text}
+    </span>
   )
 }
 
@@ -116,46 +151,61 @@ function RunStatus() {
  * It used to be a line in a card under the keyboard, which is to say nowhere a
  * player with their eyes on the music would see it. It sits on the music now,
  * with the one thing anyone wants next: to go again — or, at the end of a
- * lesson, to go on to the next.
+ * lesson, to go on to the next (`LessonComplete`, a lesson's own). One card for
+ * a practice area's run and a song's.
  */
-function RunComplete() {
-  const session = useLearningStore((state) => state.session)
-  const steps = useLearningStore((state) => state.exercise?.steps.length ?? 0)
-  // A step of solid chords is a chord, not a note.
-  const unit = useLearningStore(
-    (state) =>
-      state.exercise?.stepsAre ??
-      ((state.exercise?.kind === 'chord' || state.exercise?.kind === 'progression') &&
-      state.exercise.steps.every((step) => step.noteLabels)
-        ? 'chords'
-        : 'notes'),
-  )
-  const start = useLearningStore((state) => state.start)
-  if (session.status !== 'complete') return null
-  const percent = Math.round(accuracy(session) * 100)
-
+function RunResult({ detail, onAgain }: { detail: string; onAgain: () => void }) {
   return (
     <div className="run-complete" role="status">
       <div className="flex flex-col">
         <span className="run-complete__title">Complete</span>
         <span className="run-complete__detail" data-tabular>
-          {steps} {unit} · {percent}% accuracy ·{' '}
-          {session.mistakes === 0 && session.missedSteps.length === 0
-            ? 'clean'
-            : [
-                session.mistakes > 0 &&
-                  `${session.mistakes} ${session.mistakes === 1 ? 'mistake' : 'mistakes'}`,
-                session.missedSteps.length > 0 && `${session.missedSteps.length} missed`,
-              ]
-                .filter(Boolean)
-                .join(' · ')}
+          {detail}
         </span>
       </div>
-      <button type="button" className="bar-start" onClick={start}>
-        <RotateCcw size={18} aria-hidden />
-        <span className="bar-start__label">Again</span>
-      </button>
-      <NextLessonButton />
+      <BarButton
+        look="start"
+        label="Again"
+        showLabel
+        icon={<RotateCcw size={18} aria-hidden />}
+        onClick={onAgain}
+      />
     </div>
   )
+}
+
+/** "2 mistakes · 1 missed", or "clean". */
+const faults = (parts: [count: number, one: string, many: string][]) =>
+  parts
+    .filter(([count]) => count > 0)
+    .map(([count, one, many]) => `${count} ${count === 1 ? one : many}`)
+    .join(' · ') || 'clean'
+
+/** A practice area's run. A lesson's ends in its own dialog (`LessonComplete`). */
+function RunComplete() {
+  const session = useLearningStore((state) => state.session)
+  const exercise = useLearningStore((state) => state.exercise)
+  const lesson = useLearningStore((state) => state.topic === 'lesson')
+  const start = useLearningStore((state) => state.start)
+  if (session.status !== 'complete' || !exercise || lesson) return null
+  return <RunResult detail={runSummary(exercise, session)} onAgain={start} />
+}
+
+/** How a song's Practice run went: each step on time, early, late or missed. */
+function SongPracticeComplete() {
+  const song = useCurrentSong()
+  const practiced = useSongStore((state) => state.practiced)
+  const results = useSongStore((state) => state.practice.results)
+  const total = useSongStore((state) => state.stepCount)
+  const startPractice = useSongStore((state) => state.startPractice)
+  if (!practiced || !song) return null
+  const run = practiceSummary(results, total)
+  const detail = `${run.total} steps · ${Math.round(run.accuracy * 100)}% played · ${run.onTime} on time · ${faults(
+    [
+      [run.early, 'early', 'early'],
+      [run.late, 'late', 'late'],
+      [run.missed, 'missed', 'missed'],
+    ],
+  )}`
+  return <RunResult detail={detail} onAgain={() => startPractice(leadInMs(song))} />
 }

@@ -101,6 +101,126 @@ export const MIGRATIONS: readonly Migration[] = [
       ALTER TABLE song_categories DROP COLUMN category;
     `,
   },
+  {
+    version: 4,
+    name: 'accounts_lesson_settings_and_runs',
+    up: /* sql */ `
+      -- Everyone who has signed in, by their Google account. Whether one is an
+      -- admin is not kept here: it is the server's .env that says so, read on
+      -- every request, so taking someone off the list takes effect at once.
+      CREATE TABLE users (
+        id             INTEGER PRIMARY KEY,
+        google_sub     TEXT    NOT NULL UNIQUE,
+        email          TEXT    NOT NULL,
+        name           TEXT    NOT NULL,
+        picture        TEXT,
+        created_at     TEXT    NOT NULL,
+        last_seen_at   TEXT    NOT NULL
+      );
+
+      -- A sign-in. Only a hash of the cookie's token is kept, so a copy of the
+      -- database signs nobody in.
+      CREATE TABLE sessions (
+        token_hash  TEXT    PRIMARY KEY,
+        user_id     INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+        created_at  TEXT    NOT NULL,
+        expires_at  TEXT    NOT NULL
+      );
+      CREATE INDEX sessions_user_idx ON sessions (user_id);
+
+      -- How a lesson opens, for everybody, where an admin has said. Each
+      -- column is NULL where it has not been set.
+      CREATE TABLE lesson_settings (
+        lesson_key  TEXT PRIMARY KEY,
+        key_labels  TEXT,
+        stage_view  TEXT,
+        hands       INTEGER,
+        bpm         INTEGER,
+        updated_at  TEXT NOT NULL,
+        updated_by  TEXT NOT NULL
+      );
+
+      -- Every run a player has finished: the score of a lesson, an exercise or
+      -- a song. Nothing queries inside one, so all but its owner, time and key
+      -- is one JSON record, validated on the way in and out.
+      CREATE TABLE runs (
+        id       INTEGER PRIMARY KEY,
+        user_id  INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+        at       INTEGER NOT NULL,
+        run_key  TEXT    NOT NULL,
+        record   TEXT    NOT NULL
+      );
+      CREATE INDEX runs_user_at_idx ON runs (user_id, at);
+    `,
+  },
+  {
+    version: 5,
+    name: 'lessons_reset',
+    up: /* sql */ `
+      -- When a player last started the lessons over, in milliseconds since
+      -- 1970: their lesson scores count only the lesson runs after it, while
+      -- every run stays in their history. NULL for never.
+      ALTER TABLE users ADD COLUMN lessons_reset_at INTEGER;
+    `,
+  },
+  {
+    version: 6,
+    name: 'devices_owner',
+    up: /* sql */ `
+      -- A keyboard and its settings belong to the player who announced it, so
+      -- each player sees and changes only their own. The same keyboard on two
+      -- players' machines is two rows, one each: the key is (user_id, id).
+      --
+      -- SQLite cannot add a primary key to a table, so it is rebuilt. The
+      -- devices kept before there were owners go to the first account (the
+      -- lowest user id), which on a one-person install is that person. Where
+      -- nobody has signed in yet they have no one to go to and are dropped:
+      -- the browser announces every keyboard again on the next page load, so
+      -- what is lost is only settings changed before devices had owners.
+      CREATE TABLE devices_owned (
+        user_id        INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+        id             TEXT    NOT NULL,
+        name           TEXT    NOT NULL,
+        manufacturer   TEXT    NOT NULL DEFAULT '',
+        profile_id     TEXT    REFERENCES device_profiles (id) ON DELETE SET NULL,
+        key_count      INTEGER NOT NULL,
+        config         TEXT    NOT NULL,
+        first_seen_at  TEXT    NOT NULL,
+        last_seen_at   TEXT    NOT NULL,
+        PRIMARY KEY (user_id, id)
+      );
+
+      INSERT INTO devices_owned
+        (user_id, id, name, manufacturer, profile_id, key_count, config, first_seen_at, last_seen_at)
+      SELECT (SELECT MIN(id) FROM users), id, name, manufacturer, profile_id, key_count, config,
+             first_seen_at, last_seen_at
+        FROM devices
+       WHERE EXISTS (SELECT 1 FROM users);
+
+      DROP TABLE devices;
+      ALTER TABLE devices_owned RENAME TO devices;
+      CREATE INDEX devices_user_last_seen_idx ON devices (user_id, last_seen_at DESC);
+    `,
+  },
+  {
+    version: 7,
+    name: 'goals_and_seen_badges',
+    up: /* sql */ `
+      -- The weekly goal a player picked: so many runs at 90% or better a week.
+      -- NULL until they pick one.
+      ALTER TABLE users ADD COLUMN weekly_goal INTEGER;
+
+      -- The badges whose unlock a player has been shown, so each is shown once
+      -- on whichever device it happens. Whether a badge is earned is worked out
+      -- from the runs; only that it was seen is kept. seen_at is in ms since 1970.
+      CREATE TABLE seen_badges (
+        user_id   INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+        badge_id  TEXT    NOT NULL,
+        seen_at   INTEGER NOT NULL,
+        PRIMARY KEY (user_id, badge_id)
+      );
+    `,
+  },
 ]
 
 /** Applies every migration newer than the file's current `user_version`. */

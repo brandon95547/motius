@@ -2,6 +2,7 @@ import * as React from 'react'
 import { Loader2, Search } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useDismissable } from '@/lib/hooks'
+import { Listbox, ListboxOption, listKeys, useActiveInView } from '@/ui/Listbox'
 import { useLearningStore } from '@/state/learning-store'
 import { useSongStore } from '@/state/song-store'
 import { loadCatalogSong } from './catalog'
@@ -97,12 +98,7 @@ export function SongSearch({ className }: { className?: string }) {
   }
 
   // The highlighted song stays in sight as the arrows move it.
-  React.useEffect(() => {
-    if (!open) return
-    listRef.current
-      ?.querySelector<HTMLElement>('[data-active="true"]')
-      ?.scrollIntoView?.({ block: 'nearest' })
-  }, [open, active])
+  useActiveInView(listRef, open, active)
 
   return (
     <div ref={wrapRef} className={cn('bar-search', className)}>
@@ -131,24 +127,17 @@ export function SongSearch({ className }: { className?: string }) {
           setActive(0)
           setFailed(null)
         }}
-        onKeyDown={(event) => {
-          if (event.key === 'ArrowDown') {
-            event.preventDefault()
-            setActive((index) => Math.min(matches.length - 1, index + 1))
-          } else if (event.key === 'ArrowUp') {
-            event.preventDefault()
-            setActive((index) => Math.max(0, index - 1))
-          } else if (event.key === 'Enter' && open) {
-            event.preventDefault()
-            void choose(matches[active])
-          } else if (event.key === 'Escape' && query) {
-            // The field's own Escape: it clears what was typed, and whatever
-            // panel is open behind it stays open.
-            event.stopPropagation()
-            event.nativeEvent.stopImmediatePropagation()
-            clear()
-          }
-        }}
+        onKeyDown={listKeys({
+          open,
+          count: matches.length,
+          setActive,
+          onChoose: () => void choose(matches[active]),
+          // Escape clears what was typed.
+          onEscape: () => {
+            if (query) clear()
+            return Boolean(query)
+          },
+        })}
       />
       {loading && (
         <Loader2
@@ -159,12 +148,11 @@ export function SongSearch({ className }: { className?: string }) {
       )}
 
       {open && (
-        <div
+        <Listbox
           ref={listRef}
           id={listId}
-          role="listbox"
-          aria-label="Songs"
-          className="absolute top-[calc(100%+8px)] right-0 z-10 max-h-[min(26rem,70vh)] w-[min(22rem,calc(100vw-1.5rem))] overflow-y-auto rounded-[var(--radius-lg)] border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-1 shadow-e4"
+          label="Songs"
+          className="top-[calc(100%+8px)] right-0 max-h-[min(26rem,70vh)] w-[min(22rem,calc(100vw-1.5rem))]"
         >
           {failed && (
             <p role="alert" className="px-2.5 py-2 text-caption text-[var(--ds-warning-text)]">
@@ -179,20 +167,14 @@ export function SongSearch({ className }: { className?: string }) {
           {matches.map((match, index) => {
             const current = match.id === currentId
             return (
-              <div
+              <ListboxOption
                 key={match.id}
-                id={`${listId}-${index}`}
-                role="option"
-                aria-selected={current}
-                data-active={index === active}
-                // The field keeps the focus; a press on a song must not take it.
-                onMouseDown={(event) => event.preventDefault()}
-                onMouseEnter={() => setActive(index)}
-                onClick={() => void choose(match)}
-                className={cn(
-                  'flex cursor-pointer items-center gap-2.5 rounded-[var(--radius-sm)] px-2.5 py-1.5 coarse:min-h-11',
-                  index === active && 'bg-[var(--ds-layer-hover)]',
-                )}
+                listId={listId}
+                index={index}
+                active={index === active}
+                selected={current}
+                onHover={setActive}
+                onChoose={() => void choose(match)}
               >
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-label text-[var(--ds-fg)]">{match.title}</span>
@@ -213,7 +195,7 @@ export function SongSearch({ className }: { className?: string }) {
                     </span>
                   )
                 )}
-              </div>
+              </ListboxOption>
             )
           })}
           {more > 0 && (
@@ -221,7 +203,7 @@ export function SongSearch({ className }: { className?: string }) {
               {more} more. Keep typing to narrow them down.
             </p>
           )}
-        </div>
+        </Listbox>
       )}
     </div>
   )

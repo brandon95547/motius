@@ -2,13 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { noteName } from '../midi/notes.js'
 import { KEY_MODES } from '../music/chords.js'
 import { stepBeats, type Exercise } from './exercise.js'
-import {
-  buildRoutineExercise,
-  DEFAULT_ROUTINE_SPEC,
-  routineHands,
-  ROUTINES,
-  type RoutineSpec,
-} from './routine-exercise.js'
+import { buildRoutineExercise, routineHands, ROUTINES } from './routine-exercise.js'
+import { DEFAULT_ROUTINE_SPEC } from './practice-defaults.js'
+import type { RoutineSpec } from './practice-specs.js'
 
 const routine = (spec: Partial<RoutineSpec>, options = {}) =>
   buildRoutineExercise({ ...DEFAULT_ROUTINE_SPEC, ...spec }, options)

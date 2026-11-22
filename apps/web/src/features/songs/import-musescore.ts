@@ -21,6 +21,8 @@ import {
   type SongNote,
   type WrittenNote,
 } from '@motius/shared'
+// MuseScore's XML is read with the same few helpers as MusicXML's.
+import { GRACE_Q, inner, num } from './musicxml-scan'
 
 /**
  * Reads MuseScore's own `.mscx` into a song.
@@ -104,19 +106,6 @@ const GRACE_TAGS = [
   'grace16after',
   'grace32after',
 ]
-
-/** How long before its beat a grace note is struck, in crotchets. */
-const GRACE_Q = 0.25
-
-const inner = (xml: string, tag: string): string | undefined =>
-  new RegExp(`<${tag}(?:\\s[^>]*)?>([\\s\\S]*?)</${tag}>`).exec(xml)?.[1]
-
-const num = (xml: string, tag: string): number | undefined => {
-  const text = inner(xml, tag)
-  if (text === undefined) return undefined
-  const value = Number(text.trim())
-  return Number.isFinite(value) ? value : undefined
-}
 
 /**
  * Top-level children of one element, in document order.

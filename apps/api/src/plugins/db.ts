@@ -2,11 +2,20 @@ import fp from 'fastify-plugin'
 import type { FastifyInstance } from 'fastify'
 import { openDatabase, type Db } from '../db/index.js'
 import { DeviceRepository } from '../repositories/device-repository.js'
+import { GoalsRepository } from '../repositories/goals-repository.js'
+import { LessonSettingsRepository } from '../repositories/lesson-settings-repository.js'
+import { RunRepository } from '../repositories/run-repository.js'
+import { SongCategoryRepository } from '../repositories/song-category-repository.js'
+import type { Warn } from '../repositories/stored-json.js'
 
 declare module 'fastify' {
   interface FastifyInstance {
     db: Db
     devices: DeviceRepository
+    goals: GoalsRepository
+    lessonSettings: LessonSettingsRepository
+    runs: RunRepository
+    songCategories: SongCategoryRepository
   }
 }
 
@@ -30,7 +39,12 @@ export const dbPlugin = fp<DbPluginOptions>(
     })
 
     app.decorate('db', db)
+    const warn: Warn = (fields, message) => app.log.warn({ scope: 'db', ...fields }, message)
     app.decorate('devices', new DeviceRepository(db))
+    app.decorate('goals', new GoalsRepository(db))
+    app.decorate('lessonSettings', new LessonSettingsRepository(db))
+    app.decorate('runs', new RunRepository(db, warn))
+    app.decorate('songCategories', new SongCategoryRepository(db, warn))
 
     app.addHook('onClose', async () => {
       db.close()

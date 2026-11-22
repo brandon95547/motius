@@ -1,0 +1,78 @@
+/* ---- The bar along the bottom ---------------------------------------------
+   The places at the top of the app, under the dashboard and the pages below
+   it. Drawn to the same mock, and so apart from the Bible's bottom navigation
+   in three ways: it is there on a wide screen too, where its six are a group
+   in the middle and not spread from edge to edge; there are six of them, one
+   past the Bible's five, so on a 320px phone each is 52px wide where the Bible
+   asks for 64; and the place you are at is marked by a bead on the bar's top
+   edge, not a pill behind the icon. It is still three signals — the bead, the
+   color and the heavier word — so it does not rest on color alone. */
+.bottom-nav {
+  position: relative;
+  z-index: var(--z-bar);
+  flex: none;
+  border-top: 1px solid var(--c-dash-card-edge);
+  /* The band at the foot of a phone that belongs to its home gesture. */
+  padding-bottom: env(safe-area-inset-bottom);
+  background-color: var(--c-dash-nav);
+}
+.bottom-nav__row {
+  display: flex;
+  justify-content: center;
+  height: 64px;
+  padding-inline: 4px;
+}
+.bottom-nav__slot {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  /* Close enough to read as one group; still a 44px touch target and more. */
+  max-width: 5.5rem;
+}
+.bottom-nav__item {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--c-dash-nav-fg);
+  transition: color 140ms var(--ease-standard);
+}
+.bottom-nav__item:hover {
+  color: var(--c-dash-ink);
+}
+.bottom-nav__item:focus-visible {
+  outline: 2px solid var(--ds-focus-ring);
+  outline-offset: -4px;
+  border-radius: var(--radius-md);
+}
+.bottom-nav__item--here,
+.bottom-nav__item--here:hover {
+  color: var(--c-dash-nav-here);
+}
+.bottom-nav__item--here::before {
+  position: absolute;
+  top: -3px;
+  left: calc(50% - 4px);
+  width: 8px;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background-color: currentColor;
+  content: '';
+}
+/* The Bible's size for the word under a destination's icon. */
+.bottom-nav__label {
+  overflow: hidden;
+  max-width: 100%;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bottom-nav__item--here .bottom-nav__label {
+  font-weight: 600;
+}

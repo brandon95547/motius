@@ -27,10 +27,18 @@ export function Drawer({
   footer,
   side = 'right',
   fit = false,
+  docked,
 }: {
   side?: 'left' | 'right'
   /** As wide as what is in it, up to the usual width, rather than always that wide: a list of names. */
   fit?: boolean
+  /**
+   * Docked over the workspace rather than over a scrim: for settings whose
+   * effect is watched as they change. Not modal — it does not trap Tab or stop
+   * the page scrolling — and a press on `within` (the bar) leaves it open.
+   * `className` places it; `id` lets its button point at it.
+   */
+  docked?: { className: string; id?: string; within?: string }
   open: boolean
   onClose: () => void
   title: string
@@ -42,25 +50,62 @@ export function Drawer({
   const isNarrow = useMediaQuery('(max-width: 47.999rem)')
   const titleId = React.useId()
   const descriptionId = React.useId()
+  const modal = !docked
 
-  useDismissable(open, onClose, [panelRef])
-  useFocusTrap(open, panelRef)
+  useDismissable(open, onClose, [panelRef], docked?.within)
+  useFocusTrap(open && modal, panelRef)
 
-  // Focus moves into the panel on open and the page behind it stops scrolling.
-  // Without both, a keyboard user tabs into content they cannot see.
+  // Focus moves into the panel on open. A modal sheet also stops the page
+  // behind it scrolling and gives focus back on close; without both, a
+  // keyboard user tabs into content they cannot see. A docked panel leaves the
+  // page as it is, and its owner says where focus goes when it closes.
   React.useEffect(() => {
     if (!open) return
     const previous = document.activeElement as HTMLElement | null
     panelRef.current?.focus()
+    if (!modal) return
     const { overflow } = document.body.style
     document.body.style.overflow = 'hidden'
     return () => {
       document.body.style.overflow = overflow
       previous?.focus?.()
     }
-  }, [open])
+  }, [open, modal])
 
   if (!open) return null
+
+  const header = (
+    <header className="flex items-start justify-between gap-4 border-b border-[var(--ds-border-subtle)] px-5 py-4">
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <h2 id={titleId} className="text-h4 text-[var(--ds-fg)]">
+          {title}
+        </h2>
+        {description && (
+          <p id={descriptionId} className="text-body-sm text-[var(--ds-fg-muted)]">
+            {description}
+          </p>
+        )}
+      </div>
+      <IconButton label="Close" icon={<X />} size="sm" onClick={onClose} />
+    </header>
+  )
+
+  if (docked) {
+    return (
+      <div
+        ref={panelRef}
+        id={docked.id}
+        role="dialog"
+        aria-labelledby={titleId}
+        aria-describedby={description ? descriptionId : undefined}
+        tabIndex={-1}
+        className={docked.className}
+      >
+        {header}
+        <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">{children}</div>
+      </div>
+    )
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex" role="presentation">
@@ -91,19 +136,7 @@ export function Drawer({
             <span className="h-1 w-9 rounded-full bg-[var(--ds-border-strong)]" />
           </div>
         )}
-        <header className="flex items-start justify-between gap-4 border-b border-[var(--ds-border-subtle)] px-5 py-4">
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <h2 id={titleId} className="text-h4 text-[var(--ds-fg)]">
-              {title}
-            </h2>
-            {description && (
-              <p id={descriptionId} className="text-body-sm text-[var(--ds-fg-muted)]">
-                {description}
-              </p>
-            )}
-          </div>
-          <IconButton label="Close" icon={<X />} size="sm" onClick={onClose} />
-        </header>
+        {header}
 
         <div className="flex-1 overflow-y-auto px-5 py-5">{children}</div>
 

@@ -1,0 +1,20 @@
+/* ---- The staff panel -----------------------------------------------------
+   The staff on the stage: as tall as the stage allows, up to where the music is
+   read rather than stared at. The drawing scales with this height — the
+   viewBox keeps a fixed vertical budget — so a taller panel means wider line
+   spacing and bigger noteheads, not more empty paper.
+
+   And never taller than the screen is wide allows. The width in notes follows
+   from the height, so a phone held upright — a tall stage, a narrow one — drew
+   the staff at desktop size and fitted one note across it. */
+.staff-panel {
+  position: relative;
+  flex: 0 1 auto;
+  width: 100%;
+  height: min(100%, 440px, 64vw);
+  min-height: 150px;
+}
+/* Sheet music reads ahead, so it takes the whole stage and scrolls in it. */
+.staff-panel--sheet {
+  height: 100%;
+}

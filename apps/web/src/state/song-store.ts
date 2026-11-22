@@ -1,15 +1,20 @@
 import { create } from 'zustand'
-import { gridMeasures, type Hand, type Song } from '@motius/shared'
+import {
+  gridMeasures,
+  PRACTICE_START,
+  type Hand,
+  type Song,
+  type SongPracticeState,
+} from '@motius/shared'
 
 /**
  * The songs a player has imported, the built-in ones they have opened, and how
  * they are practising the one that is open.
  *
  * The library persists; the playback settings do not survive a reload on
- * purpose. A loop set on bars 12-16 and a tempo of 50% are things you set up to
- * work on a passage for ten minutes, not preferences — coming back tomorrow to
- * a song that silently plays half speed between two arbitrary bars is a bug
- * report, not a feature.
+ * purpose. A tempo of 50% is something you set up to work on a passage for ten
+ * minutes, not a preference — coming back tomorrow to a song that silently
+ * plays at half speed is a bug report, not a feature.
  */
 
 export type SongPart = 'both' | Hand
@@ -17,11 +22,12 @@ export type SongPart = 'both' | Hand
 /**
  * How the song is being worked on.
  *
- * Explore plays it to you; Learn waits for you. The same two words the scale
- * screen uses, meaning the same two things, because a player who has learned
- * what they mean there should not have to learn it twice.
+ * Listen plays it to you; Learn waits for you; Practice plays on at the tempo
+ * and judges what you play. The same three words an exercise uses, meaning the
+ * same three things, because a player who has learned what they mean there
+ * should not have to learn them again.
  */
-export type SongMode = 'explore' | 'learn'
+export type SongMode = 'listen' | 'learn' | 'practice'
 
 /**
  * How the score is laid out.
@@ -63,36 +69,16 @@ interface SongState {
    * notes means guessing at the person, so it is asked rather than inferred.
    */
   fingering: FingeringDensity
-  /**
-   * Whether the hands are drawn over the keys, playing the fingering.
-   *
-   * Kept with the other two: whether you want to watch hands is a fact about
-   * how you learn, not about the passage in front of you.
-   */
-  hands: boolean
   /** Which step of the song the player is on, in Learn. */
   stepIndex: number
+  /** Practice's run: the step asked for, and how each step went. */
+  practice: SongPracticeState
+  /** A Practice run has reached the end of the song: there is a result to show. */
+  practiced: boolean
   /** True once Start has been pressed, until the song is finished or reset. */
   learning: boolean
   /** How many steps the song's keyboard part has, for the progress bar. */
   stepCount: number
-  /**
-   * The note the player is on, flattened to what the hand card needs.
-   *
-   * Kept here rather than threaded through props so the card can sit anywhere
-   * on the page without the control row having to hand it down.
-   */
-  /**
-   * What the step under the player's hands is, flattened for the hand card.
-   *
-   * A list, not one finger: a chord is played with several, and a step can
-   * reach across both hands. Showing the first of them answers the wrong
-   * question for every chord in a song.
-   *
-   * Each finger with its hand, and whether that hand is the score's or a
-   * reading of it (`SongNote.handSuggested`).
-   */
-  currentFingers: readonly { finger: number; hand: Hand; handSuggested?: boolean }[]
   /**
    * Notes pressed that the step did not ask for, so the keyboard can say so.
    *
@@ -113,18 +99,26 @@ interface SongState {
   remove: (id: string) => void
   setPlaying: (playing: boolean) => void
   seek: (positionMs: number) => void
+  /**
+   * Where the playback has got to, as it goes. Unlike `seek`, it may be before
+   * the start: Practice begins with a lead-in.
+   */
+  setPlayhead: (positionMs: number) => void
+  /** The playback has reached the end of the song. */
+  end: () => void
+  /** Begin a Practice run, this long before the first note. */
+  startPractice: (leadInMs: number) => void
+  setPractice: (practice: SongPracticeState) => void
   setPart: (part: SongPart) => void
   setTempoScale: (scale: number) => void
   setMetronome: (on: boolean) => void
   setMode: (mode: SongMode) => void
   setStaffView: (view: StaffView) => void
   setFingering: (density: FingeringDensity) => void
-  setHands: (on: boolean) => void
   startLearning: () => void
   resetLearning: () => void
   advance: (steps: number) => void
   setStepCount: (count: number) => void
-  setCurrent: (fingers: SongState['currentFingers']) => void
   setWrongNotes: (notes: readonly number[]) => void
 }
 
@@ -132,19 +126,22 @@ const STORAGE_KEY = 'motius.songs.v1'
 /**
  * Kept, unlike the playback settings.
  *
- * A loop and a tempo are things you set up to work on a passage for ten
- * minutes; coming back to them tomorrow is a bug report. Whether you read from
- * sheet music or from a moving staff is not a setting on a passage — it is a
- * fact about the person reading, and asking them again every session would be
- * asking them whether they can still read music.
+ * A tempo is something you set up to work on a passage for ten minutes;
+ * coming back to it tomorrow is a bug report. Whether you read from sheet music
+ * or from a moving staff is not a setting on a passage — it is a fact about the
+ * person reading, and asking them again every session would be asking them
+ * whether they can still read music.
  */
 const VIEW_KEY = 'motius.staff-view.v1'
 
 /** Nothing in progress. */
-const IDLE = { stepIndex: 0, learning: false } as const
+const IDLE = { stepIndex: 0, learning: false, practice: PRACTICE_START, practiced: false } as const
 
-/** The slowest the tempo goes, as a share of the song's own. */
-const MIN_TEMPO_SCALE = 0.25
+/** The slowest and fastest a song goes, as a share of the tempo it is written at. */
+export const SONG_SPEED = { min: 0.25, max: 2 } as const
+
+/** Never carried on further than this past the playhead's last tick, should ticks stop. */
+export const MAX_CARRY_MS = 250
 
 /**
  * The speed a song opens at, as a share of the tempo it is written at: all of
@@ -251,16 +248,6 @@ function loadFingering(): FingeringDensity {
   }
 }
 
-const HANDS_KEY = 'motius.songs.hands'
-
-function loadHands(): boolean {
-  try {
-    return window.localStorage.getItem(HANDS_KEY) === 'on'
-  } catch {
-    return false
-  }
-}
-
 function loadView(): StaffView {
   try {
     return window.localStorage.getItem(VIEW_KEY) === 'sheet' ? 'sheet' : 'flow'
@@ -278,14 +265,14 @@ export const useSongStore = create<SongState>((set) => ({
   part: 'both',
   tempoScale: 1,
   metronome: false,
-  mode: 'explore',
+  mode: 'listen',
   staffView: typeof window === 'undefined' ? 'flow' : loadView(),
   fingering: typeof window === 'undefined' ? 'hints' : loadFingering(),
-  hands: typeof window === 'undefined' ? false : loadHands(),
   stepIndex: 0,
   learning: false,
+  practice: PRACTICE_START,
+  practiced: false,
   stepCount: 0,
-  currentFingers: [],
   wrongNotes: [],
 
   add: (song) =>
@@ -340,9 +327,14 @@ export const useSongStore = create<SongState>((set) => ({
 
   setPlaying: (playing) => set({ playing }),
   seek: (positionMs) => set({ positionMs: Math.max(0, positionMs) }),
+  setPlayhead: (positionMs) => set({ positionMs }),
+  end: () =>
+    set((state) => ({ playing: false, positionMs: 0, practiced: state.mode === 'practice' })),
+  startPractice: (leadInMs) => set({ ...IDLE, positionMs: -leadInMs, playing: true }),
+  setPractice: (practice) => set({ practice }),
   setPart: (part) => set({ part }),
   setTempoScale: (tempoScale) =>
-    set({ tempoScale: Math.min(2, Math.max(MIN_TEMPO_SCALE, tempoScale)) }),
+    set({ tempoScale: Math.min(SONG_SPEED.max, Math.max(SONG_SPEED.min, tempoScale)) }),
   setMetronome: (metronome) => set({ metronome }),
 
   // Switching how you are working on the piece stops whatever the other way
@@ -362,16 +354,6 @@ export const useSongStore = create<SongState>((set) => ({
       return { fingering }
     }),
 
-  setHands: (hands) =>
-    set(() => {
-      try {
-        window.localStorage.setItem(HANDS_KEY, hands ? 'on' : 'off')
-      } catch {
-        // Private browsing. The choice holds for this session.
-      }
-      return { hands }
-    }),
-
   setStaffView: (staffView) =>
     set(() => {
       try {
@@ -386,7 +368,6 @@ export const useSongStore = create<SongState>((set) => ({
   resetLearning: () => set({ ...IDLE }),
   advance: (steps) => set((state) => ({ stepIndex: Math.max(0, state.stepIndex + steps) })),
   setStepCount: (stepCount) => set({ stepCount }),
-  setCurrent: (currentFingers) => set({ currentFingers }),
   setWrongNotes: (wrongNotes) =>
     set((state) =>
       // Same notes, same array — this runs on every key event, and a fresh

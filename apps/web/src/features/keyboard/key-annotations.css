@@ -1,0 +1,184 @@
+/* ============================================================================
+   LEARNING ANNOTATIONS
+   ----------------------------------------------------------------------------
+   Four roles, four levels of emphasis, and one meaning each:
+
+     scale / root   this note belongs to the material          (information)
+     upcoming       you will need this one shortly             (context)
+     target         play this, now                             (the action)
+     wrong          that was not it                            (the error)
+
+   The target is "now" blue — the same colour as the note it is on the staff —
+   and that blue is used for nothing else on the keybed: the whole point of a
+   single colour for it is that when it appears, there is exactly one thing to
+   do. The scale wash therefore has to be quiet enough that the target still
+   reads as an instruction rather than as more of the same, which is why it is
+   a low-alpha tint rather than a fill.
+   ========================================================================= */
+
+.piano-key[data-role='scale'],
+.piano-key[data-role='upcoming'],
+.piano-key[data-role='root'] {
+  /* An alpha wash rather than a solid colour, so one value composes correctly
+     over both an ivory white key and a near-black black key. */
+  background-image: linear-gradient(var(--key-wash), var(--key-wash));
+}
+.piano-key--white[data-role='scale'] {
+  --key-wash: rgb(var(--c-wash-white) / 0.13);
+}
+
+/* Listen has no target on the keybed, so the wash has nothing to defer to and
+   can carry the information properly. In Learn it has to stay quiet, because
+   the accent target is competing with it and the accent has to win. Same role,
+   different amount of room — which is why this is keyed to the mode rather
+   than baked into the role. */
+.keybed[data-mode='listen'] .piano-key--white[data-role='scale'] {
+  --key-wash: rgb(var(--c-wash-white) / 0.27);
+}
+.keybed[data-mode='listen'] .piano-key--white[data-role='root'] {
+  --key-wash: rgb(var(--c-wash-white) / 0.52);
+}
+.keybed[data-mode='listen'] .piano-key--black[data-role='scale'] {
+  --key-wash: rgb(var(--c-wash-black) / 0.4);
+}
+.keybed[data-mode='listen'] .piano-key--black[data-role='root'] {
+  --key-wash: rgb(var(--c-wash-black) / 0.66);
+}
+.piano-key--white[data-role='upcoming'] {
+  --key-wash: rgb(var(--c-wash-white) / 0.28);
+}
+.piano-key--white[data-role='root'] {
+  --key-wash: rgb(var(--c-wash-white) / 0.3);
+}
+.piano-key--black[data-role='scale'] {
+  --key-wash: rgb(var(--c-wash-black) / 0.2);
+}
+.piano-key--black[data-role='upcoming'],
+.piano-key--black[data-role='root'] {
+  --key-wash: rgb(var(--c-wash-black) / 0.4);
+}
+
+/* A lesson's step already played, filled in: the keyboard fills up as the
+   lesson goes (`Exercise.marksProgress`). Solid, like the target, and in the
+   colour of something done rather than something to do. */
+.piano-key[data-role='done']:not([data-active='true']) {
+  background-color: var(--c-key-done);
+}
+
+/* In a lesson, the key to play now is in the lessons' violet, whatever the
+   theme's colour for it elsewhere. */
+.workspace[data-lesson='true'] {
+  --c-now: var(--c-lessons);
+  --c-now-deep: var(--c-lessons-deep);
+  --c-key-label-on-fill: rgb(0 0 0 / 0.85);
+}
+
+/* The one key to play now.
+   Solid, not a wash — an instruction should not be a stronger version of the
+   surrounding information, it should be a different kind of thing. The wash
+   above is deliberately quiet for the same reason: the accent only reads as
+   "do this" if nothing else on the keybed is wearing it. */
+.piano-key--white[data-role='target']:not([data-active='true']) {
+  background-color: var(--c-now);
+  box-shadow:
+    inset 0 -4px 0 var(--c-now-deep),
+    0 0 22px -4px var(--c-now);
+}
+.piano-key--black[data-role='target']:not([data-active='true']) {
+  background-color: var(--c-now-deep);
+  box-shadow:
+    inset 0 6px 0 var(--c-now),
+    inset 0 -3px 0 var(--c-key-bevel-lit),
+    0 0 22px -6px var(--c-now);
+}
+.piano-key--white[data-role='target'] .piano-key__label,
+.piano-key--black[data-role='target'] .piano-key__label {
+  color: var(--c-key-label-on-fill);
+}
+
+/* A key you are holding down in Learn, which the exercise did not object to.
+   In the accent, like every key that is sounding, and like the note sounding
+   on the staff: blue is where you are, violet is what you are playing, and the
+   two mean the same thing on the paper as on the keys.
+
+   No new state is needed for this. A key held in Learn is either wrong — in
+   which case it is already marked — or it is right, because a wrong note is
+   the only thing Learn refuses. Styling it as "target, pressed" does not work:
+   the step advances the instant you play it, so the key stops being the target
+   in the same frame it goes down, and there is nothing left to style.
+
+   The white key's label flips dark here. White on the lighter fill measures
+   3.6:1, under the 4.5:1 a 10px label needs; black at 0.8 measures 4.7:1. The
+   black key only rises to --ds-accent, where white still measures 4.8:1. */
+.keybed[data-mode='learn'] .piano-key--white[data-active='true']:not([data-role='wrong']) {
+  background-color: var(--ds-accent-hover);
+  box-shadow:
+    inset 0 -4px 0 var(--ds-accent),
+    0 0 26px -2px var(--ds-accent-hover);
+}
+.keybed[data-mode='learn']
+  .piano-key--white[data-active='true']:not([data-role='wrong'])
+  .piano-key__label {
+  color: var(--c-key-label-on-accent);
+}
+.keybed[data-mode='learn'] .piano-key--black[data-active='true']:not([data-role='wrong']) {
+  background-color: var(--ds-accent);
+  box-shadow:
+    inset 0 6px 0 var(--ds-accent-hover),
+    inset 0 -3px 0 var(--c-key-bevel-lit),
+    0 0 26px -4px var(--ds-accent-hover);
+}
+
+/* With falling notes up, the key a note is falling to is asked for in the
+   color of its hand, as the note is; and a key pressed when it was due lights
+   in that color. */
+.piano-key[data-hit],
+.piano-key[data-hand] {
+  --hand: var(--c-fall-right);
+}
+.piano-key[data-hit='left'],
+.piano-key[data-hand='left']:not([data-hit]) {
+  --hand: var(--c-fall-left);
+}
+.keybed .piano-key--white[data-role='target'][data-hand]:not([data-active='true']) {
+  background-color: var(--hand);
+  box-shadow:
+    inset 0 -4px 0 var(--c-fall-edge),
+    0 0 22px -4px var(--hand);
+}
+.keybed .piano-key--black[data-role='target'][data-hand]:not([data-active='true']) {
+  background-color: var(--hand);
+  box-shadow:
+    inset 0 -3px 0 var(--c-key-bevel-lit),
+    0 0 22px -6px var(--hand);
+}
+.keybed .piano-key--white[data-active='true'][data-hit]:not([data-role='wrong']) {
+  background-color: var(--hand);
+  box-shadow:
+    inset 0 -4px 0 var(--c-fall-edge),
+    0 0 26px -2px var(--hand);
+}
+.keybed .piano-key--black[data-active='true'][data-hit]:not([data-role='wrong']) {
+  background-color: var(--hand);
+  box-shadow:
+    inset 0 -3px 0 var(--c-key-bevel-lit),
+    0 0 26px -4px var(--hand);
+}
+
+/* A wrong note, in the danger colour: a faint red. Muted rather than
+   alarming: it is a correction, not a fault, and it has to be legible next to
+   an accent key without shouting over it. The colour fills a white key and its
+   deeper step edges it; a black key takes the deeper step. */
+.piano-key--white[data-role='wrong'],
+.piano-key--white[data-role='wrong'][data-active='true'] {
+  background-color: var(--ds-danger);
+  box-shadow: inset 0 -4px 0 var(--ds-danger-active);
+}
+.piano-key--black[data-role='wrong'],
+.piano-key--black[data-role='wrong'][data-active='true'] {
+  background-color: var(--ds-danger-active);
+  box-shadow: inset 0 6px 0 var(--ds-danger);
+}
+.piano-key[data-role='wrong'] .piano-key__label {
+  color: var(--ds-danger-fg);
+}

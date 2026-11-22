@@ -160,7 +160,7 @@ describe('saying which note to play', () => {
 
   it('says nothing outside Learn, where there is no single next note', () => {
     useLearningStore.setState({
-      mode: 'explore',
+      mode: 'listen',
       annotations: { 63: { role: 'target', label: 'E♭' } },
     })
     const { container } = render(<Live />)

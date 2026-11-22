@@ -1,0 +1,65 @@
+/* ---- The stage ----------------------------------------------------------- */
+.stage {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px clamp(12px, 2.5vw, 36px);
+  background-color: var(--c-stage);
+  /* Its own stacking order, so the film can lie under everything on the stage
+     and still over the stage's color. */
+  isolation: isolate;
+}
+/* The film behind the music: a tint of movement over the stage's color, which
+   stays the stronger of the two, and under all that is written on it. */
+.stage__backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: var(--stage-backdrop-opacity);
+  pointer-events: none;
+}
+.stage--message {
+  align-items: center;
+}
+/* Bounded on both sides and free to wrap: on a phone the run meter and the
+   audio notice do not fit side by side, and unbounded the notice slid off the
+   left edge. The box spans the stage, so it lets clicks through to what is
+   under it and only its notices take them. */
+.stage__notices {
+  position: absolute;
+  top: 12px;
+  right: clamp(12px, 2.5vw, 36px);
+  left: clamp(12px, 2.5vw, 36px);
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+.stage__notices > * {
+  pointer-events: auto;
+}
+.stage-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding-inline: 12px;
+  border-radius: var(--radius-pill);
+  background-color: var(--c-bar);
+  color: var(--c-bar-fg);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.stage-pill__muted {
+  color: var(--c-bar-fg-muted);
+  font-weight: 500;
+}

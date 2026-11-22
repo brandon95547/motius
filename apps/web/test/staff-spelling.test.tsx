@@ -11,7 +11,8 @@ import {
   type SongNote,
 } from '@motius/shared'
 import { measureScore } from '@/features/staff/score'
-import { Chord, staffOf } from '@/features/staff/StaffNotes'
+import { Chord } from '@/features/staff/StaffNotes'
+import { staffOf } from '@/features/staff/chord-layout'
 import { GrandStaff } from '@/features/staff/GrandStaff'
 import { useKeyboardStore } from '@/state/keyboard-store'
 import { useLearningStore } from '@/state/learning-store'

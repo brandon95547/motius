@@ -223,11 +223,26 @@ export function scoreWindows(
  * that the player is asked for the second time.
  */
 export function playedSteps(song: Pick<Song, 'sections'>, steps: readonly SongStep[]): number[] {
-  if (!song.sections?.length) return steps.map((_, index) => index)
-  const played: number[] = []
-  for (const section of song.sections)
+  return playedStepTimes(song, steps).map((played) => played.index)
+}
+
+/**
+ * The same, each with when it is played: its moment in performance time, which
+ * is score time moved by the section it falls in. What falling notes need, to
+ * draw a repeat where it is heard and not where it is printed.
+ */
+export function playedStepTimes(
+  song: Pick<Song, 'sections'>,
+  steps: readonly SongStep[],
+): { readonly index: number; readonly startMs: number; readonly offsetMs: number }[] {
+  if (!song.sections?.length)
+    return steps.map((step, index) => ({ index, startMs: step.startMs, offsetMs: 0 }))
+  const played: { index: number; startMs: number; offsetMs: number }[] = []
+  for (const section of song.sections) {
+    const offsetMs = section.startMs - section.fromMs
     for (const [index, step] of steps.entries())
       if (step.startMs >= section.fromMs - 0.5 && step.startMs < section.toMs - 0.5)
-        played.push(index)
+        played.push({ index, startMs: step.startMs + offsetMs, offsetMs })
+  }
   return played
 }

@@ -1,0 +1,289 @@
+.tempo-field__steps {
+  display: grid;
+  align-self: stretch;
+  grid-template-rows: 1fr 1fr;
+  width: 24px;
+}
+.tempo-field__step {
+  display: grid;
+  place-items: center;
+  color: var(--c-bar-fg-muted);
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+.tempo-field__step:first-child {
+  padding-top: 3px;
+}
+.tempo-field__step:last-child {
+  padding-bottom: 3px;
+}
+.tempo-field__step:hover:not(:disabled) {
+  background-color: var(--c-bar-control-hover);
+  color: var(--c-bar-fg);
+}
+.tempo-field__step:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+/* On a panel: the app's field, not the bar's — at the height of the metronome
+   button it sits beside there. */
+.tempo-field--panel {
+  border: 1px solid var(--ds-border-interactive);
+  border-radius: var(--radius-md);
+  background-color: var(--ds-field);
+  color: var(--ds-fg);
+}
+.tempo-field--panel:focus-within {
+  border-color: var(--ds-accent);
+  box-shadow: 0 0 0 3px var(--ds-accent-subtle);
+}
+.tempo-field--panel .tempo-field__icon,
+.tempo-field--panel .tempo-field__step {
+  color: var(--ds-fg-muted);
+}
+.tempo-field--panel .tempo-field__step:hover:not(:disabled) {
+  background-color: var(--ds-layer-hover);
+  color: var(--ds-fg);
+}
+
+/* Record: a red dot at rest, and red all over while it is armed — the one
+   state where the button should read as live rather than merely selected. */
+.bar-record {
+  border-radius: var(--radius-lg);
+  background-color: var(--c-bar-control);
+}
+.bar-record:hover:not(:disabled) {
+  background-color: var(--c-bar-control-hover);
+}
+.bar-record__dot {
+  color: var(--c-record);
+}
+.bar-record.is-recording,
+.bar-record.is-recording:hover {
+  border-color: transparent;
+  background-color: var(--c-record-armed);
+  color: var(--c-record-fg);
+}
+/* In the bar's pill, a round button on it like the others: the pill is its surface. */
+.bar-group .bar-record:not(.is-recording) {
+  border-radius: var(--radius-pill);
+  background-color: transparent;
+}
+.bar-group .bar-record:not(.is-recording):hover {
+  background-color: var(--c-bar-hover);
+}
+/* On a panel its edge is the panel's, and nothing needs filling behind it. */
+.bar-record.bar-icon-button--panel:not(.is-recording) {
+  background-color: transparent;
+}
+.bar-record.bar-icon-button--panel:not(.is-recording):hover {
+  background-color: var(--ds-layer-hover);
+}
+
+/* The one filled button on the screen. */
+.bar-start {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding-inline: 18px 22px;
+  border-radius: var(--radius-lg);
+  background-color: var(--ds-accent);
+  color: var(--ds-accent-fg);
+  font-size: 1rem;
+  font-weight: 650;
+  white-space: nowrap;
+  box-shadow: 0 6px 16px -8px var(--ds-accent);
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+.bar-start:hover {
+  background-color: var(--ds-accent-hover);
+}
+.bar-start--stop {
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1px var(--c-bar-outline);
+  color: var(--c-bar-fg);
+}
+.bar-start--stop:hover {
+  background-color: var(--c-bar-hover);
+}
+/* Nothing to play — no song open, say. It keeps its place and gives up its colour. */
+.bar-start:disabled,
+.bar-start:disabled:hover {
+  background-color: var(--c-bar-control);
+  box-shadow: none;
+  color: var(--c-bar-fg-muted);
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+/* Learn's Start and Stop, and a song's Play and Pause: the icon alone, square,
+   so the two states are the same size and pressing one does not move the rest
+   of the bar. */
+.bar-start--icon {
+  justify-content: center;
+  width: 44px;
+  padding-inline: 0;
+}
+/* On the bar, in its pill, Play (and Pause or Stop in its place) is an icon
+   like the others there: white on the pill, round, lit only on hover. */
+.bar-group .bar-start,
+.bar-group .bar-start--stop {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-pill);
+  background-color: transparent;
+  box-shadow: none;
+  color: var(--c-bar-fg);
+}
+.bar-group .bar-start:hover:not(:disabled) {
+  background-color: var(--c-bar-hover);
+}
+.bar-group .bar-start:disabled,
+.bar-group .bar-start:disabled:hover {
+  background-color: transparent;
+}
+/* Two things that take turns in one place, in the room the wider one needs:
+   a song's transport, and the Start that stands in for it in Learn. The mode
+   tabs are to the left of it, and must not move when the mode does. */
+.bar-swap {
+  display: inline-grid;
+  flex: none;
+}
+.bar-swap__layer {
+  display: flex;
+  grid-area: 1 / 1;
+  align-items: center;
+  justify-content: center;
+  gap: inherit;
+}
+.bar-swap__layer--held {
+  visibility: hidden;
+}
+
+/* The MIDI keyboard button: a keyboard with a light in its corner — green and
+   steady when a keyboard is connected, flashing when none is, so it is
+   noticed and pressed (it connects one). */
+.midi-status {
+  position: relative;
+}
+.midi-status__dot {
+  position: absolute;
+  right: 5px;
+  bottom: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background-color: var(--ds-danger);
+  box-shadow: 0 0 0 2px var(--c-bar);
+  animation: midi-blink 1.2s ease-in-out infinite;
+}
+.midi-status__dot[data-connected='true'] {
+  background-color: var(--ds-success);
+  animation: none;
+}
+@keyframes midi-blink {
+  50% {
+    opacity: 0.2;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .midi-status__dot {
+    animation: none;
+  }
+}
+
+/* Where there is room for the mockup's wider mode tabs. */
+@media (min-width: 80rem) {
+  .bar-tabs__tab {
+    padding-inline: 20px;
+  }
+}
+
+/* The bar folds rather than wrapping or scrolling. Measured, the full Scales
+   row is about 935px, 980 with a take waiting, so:
+     under 90rem  a lesson's trail keeps only the step above it, and under
+                  85rem only the section's name;
+     under 80rem  the song search goes — the chooser has one, a click away —
+                  and, where there are controls, the name (the mark says it);
+     under 60rem  the mode tabs are icons, and a lesson's trail goes;
+     under 56rem  a song's skip buttons go;
+     under 48rem  the mark, the metronome, Record and the MIDI keyboard go —
+                  to Settings and the menu;
+     under 40rem  This run, About this lesson and Lessons join the menu, and
+                  the pills are just their buttons;
+     under 26rem  the tempo goes, to Settings.
+   `menu-only-*` and `panel-only-*` are each tier's other half: what stands in
+   for a control, in the menu or in Settings, exactly where the bar has folded
+   it. */
+@media (max-width: 79.999rem) {
+  .bar-roomy {
+    display: none !important;
+  }
+}
+@media (max-width: 63.999rem) {
+  .bar-full {
+    display: none !important;
+  }
+}
+@media (max-width: 55.999rem) {
+  .bar-wide {
+    display: none !important;
+  }
+}
+@media (max-width: 47.999rem) {
+  .bar-mid {
+    display: none !important;
+  }
+}
+@media (min-width: 48rem) {
+  .menu-only-mid,
+  .panel-only-mid {
+    display: none !important;
+  }
+}
+@media (min-width: 40rem) {
+  .menu-only-sm {
+    display: none !important;
+  }
+}
+@media (max-width: 39.999rem) {
+  .bar-sm {
+    display: none !important;
+  }
+  .bar-start {
+    gap: 6px;
+    height: 40px;
+    padding-inline: 10px 12px;
+  }
+  .bar-start--icon {
+    width: 40px;
+    padding-inline: 0;
+  }
+}
+@media (max-width: 25.999rem) {
+  .bar-xs {
+    display: none !important;
+  }
+}
+@media (min-width: 26rem) {
+  .panel-only-xs {
+    display: none !important;
+  }
+}
+/* The narrowest phones: the bar's one filled button keeps its name for a
+   screen reader and gives up the word on screen. Nothing else in the bar wears
+   its icon, so the icon alone still says what it does. */
+@media (max-width: 22.999rem) {
+  .top-bar .bar-start {
+    position: relative;
+    padding-inline: 11px;
+  }
+  .top-bar .bar-start__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

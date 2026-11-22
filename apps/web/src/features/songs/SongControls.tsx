@@ -1,24 +1,22 @@
-import { ListMusic, Pause, Play, SkipBack, SkipForward } from 'lucide-react'
+import { ListMusic } from 'lucide-react'
 import * as React from 'react'
-import { fingerSong, skipBars, type Song } from '@motius/shared'
-import { cn } from '@/lib/cn'
+import { fingerSong, type Song } from '@motius/shared'
 import { Button } from '@/ui/Button'
-import { Field, SegmentedControl, Switch } from '@/ui/Controls'
+import { Field, SegmentedControl } from '@/ui/Controls'
 import { Divider } from '@/ui/Display'
-import { BarTabs } from '@/ui/BarTabs'
-import { TempoField } from '@/ui/TempoField'
-import { MetronomeIcon } from '@/ui/MetronomeIcon'
-import { MODE_ICONS, OptionGroup, StartStopButton } from '@/features/learning/ScaleControls'
+import { OptionGroup } from '@/ui/Surface'
 import { useLearningStore } from '@/state/learning-store'
-import { useCurrentSong, useSongStore, type SongMode, type SongPart } from '@/state/song-store'
+import { useCurrentSong, useSongStore, type SongPart } from '@/state/song-store'
 import { panelActions } from '@/state/panel-store'
 import { useSongPlayback } from './use-song-playback'
 import { useSongLearning } from './use-song-learning'
+import { useSongPractice } from './use-song-practice'
 
 /**
- * The Songs controls: on the bar, how the song is practised — the mode, the
- * tempo, the transport — and in the options panel, what is — which song, and
- * which hand's part of it.
+ * The Songs controls, in the options panel: what is practised — which song,
+ * and which hand's part of it. How it is practised (the mode, the tempo and
+ * Play) is the bar's one set of playing controls (`PlayControls`), the
+ * same as every other screen's.
  *
  * The playback and step-tracking engine is its own component, mounted whenever
  * the topic is Songs, and deliberately not part of any control. It used to live
@@ -31,6 +29,7 @@ export function SongEngine() {
   useSongFingering(song)
   useSongPlayback(song)
   useSongLearning(song)
+  useSongPractice(song)
   return null
 }
 
@@ -74,8 +73,6 @@ export function SongOptions() {
   const setPart = useSongStore((state) => state.setPart)
   const tempoScale = useSongStore((state) => state.tempoScale)
   const setTempoScale = useSongStore((state) => state.setTempoScale)
-  const hands = useSongStore((state) => state.hands)
-  const setHands = useSongStore((state) => state.setHands)
 
   return (
     <>
@@ -110,9 +107,10 @@ export function SongOptions() {
                 options={PART_OPTIONS}
               />
             </Field>
-            {/* The bar's tempo moves it a step at a time; these are the three
-                speeds worth one press. A speed that is none of them lights none. */}
+            {/* Where the bar has no room for its tempo: the three speeds worth
+                one press. A speed that is none of them lights none. */}
             <Field
+              className="panel-only-xs"
               label="Speed"
               hint={`${Math.round(song.bpm * tempoScale)} BPM. The song is written at ${Math.round(song.bpm)}.`}
             >
@@ -123,190 +121,9 @@ export function SongOptions() {
                 options={SPEEDS.map((scale) => ({ value: String(scale), label: percent(scale) }))}
               />
             </Field>
-            {/* Only where there is a fingering for hands to play: without one
-                there is nothing to say which finger goes where. */}
-            {song.hasFingering ? (
-              <Switch
-                label="Show hands on the keys"
-                description={
-                  song.fingeringSource === 'score'
-                    ? 'See-through hands over the keyboard, playing the fingering the score gives.'
-                    : song.fingeringSource === 'mixed'
-                      ? 'See-through hands over the keyboard, playing the fingering the score gives and, between its marks, the one Motius suggests.'
-                      : 'See-through hands over the keyboard, playing the fingering Motius suggests.'
-                }
-                checked={hands}
-                onChange={setHands}
-              />
-            ) : (
-              <p className="text-caption text-[var(--ds-fg-muted)]">
-                Hands can be shown over the keys for a song that has fingering. This one has none.
-              </p>
-            )}
           </OptionGroup>
         </>
       )}
     </>
-  )
-}
-
-const SONG_MODES: readonly { value: SongMode; label: string; description: string }[] = [
-  { value: 'explore', label: 'Explore', description: 'Play the song and listen' },
-  { value: 'learn', label: 'Learn', description: 'Light the keys and wait for you to play them' },
-]
-
-/** Explore or Learn, side by side on the bar — the two a song has. */
-export function SongModeTabs() {
-  const mode = useSongStore((state) => state.mode)
-  const setMode = useSongStore((state) => state.setMode)
-  return (
-    <BarTabs<SongMode>
-      label="Mode"
-      value={mode}
-      onChange={setMode}
-      options={SONG_MODES.map((option) => {
-        const Icon = MODE_ICONS[option.value]
-        return { ...option, icon: <Icon size={18} /> }
-      })}
-    />
-  )
-}
-
-/** The slowest and fastest the store lets a song go, as a share of its own tempo. */
-const MIN_SCALE = 0.25
-const MAX_SCALE = 2
-
-/**
- * The song's tempo, in beats a minute: on the bar, and in Settings for a bar
- * too narrow to hold it.
- *
- * The song keeps its speed as a share of the tempo it is written at, which is
- * what slows every bar of a piece that changes tempo by the same amount. The
- * player thinks in beats a minute, so that is what the field shows and what is
- * typed into it. A song opens at its own tempo, whatever the last one was
- * turned to.
- */
-export function SongTempoControl({ className, panel }: { className?: string; panel?: boolean }) {
-  const song = useCurrentSong()
-  const tempoScale = useSongStore((state) => state.tempoScale)
-  const setTempoScale = useSongStore((state) => state.setTempoScale)
-  // No song, no tempo to set — and the bar needs the room for "Open a song".
-  if (!song) return null
-  const written = song.bpm
-  return (
-    <TempoField
-      value={Math.round(written * tempoScale)}
-      min={Math.ceil(written * MIN_SCALE)}
-      max={Math.floor(written * MAX_SCALE)}
-      // An arrow is a twentieth of the song's tempo: a step that can be heard.
-      step={Math.max(1, Math.round(written * 0.05))}
-      onChange={(bpm) => setTempoScale(bpm / written)}
-      detail={`${percent(tempoScale)} of the song's tempo`}
-      panel={panel}
-      className={className}
-    />
-  )
-}
-
-export function SongMetronomeToggle({ className }: { className?: string }) {
-  const song = useCurrentSong()
-  const on = useSongStore((state) => state.metronome)
-  const tempoScale = useSongStore((state) => state.tempoScale)
-  const setMetronome = useSongStore((state) => state.setMetronome)
-  const bpm = song ? Math.round(song.bpm * tempoScale) : null
-  return (
-    <button
-      type="button"
-      className={cn('bar-icon-button', className)}
-      aria-pressed={on}
-      aria-label={`Metronome ${on ? 'on' : 'off'}${bpm ? `, ${bpm} BPM` : ''}`}
-      title={on ? 'Metronome on' : 'Metronome'}
-      // The click follows the song's own pulse, which is only there while the
-      // song is playing — so it is offered where it can be heard.
-      disabled={!song}
-      onClick={() => setMetronome(!on)}
-    >
-      <MetronomeIcon />
-    </button>
-  )
-}
-
-/**
- * Explore plays the piece; Learn waits for you. So Explore gets a transport and
- * Learn gets a Start, in the same place, and never both.
- *
- * In the same place, and the same width. The mode tabs sit to the left of this,
- * and a transport that shrank to one button when Learn was pressed would slide
- * them out from under the pointer that had just pressed them. So Learn's Start
- * stands in the middle of the room the transport takes, where Play was.
- */
-export function SongTransport() {
-  const song = useCurrentSong()
-  const mode = useSongStore((state) => state.mode)
-  const learning = useSongStore((state) => state.learning)
-  const playing = useSongStore((state) => state.playing)
-  const { startLearning, resetLearning, setPlaying, seek } = useSongStore.getState()
-
-  if (!song) {
-    return (
-      <button
-        type="button"
-        className="bar-start"
-        title="Open a song"
-        onClick={() => panelActions.open('library')}
-      >
-        <ListMusic size={18} aria-hidden />
-        <span className="bar-start__label">Open a song</span>
-      </button>
-    )
-  }
-
-  const learn = mode === 'learn'
-  // Where the playhead is when a skip is pressed, asked then. Watched instead,
-  // it redrew the transport forty times a second for as long as a song played,
-  // to keep ready a number that is wanted on a click.
-  const skip = (bars: number) => seek(skipBars(song, useSongStore.getState().positionMs, bars))
-
-  return (
-    <div className="bar-swap">
-      {/* Hidden rather than gone in Learn: it still holds the room open, and
-          `visibility` takes it out of the Tab order and the accessibility tree. */}
-      <div className={cn('bar-swap__layer', learn && 'bar-swap__layer--held')}>
-        <button
-          type="button"
-          className="bar-icon-button bar-wide"
-          aria-label="Back a bar"
-          title="Back a bar"
-          onClick={() => skip(-1)}
-        >
-          <SkipBack size={18} aria-hidden />
-        </button>
-        {/* The icon alone, the square Learn's Start is: the two take turns in
-            this spot, and are the same button to the eye. */}
-        <button
-          type="button"
-          className="bar-start bar-start--icon"
-          aria-label={playing ? 'Pause' : 'Play'}
-          title={playing ? 'Pause' : 'Play'}
-          onClick={() => setPlaying(!playing)}
-        >
-          {playing ? <Pause size={18} aria-hidden /> : <Play size={18} aria-hidden />}
-        </button>
-        <button
-          type="button"
-          className="bar-icon-button bar-wide"
-          aria-label="Forward a bar"
-          title="Forward a bar"
-          onClick={() => skip(1)}
-        >
-          <SkipForward size={18} aria-hidden />
-        </button>
-      </div>
-      {learn && (
-        <div className="bar-swap__layer">
-          <StartStopButton running={learning} onStart={startLearning} onStop={resetLearning} />
-        </div>
-      )}
-    </div>
   )
 }

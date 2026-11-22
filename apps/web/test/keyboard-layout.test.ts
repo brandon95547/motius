@@ -12,7 +12,7 @@ import {
   spanForKeyCount,
   windowForSpan,
   windowIncluding,
-} from '@/features/keyboard/keyboard-layout'
+} from '@/lib/keyboard-layout'
 
 const span = (keyCount: number) => spanForKeyCount(keyCount as (typeof KEY_COUNTS)[number])
 

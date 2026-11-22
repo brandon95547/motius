@@ -1,11 +1,11 @@
 import * as React from 'react'
-import { ON_TIME_MS, stepAtBeat, type ExerciseTimeline } from '@motius/shared'
+import { LEAD_IN_BEATS, ON_TIME_MS, stepAtBeat, type ExerciseTimeline } from '@motius/shared'
 import { fallingClock, useFallingStore } from '@/state/falling-store'
 import { learningActions, useLearningStore } from '@/state/learning-store'
 
 /**
  * Where the falling notes are in the music, frame by frame, and the ways the
- * player moves them: pausing, dragging through the music, looping a stretch.
+ * player moves them: pausing, and dragging through the music.
  *
  * The position is a beat — the one at the keys right now — written straight
  * onto the track as a transform, never rendered. What moves it follows the mode:
@@ -14,7 +14,7 @@ import { learningActions, useLearningStore } from '@/state/learning-store'
  * - **Practice**: the music goes on at the tempo whatever is played. A step
  *   that goes by unplayed is missed, and where each played step was played is
  *   kept, to judge it against its beat.
- * - **Hear**: it goes with the demonstration.
+ * - **Listen**: it goes with the demonstration.
  *
  * The music moves whatever the system's motion setting: falling notes are
  * motion by nature, and the player chose them over the staff, which is the
@@ -23,15 +23,11 @@ import { learningActions, useLearningStore } from '@/state/learning-store'
  *
  * Paused, it stands still, and goes on from exactly there. Dragged, it moves to
  * wherever it is let go, and the run goes on from the step there (the score
- * starting again, as from a new place). A loop sends the music back to its
- * start whenever it reaches its end, two beats before it, so its first note
- * falls in rather than appearing at the keys.
+ * starting again, as from a new place).
  */
 
 /** Practice starts this many beats before the first note reaches the keys. */
-export const LEAD_IN = 4
-/** A loop going round comes back in this many beats before its start. */
-const COUNT_IN = 2
+const LEAD_IN = LEAD_IN_BEATS
 
 export interface FallingClock {
   /** Move the music by this many beats, holding it there: a drag or a scroll. */
@@ -82,39 +78,19 @@ export function useFallingClock(
     [place],
   )
 
-  /** Take the run to the step at a beat, coming in from a little before it. */
-  const goTo = React.useCallback(
-    (beat: number) => {
-      const step = stepAt(beat)
-      if (useLearningStore.getState().session.status !== 'running') moved.current = true
-      useLearningStore.getState().seekStep(step)
-      useFallingStore.getState().clearPlayed()
-      counted.current = step
-      const start = starts?.[step] ?? 0
-      runFrom(useLearningStore.getState().mode === 'practice' ? start - COUNT_IN : start - 1)
-    },
-    [stepAt, starts, runFrom],
-  )
-
   // A run begins — Start, or Again after one ended: from wherever the music
-  // was left before the first, from the top (or the loop's start) after one.
-  // Not when the run itself was moved (a loop going round): that placed itself.
+  // was left before the first, from the top after one.
   const previous = React.useRef(status)
-  const moved = React.useRef(false)
   React.useEffect(() => {
     const before = previous.current
     previous.current = status
-    const begun = before !== 'running' && status === 'running' && !moved.current
-    moved.current = false
+    const begun = before !== 'running' && status === 'running'
     if (status !== 'running') useFallingStore.getState().setPaused(false)
     if (!begun || !starts) return
     useFallingStore.getState().setPaused(false)
     useFallingStore.getState().clearPlayed()
     const practice = mode === 'practice'
-    const from =
-      before === 'idle'
-        ? fallingClock.now + (practice ? LEAD_IN : 0)
-        : (useFallingStore.getState().loop?.from ?? 0)
+    const from = before === 'idle' ? fallingClock.now + (practice ? LEAD_IN : 0) : 0
     const step = stepAt(Math.max(0, from))
     if (step > 0) useLearningStore.getState().seekStep(step)
     counted.current = step
@@ -132,12 +108,6 @@ export function useFallingClock(
     if (resumed && session.status === 'running' && now === 'practice') runFrom(fallingClock.now)
   }, [paused, runFrom])
 
-  // A loop that ends with the exercise: the run is complete, and goes round.
-  const loop = useFallingStore((state) => state.loop)
-  React.useEffect(() => {
-    if (status === 'complete' && loop) goTo(loop.from)
-  }, [status, loop, goTo])
-
   // Waiting to begin: Practice with its lead-in above, so Start does not jump.
   React.useEffect(() => {
     if (status === 'idle' && !demoing && timeline) place(mode === 'practice' ? -LEAD_IN : 0)
@@ -154,7 +124,7 @@ export function useFallingClock(
       const elapsed = (time - then) / beatMs
       then = time
       const learning = useLearningStore.getState()
-      const { paused, loop: looped } = useFallingStore.getState()
+      const { paused } = useFallingStore.getState()
       const at = learning.session.stepIndex
       let now = fallingClock.now
 
@@ -186,24 +156,13 @@ export function useFallingClock(
         for (; counted.current < completedSteps; counted.current++)
           if (!missedSteps.includes(counted.current))
             useFallingStore.getState().markPlayed(counted.current, now)
-
-        if (looped) {
-          const pastEnd =
-            learning.mode === 'practice'
-              ? now >= looped.to
-              : (starts[useLearningStore.getState().session.stepIndex] ?? 0) >= looped.to
-          if (pastEnd) {
-            goTo(looped.from)
-            now = fallingClock.now
-          }
-        }
       }
       place(now)
       frame = requestAnimationFrame(tick)
     }
     frame = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame)
-  }, [starts, status, demoing, beatMs, place, goTo])
+  }, [starts, status, demoing, beatMs, place])
 
   return React.useMemo(
     () => ({

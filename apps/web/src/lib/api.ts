@@ -1,26 +1,33 @@
-import { z } from 'zod'
 import {
   API_PREFIX,
-  apiErrorSchema,
-  collectionSchema,
-  deviceSchema,
-  instrumentSchema,
-  songCategoryChoiceSchema,
+  type AddedRuns,
+  type ApiError,
+  type AuthConfig,
   type Device,
   type DeviceIdentity,
+  type Goals,
   type Instrument,
+  type Instruments,
+  type LessonSettings,
+  type NewRun,
+  type RegisteredDevice,
+  type ResetResult,
+  type ResetScope,
+  type Runs,
   type SetSongCategoryInput,
+  type SongCategoryChoice,
   type UpdateDeviceConfigInput,
+  type User,
 } from '@motius/shared'
 
 /**
  * The API client.
  *
- * Every response is parsed with the same zod schema the server validated it
- * against. That costs a few microseconds and buys the thing a typed client
- * otherwise only pretends to have: if the server and the client disagree, the
- * failure happens here, with a message that names the field — instead of three
- * layers down as `undefined is not an object`.
+ * The server checks what it is sent, and what it sends back, against the
+ * shared schemas (each route's `body` and `response`), so a reply is typed
+ * from those schemas here and not checked again: the browser does not carry
+ * zod (`docs/adr/0009-responses-checked-on-the-server.md`). The API and the
+ * app are built and deployed from this one repository, together.
  */
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? API_PREFIX
@@ -88,11 +95,17 @@ export class ApiClientError extends Error {
   }
 }
 
-async function request<T>(
-  path: string,
-  schema: z.ZodType<T>,
-  init?: RequestInit & { signal?: AbortSignal },
-): Promise<T> {
+/**
+ * What to do when the server says nobody is signed in: the sign-in ran out, or
+ * was ended elsewhere. The account store sets it, so a 401 from anywhere puts
+ * the sign-in page back up rather than leaving a screen of failed requests.
+ */
+let onSignedOut: (() => void) | null = null
+export function whenSignedOut(handler: () => void) {
+  onSignedOut = handler
+}
+
+async function request<T>(path: string, init?: RequestInit & { signal?: AbortSignal }): Promise<T> {
   const { signal, release } = withTimeout(init?.signal)
 
   let response: Response
@@ -125,19 +138,15 @@ async function request<T>(
     release()
   }
 
-  if (response.status === 204) return schema.parse(null)
+  if (response.status === 204) return null as T
 
-  const payload: unknown = await response.json().catch(() => null)
+  const payload: unknown = await response.json().catch(() => undefined)
 
   if (!response.ok) {
-    const parsed = apiErrorSchema.safeParse(payload)
-    throw parsed.success
-      ? new ApiClientError(
-          response.status,
-          parsed.data.error.code,
-          parsed.data.error.message,
-          parsed.data.error.details,
-        )
+    if (response.status === 401 && !path.startsWith('/auth/')) onSignedOut?.()
+    const error = errorOf(payload)
+    throw error
+      ? new ApiClientError(response.status, error.code, error.message, error.details)
       : new ApiClientError(
           response.status,
           'unexpected_error',
@@ -145,64 +154,112 @@ async function request<T>(
         )
   }
 
-  const result = schema.safeParse(payload)
-  if (!result.success) {
+  // Not JSON at all: a proxy's error page, or something that is not the API.
+  if (payload === undefined) {
     throw new ApiClientError(
       response.status,
-      'response_shape_mismatch',
-      `The server sent a response this build does not understand (${path}).`,
-      result.error.issues,
+      'unreadable_response',
+      `The server sent a response this build cannot read (${path}).`,
     )
   }
-  return result.data
+  return payload as T
 }
 
-const instrumentsResponse = collectionSchema(instrumentSchema).extend({
-  defaultInstrumentId: z.string(),
-})
+/** The server's error (`ApiError`), where a failed reply carries one. */
+function errorOf(payload: unknown): ApiError['error'] | null {
+  const error = (payload as Partial<ApiError> | null | undefined)?.error
+  return typeof error?.code === 'string' && typeof error.message === 'string' ? error : null
+}
 
-const registerDeviceResponse = z.object({
-  device: deviceSchema,
-  created: z.boolean(),
-  detection: z.object({
-    source: z.enum(['profile', 'name-heuristic', 'default']),
-    profileLabel: z.string().nullable(),
-  }),
-})
-export type RegisterDeviceResponse = z.infer<typeof registerDeviceResponse>
+export type { RegisteredDevice as RegisterDeviceResponse }
 
 export const api = {
-  listInstruments: (signal?: AbortSignal) =>
-    request('/instruments', instrumentsResponse, { signal }),
+  /** What the sign-in page needs: the Google client id, if the server has one. */
+  authConfig: (signal?: AbortSignal) => request<AuthConfig>('/auth/config', { signal }),
 
-  listDevices: (signal?: AbortSignal) =>
-    request('/devices', collectionSchema(deviceSchema), { signal }),
+  /** Who is signed in; a 401 for nobody. */
+  me: (signal?: AbortSignal) => request<User>('/auth/me', { signal }),
+
+  /** Signs in, or up, with the credential Google's button hands the page. */
+  signInWithGoogle: (credential: string) =>
+    request<User>('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ credential }),
+    }),
+
+  signOut: () => request<null>('/auth/sign-out', { method: 'POST' }),
+
+  /** The player's weekly goal, and the badges they have seen unlock. */
+  goals: (signal?: AbortSignal) => request<Goals>('/goals', { signal }),
+
+  /** Sets the weekly goal: so many runs at 90% or better a week; null clears it. */
+  setWeeklyGoal: (weeklyGoal: number | null) =>
+    request<Goals>('/goals/weekly', {
+      method: 'PUT',
+      body: JSON.stringify({ weeklyGoal }),
+    }),
+
+  /** Notes badges whose unlock the player has been shown. */
+  seeBadges: (badges: readonly string[]) =>
+    request<Goals>('/goals/seen', {
+      method: 'POST',
+      body: JSON.stringify({ badges }),
+    }),
+
+  /** How each lesson opens, where an admin has set it. */
+  listLessonSettings: (signal?: AbortSignal) =>
+    request<{ items: LessonSettings[] }>('/lessons/settings', { signal }),
+
+  /** Sets how a lesson opens, for everybody (admins only). */
+  setLessonSettings: (settings: LessonSettings) =>
+    request<LessonSettings>('/lessons/settings', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    }),
+
+  /** The signed-in player's finished runs, oldest first, and when the lessons were last started over. */
+  listRuns: (signal?: AbortSignal) => request<Runs>('/runs', { signal }),
+
+  /** Starts over: the lessons only, keeping the history, or everything. */
+  resetProgress: (scope: ResetScope) =>
+    request<ResetResult>('/runs/reset', {
+      method: 'POST',
+      body: JSON.stringify({ scope }),
+    }),
+
+  /** Keeps finished runs with the player's account. */
+  addRuns: (runs: readonly NewRun[]) =>
+    request<AddedRuns>('/runs', { method: 'POST', body: JSON.stringify({ runs }) }),
+
+  listInstruments: (signal?: AbortSignal) => request<Instruments>('/instruments', { signal }),
+
+  listDevices: (signal?: AbortSignal) => request<{ items: Device[] }>('/devices', { signal }),
 
   registerDevice: (identity: DeviceIdentity) =>
-    request('/devices', registerDeviceResponse, {
+    request<RegisteredDevice>('/devices', {
       method: 'POST',
       body: JSON.stringify(identity),
     }),
 
   updateDeviceConfig: (id: string, patch: UpdateDeviceConfigInput) =>
-    request(`/devices/${encodeURIComponent(id)}/config`, deviceSchema, {
+    request<Device>(`/devices/${encodeURIComponent(id)}/config`, {
       method: 'PATCH',
       body: JSON.stringify(patch),
     }),
 
   resetDeviceConfig: (id: string) =>
-    request(`/devices/${encodeURIComponent(id)}/config/reset`, deviceSchema, { method: 'POST' }),
+    request<Device>(`/devices/${encodeURIComponent(id)}/config/reset`, { method: 'POST' }),
 
   forgetDevice: (id: string) =>
-    request(`/devices/${encodeURIComponent(id)}`, z.null(), { method: 'DELETE' }),
+    request<null>(`/devices/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 
   /** The built-in songs whose genre or moods have been changed, and what to. */
   listSongCategories: (signal?: AbortSignal) =>
-    request('/songs/categories', collectionSchema(songCategoryChoiceSchema), { signal }),
+    request<{ items: SongCategoryChoice[] }>('/songs/categories', { signal }),
 
   /** Changes a song's genre, its moods, or both; what is left out stays as it was. */
   setSongCategory: (songId: string, change: SetSongCategoryInput) =>
-    request(`/songs/${encodeURIComponent(songId)}/category`, songCategoryChoiceSchema, {
+    request<SongCategoryChoice>(`/songs/${encodeURIComponent(songId)}/category`, {
       method: 'PATCH',
       body: JSON.stringify(change),
     }),

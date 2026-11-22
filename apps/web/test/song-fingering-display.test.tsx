@@ -1,4 +1,4 @@
-import { act, cleanup, render, renderHook } from '@testing-library/react'
+import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildSong, type SongNote } from '@motius/shared'
 import { useLearningStore } from '@/state/learning-store'
@@ -18,7 +18,7 @@ afterEach(cleanup)
 /**
  * A song's fingering has to survive the whole way to the key.
  *
- * It was worked out on import, stored on the note, handed to the hand card —
+ * It was worked out on import, stored on the note, carried through Learn —
  * and then dropped twice on the last step: the keyboard annotations were built
  * without it, and the badge layer read the scale's annotations rather than the
  * song's. Every piece worked except the two that put a number on a key, so
@@ -56,7 +56,7 @@ describe('a song’s fingering reaching the keyboard', () => {
     })
   })
 
-  it('puts the finger on the key annotation, not just the hand card', async () => {
+  it('puts the finger on the key annotation', async () => {
     const { useSongLearning } = await import('@/features/songs/use-song-learning')
     renderHook(() => useSongLearning(song))
 
@@ -84,10 +84,8 @@ describe('a song’s fingering reaching the keyboard', () => {
 /**
  * A chord is a hand shape, not a note.
  *
- * The keyboard had this right — every note of the step lights with its own
- * finger. The hand card did not: it took the first note of the step and showed
- * one finger, so a three-note chord looked like a single note and a chord
- * spanning both hands showed one hand.
+ * Every note of the step lights with its own finger: a three-note chord is
+ * three fingers, and a chord spanning both hands is both hands.
  */
 describe('a chord in Learn', () => {
   const chord = (): SongNote[] => [
@@ -148,7 +146,6 @@ describe('a chord in Learn', () => {
       mode: 'learn',
       part: 'both',
       stepIndex: 0,
-      currentFingers: [],
     })
   })
 
@@ -167,92 +164,8 @@ describe('a chord in Learn', () => {
       expect(annotations[note]?.finger, `note ${note}`).toBe(finger)
     }
   })
-
-  it('gives the hand card every finger, not the first one', async () => {
-    const { useSongLearning } = await import('@/features/songs/use-song-learning')
-    renderHook(() => useSongLearning(song))
-
-    // Low to high, which is the order a grip is held in.
-    expect(useSongStore.getState().currentFingers).toEqual([
-      { finger: 5, hand: 'left' },
-      { finger: 3, hand: 'left' },
-      { finger: 1, hand: 'left' },
-      { finger: 2, hand: 'right' },
-    ])
-  })
-
-  it('keeps both hands when a step reaches across them', async () => {
-    const { useSongLearning } = await import('@/features/songs/use-song-learning')
-    renderHook(() => useSongLearning(song))
-
-    const used = new Set(useSongStore.getState().currentFingers.map((entry) => entry.hand))
-    expect([...used].sort()).toEqual(['left', 'right'])
-  })
 })
 
-/**
- * The card renders before anything is playing.
- *
- * Which is most of the time: on open, before Start, and on any step whose
- * fingering could not be worked out. Reading the first hand out of an empty
- * list threw, and threw where a user would meet it first.
- */
-describe('the hand card with nothing playing', () => {
-  const song = buildSong({
-    id: 'q',
-    title: 'q',
-    bpm: 120,
-    beatsPerMeasure: 4,
-    notes: [
-      {
-        note: 60,
-        velocity: 90,
-        startMs: 0,
-        durationMs: 400,
-        hand: 'right' as const,
-        role: 'keyboard' as const,
-        finger: 1,
-      },
-    ],
-    source: 'midi',
-    handsInferred: false,
-  })
-
-  it('renders with no current fingers', async () => {
-    useSongStore.setState({
-      library: [song],
-      currentId: song.id,
-      mode: 'learn',
-      part: 'both',
-      stepIndex: 0,
-      currentFingers: [],
-    })
-    const { SongHandCard } = await import('@/features/songs/SongHandCard')
-    expect(() => render(<SongHandCard />)).not.toThrow()
-  })
-
-  it('renders with one hand playing, and with both', async () => {
-    const { SongHandCard } = await import('@/features/songs/SongHandCard')
-    for (const fingers of [
-      [{ finger: 3, hand: 'right' as const }],
-      [
-        { finger: 5, hand: 'left' as const },
-        { finger: 3, hand: 'left' as const },
-        { finger: 1, hand: 'right' as const },
-      ],
-    ]) {
-      useSongStore.setState({ library: [song], currentId: song.id, currentFingers: fingers })
-      expect(() => render(<SongHandCard />)).not.toThrow()
-    }
-  })
-})
-
-/**
- * Learn should behave the same in both tabs.
- *
- * A wrong note goes red in Scales and did nothing at all in Songs, so the same
- * mode taught two different things depending on which tab you were in.
- */
 describe('a wrong note in a song', () => {
   const song = buildSong({
     id: 'w',
@@ -288,7 +201,6 @@ describe('a wrong note in a song', () => {
       stepIndex: 0,
       learning: true,
       wrongNotes: [],
-      currentFingers: [],
     })
   })
 

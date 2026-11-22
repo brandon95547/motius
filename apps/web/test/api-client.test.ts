@@ -90,12 +90,21 @@ describe('other failures', () => {
     expect(error.isTransient).toBe(false)
   })
 
-  it('rejects a response this build cannot parse rather than passing it on', async () => {
-    // A server and a client that disagree should fail here, with a message
-    // naming the endpoint — not three layers down as "undefined is not an object".
-    globalThis.fetch = jsonFetch({ items: [{ id: 'x' }] })
+  it('says so when a reply is not the API’s at all, naming the endpoint', async () => {
+    // A proxy's error page, say. The shape of the API's own replies is checked
+    // on the server, against the shared schemas, before they are sent.
+    globalThis.fetch = vi.fn(() =>
+      Promise.resolve(new Response('<html>Bad gateway</html>', { status: 200 })),
+    ) as unknown as typeof fetch
     const error = (await api.listInstruments().catch((e: unknown) => e)) as ApiClientError
-    expect(error.code).toBe('response_shape_mismatch')
+    expect(error.code).toBe('unreadable_response')
+    expect(error.message).toContain('/instruments')
+  })
+
+  it('carries the server’s own error code and message', async () => {
+    globalThis.fetch = jsonFetch({ error: { code: 'not_found', message: 'Nope.' } }, 404)
+    const error = (await api.listInstruments().catch((e: unknown) => e)) as ApiClientError
+    expect(error).toMatchObject({ code: 'not_found', message: 'Nope.' })
   })
 
   it('passes a caller’s own cancellation through untouched', async () => {

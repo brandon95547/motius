@@ -1,3 +1,4 @@
+import { readdirSync } from 'node:fs'
 import js from '@eslint/js'
 import reactHooks from 'eslint-plugin-react-hooks'
 import globals from 'globals'
@@ -26,6 +27,13 @@ const HEX = '/(^|[^\\w/&])#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\\b/'
 const PALETTE =
   '/\\b(bg|text|border|ring|fill|stroke|from|via|to|outline|shadow)-(white|black|(slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\\d{2,3})\\b/'
 const LITERAL_SIZE = '/\\btext-\\[\\d/'
+
+/** The web app's features, one folder each, read from the tree so a new one is covered. */
+const FEATURES = readdirSync(new URL('./apps/web/src/features/', import.meta.url), {
+  withFileTypes: true,
+})
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name)
 
 const designRules = [
   {
@@ -89,4 +97,43 @@ export default tseslint.config(
     ignores: ['apps/web/src/ui/**'],
     rules: { 'no-restricted-syntax': ['error', ...designRules] },
   },
+  // Imports point one way: the shared layer imports no feature and not the
+  // frame, and a feature imports no other feature. What two need moves down.
+  {
+    files: ['apps/web/src/{ui,lib,state,audio,midi}/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/features/*', '@/components/*'],
+              message: 'Shared code imports no feature and not the frame: move what it needs down.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  ...FEATURES.map((feature) => ({
+    files: [`apps/web/src/features/${feature}/**/*.{ts,tsx}`],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/features/*', `!@/features/${feature}`, `!@/features/${feature}/*`],
+              message:
+                'A feature imports no other feature: what two need moves to ui/, lib/ or state/.',
+            },
+            {
+              group: ['@/components/*'],
+              message: 'A feature imports no part of the frame.',
+            },
+          ],
+        },
+      ],
+    },
+  })),
 )

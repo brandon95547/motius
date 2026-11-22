@@ -1,0 +1,396 @@
+/* ============================================================================
+   MOTIUS — COMPONENT TIER
+   ----------------------------------------------------------------------------
+   Tier 3 of the UI Bible's token model: per-component values that reference the
+   semantic tier and never reach past it to a primitive.
+
+   The keyboard is the one deliberate exception, and it is worth stating why.
+   Every other surface in this app takes its colour from the elevation ramp,
+   because every other surface is a UI surface. A piano key is not — it is a
+   depiction of a physical object, and a "white key" that has been assigned
+   `--ds-surface-raised` because that is where it sits in the hierarchy is a
+   piano nobody recognises. So the key faces are real-world values, defined
+   here, once, with the reasoning attached; everything about them that is UI —
+   the pressed state, the focus ring, the frame they sit in — is semantic.
+   The dashboard is the second exception, for the same kind of reason: it is
+   matched to a photographic mock, not built from the ramp.
+
+   Every colour, shadow, gradient, radius and layer a rule uses is a token in
+   the :root block below, in this order: the keys (faces, pressed, body, light
+   and shade, washes), notation and paper, the practice room (bar, stage, now,
+   playhead), the bar's controls, the run meter, type, shape and layers, the
+   dashboard, the areas. A rule names a token; it does not carry a value. The
+   exceptions are a component's stacking inside itself and plain transparency.
+   ========================================================================= */
+
+:root {
+  /* --- White keys ------------------------------------------------------
+     Ivory, not #ffffff. Pure white on a near-black page blooms, which is the
+     same halation the Bible's foreground ceiling is set to avoid — and a real
+     key is not pure white either. */
+  --c-key-white: #e9e8e4;
+  --c-key-white-hover: #f4f3f0;
+  /* The bottom lip. A 4px darker band instead of a bevel: it gives the key an
+     edge to end on without a gradient the flat brief does not want. */
+  --c-key-white-lip: #bcbab4;
+  /* The gap between adjacent keys, drawn as a right border rather than a real
+     gap so the keybed stays continuous at any width. */
+  --c-key-gap: rgb(0 0 0 / 0.32);
+
+  /* --- Notation --------------------------------------------------------
+     A font stack that has the signs in it.
+
+     The UI face is chosen for text and carries none of this: ♯ ♭ ♮ live in
+     Miscellaneous Symbols and the doubles 𝄫 𝄪 and the clefs in Musical
+     Symbols, which most text faces skip entirely. Without a stack that reaches
+     a face which has them, a sharp is a tofu box — or worse, silently the
+     wrong width, so the accidental column is spaced for ink that is not there.
+
+     Ordered from the faces that were made for this to the ones that merely
+     have the block, ending at the UI face so the fallback is still text. The
+     clef has a drawn stand-in behind all of it (see `useMusicGlyphs`); the
+     double accidentals do not, and are rare enough — G♯ minor's F𝄪 — that a
+     stack this long is the whole answer for them. */
+  --font-music:
+    'Bravura Text', 'Noto Music', 'Noto Sans Symbols 2', 'Segoe UI Symbol', 'Apple Symbols',
+    'DejaVu Sans', var(--font-sans);
+
+  /* --- Black keys ------------------------------------------------------
+     Lifted well clear of the canvas (#101010). A black key rendered at the
+     page colour is a hole in the keybed, not a key. */
+  --c-key-black: #24252a;
+  --c-key-black-face: #16171b;
+  --c-key-black-hover: #303138;
+
+  /* --- Pressed ---------------------------------------------------------
+     The accent, so a struck key is unmistakable at a glance across the room.
+     Black keys press to the *active* step so they stay visually below the
+     white keys they sit between — the accent must not erase the layout. */
+  --c-key-press: var(--ds-accent);
+  --c-key-press-black: var(--ds-accent-active);
+  --c-key-press-fg: var(--ds-accent-fg);
+
+  /* --- The instrument body --------------------------------------------- */
+  --c-piano-body: var(--ds-surface-raised);
+  /* The felt strip that runs above the keys on a real piano, in brand colour. */
+  --c-piano-felt: var(--ds-accent);
+  --c-key-radius: 0 0 var(--radius-sm) var(--radius-sm);
+
+  /* Keybed height. Viewport-relative with hard limits: tall enough on a phone
+     in landscape to aim at, capped on a large monitor so the keyboard stays an
+     instrument on a page rather than the page itself. Four fifths of what it
+     was when the keys had the screen's bottom to themselves: docked under the
+     stage, they share the height with the music. */
+  --keybed-height: clamp(83px, 19.2vh, 157px);
+
+  /* --- Paper and ink ------------------------------------------------------
+     The second physical object in the app, and the same exception as the keys:
+     printed music is black ink on white paper, and a staff tinted to sit in the
+     elevation ramp is a staff nobody reads as music. Real-world values, here,
+     once. The ink is a hair off black and the lines lighter than the notes, the
+     way engraving weights them — the notes are what is read, the lines are what
+     they stand on. */
+  --c-paper: #ffffff;
+  --c-ink: #15171b;
+  --c-ink-line: #4f5561;
+  /* What has already been played: still there, clearly behind you. 2.6:1 on the
+     paper — a mark to see past, not text to read. */
+  --c-ink-played: #a4aab4;
+
+  /* --- The practice room ---------------------------------------------------
+     A dark bar over a bright stage, with the paper in the middle, as the design
+     for this screen draws it. Both are set values rather than ramp steps: a
+     near-black bar (the dashboard's footer shares it, its cards sit a notch
+     above) and a lavender stage. The one blue the semantic tier names
+     (--ds-info) is kept for what it means — the playhead, which is information
+     about where you are. Everything on the stage that needs a dark surface to
+     carry small text (pills, the run meter, the keys' felt) uses the bar's. */
+  --c-bar: #131416;
+  /* A surface a notch above the bars: the dashboard's cards, and the sheets
+     that slide in from either side. */
+  --c-bar-raised: color-mix(in srgb, var(--c-bar), white 5%);
+  --c-bar-fg: #ffffff;
+  /* 8.5:1 on the bar. */
+  --c-bar-fg-muted: rgb(255 255 255 / 0.74);
+  --c-bar-hover: rgb(255 255 255 / 0.08);
+  --c-bar-pressed: rgb(255 255 255 / 0.16);
+  --c-bar-line: rgb(255 255 255 / 0.14);
+  /* A switch that is on — the metronome ticking. */
+  --c-bar-on: var(--p-info-300);
+  /* The lessons' own colour: the cap that opens a section's lessons. Violet,
+     6.8:1 on the bar. */
+  --c-lessons: #a78bfa;
+  /* Its deeper step: a black key asked for in a lesson. Dark labels read on
+     both (6.6:1 and 4.9:1). */
+  --c-lessons-deep: #9468f8;
+  /* Peaceful's stage: white (the user's choice, 2026-11-21; it was violet). */
+  --c-stage: #ffffff;
+  /* How much of a background film shows over the stage: one part film to three
+     of the stage's own color. */
+  --stage-backdrop-opacity: 0.25;
+
+  /* "Now": the note on the staff and the key on the keyboard you are to play,
+     one colour in both places so the eye can go from one to the other. 5.5:1
+     for white on it, which the finger numeral on a lit key needs. */
+  --c-now: var(--p-info-600);
+  --c-now-deep: var(--p-info-700);
+  --c-playhead: var(--ds-info);
+
+  /* Falling notes: a bar in each hand's color, the convention every falling-
+     notes app keeps (right green, left blue), with the finger printed on it in
+     the bar's dark ink. The one being waited on is "now", as on the keys. */
+  --c-fall-right: var(--c-area-exercises);
+  --c-fall-left: var(--c-area-arpeggios);
+  /* Pure black on every bar, the hand's colors and the one that is up alike: the
+     darkest ink there is, read as it falls. */
+  --c-fall-ink: #000000;
+  --c-fall-edge: rgb(0 0 0 / 0.18);
+  --c-fall-rule: rgb(0 0 0 / 0.1); /* a lane line at each C */
+  --c-fall-lane: rgb(0 0 0 / 0.045); /* a lane line at every other white key */
+  --c-fall-flash: rgb(255 255 255 / 0.85);
+  --c-fall-line: rgb(0 0 0 / 0.22); /* the line the notes are played at */
+
+  /* --- Keys: light and shade -----------------------------------------------
+     The bevels and shadows that make a flat key read as a real one, and the
+     inks printed on keys. Black and white at an alpha, because they are light
+     and shadow rather than colours: each sits over whatever fills the key. */
+  --c-key-bevel: rgb(0 0 0 / 0.55); /* a black key's front edge, at rest */
+  --c-key-bevel-lit: rgb(0 0 0 / 0.5); /* ...and filled: pressed, target */
+  --c-key-drop: rgb(0 0 0 / 0.7); /* a black key's shadow on the whites */
+  --c-key-veil: rgb(255 255 255 / 0.55); /* velocity: pales a soft note */
+  --c-key-label: rgb(0 0 0 / 0.72); /* the note name on an ivory key */
+  --c-key-label-pressed: rgb(255 255 255 / 0.85);
+  --c-key-label-on-fill: rgb(255 255 255 / 0.9); /* target blue, wrong red */
+  --c-key-label-on-accent: rgb(0 0 0 / 0.8); /* a held key in Learn: 4.7:1 */
+  --c-key-label-anchor: var(--ds-accent-active); /* the C that names its octave */
+  --c-key-name-above: rgb(0 0 0 / 0.5); /* a black key's name, on the stage */
+  --c-key-done: var(--ds-success-active); /* a lesson's step played, filled in */
+  --c-key-numeral: rgb(0 0 0 / 0.78); /* the finger number */
+  --c-key-numeral-black: rgb(255 255 255 / 0.88);
+  --c-key-cue: rgb(0 0 0 / 0.55); /* "thumb under" */
+
+  /* --- Hands ---------------------------------------------------------------
+     The hands over the keys, which are light and shadow as the bevels are, and
+     for the same reason: a hand lies over ivory and over black, and a colour
+     would read on one and vanish on the other. So its body is the veil and its
+     edge the shadow, each taken from the keys' own, and what is under it shows
+     through. A fingertip that is down is the ink a pressed key's label has. */
+  --c-hand-skin: var(--c-key-veil);
+  --c-hand-edge: var(--c-key-drop);
+  --c-hand-rest: var(--c-key-bevel); /* the edge of a finger on no key, and of the palm */
+  --c-hand-tip: var(--c-key-label-pressed);
+
+  /* --- Key washes ----------------------------------------------------------
+     The tints a key wears for what it means. Channels rather than colours,
+     because each role sets its own strength — `rgb(var(--c-wash-white) / 0.13)`
+     — and the black keys take a lighter violet so a wash still reads on a
+     near-black face. The upper tetrachord has its own hue: the two halves of a
+     scale are equal, so they differ in colour, not in strength. */
+  --c-wash-white: 112 111 211;
+  --c-wash-black: 150 149 240;
+  --c-wash-upper: 51 217 178;
+
+  /* --- Paper's shadows -------------------------------------------------- */
+  --shadow-staff-card: 0 1px 2px rgb(0 0 0 / 0.1), 0 6px 16px -8px rgb(0 0 0 / 0.3);
+  --shadow-paper: 0 3px 6px rgb(0 0 0 / 0.14); /* for a drop-shadow() filter */
+
+  /* --- The bar's controls, and what the bar and stage cast -------------- */
+  --c-bar-control: rgb(255 255 255 / 0.1); /* a filled round button */
+  --c-bar-control-hover: rgb(255 255 255 / 0.18);
+  --c-bar-outline: rgb(255 255 255 / 0.4); /* Stop's ring */
+  /* Record. Its own red, in both themes: the danger colour is an orange in the
+     dark one, and an orange dot says "warning", not "record". The dot is 3.4:1
+     on the button's own surface (4.6:1 on the bare bar); armed, the fill is a
+     step deeper so the white square on it is 5:1. */
+  --c-record: #ff5a64;
+  --c-record-armed: #d42c3c;
+  --c-record-fg: #ffffff;
+  --shadow-bar: 0 1px 0 rgb(0 0 0 / 0.25), 0 6px 18px -8px rgb(0 0 0 / 0.5);
+  /* Anything floating on the stage in the bar's colour: the run meter. */
+  --shadow-stage-float: 0 6px 16px -8px rgb(0 0 0 / 0.55);
+
+  /* --- The run meter ---------------------------------------------------- */
+  --c-meter-track: rgb(0 0 0 / 0.42);
+  --shadow-meter-track: inset 0 1px 3px rgb(0 0 0 / 0.6), 0 0 0 1px rgb(255 255 255 / 0.14);
+  --shadow-meter-fill: inset 0 2px 0 rgb(255 255 255 / 0.35), inset 0 -2px 0 rgb(0 0 0 / 0.18);
+  --c-meter-spark: rgb(255 255 255 / 0.95);
+  --c-meter-gleam: rgb(255 255 255 / 0.4);
+
+  /* --- Type ------------------------------------------------------------- */
+  --font-display: 'Playfair Display Variable', Georgia, serif;
+
+  /* --- Shape and layers ----------------------------------------------------
+     The Bible's radii run xs to 3xl; a pill is the one shape they leave out.
+     Layers are for things that sit over other components — a component's own
+     stacking inside itself stays a plain number next to its rule. */
+  --radius-pill: 999px;
+  --z-panel: 20; /* the area's options: over the workspace, under the bar's shadow */
+  --z-bar: 30;
+  --z-popover: 45; /* above the page, under a dialog (Tailwind z-50) */
+  --z-overlay: 60; /* the recording count-in and banner, over everything */
+
+  /* --- The dashboard -------------------------------------------------------
+     Matched to its mocks (reference.png, then new dashboard.png) rather than
+     taken from the ramp — the same exception the keys are: the page is a
+     photograph of a room, and its cards are plain dark panels over it. Values
+     sampled from the mocks. */
+  --c-dash-ink: #ffffff;
+  --c-dash-body: #d0cdc9;
+  --c-dash-quiet: #aeafaf;
+  --c-dash-room: #111214; /* under the photograph, while it loads */
+  --c-dash-shade: 8 8 10; /* channels: the room's darkening */
+  --c-dash-card: var(--c-bar-raised); /* the cards sit a notch above the bars */
+  --c-dash-card-edge: rgb(255 255 255 / 0.13);
+  /* Badges: earned, a shield in the lessons' violet with dark ink; still to
+     earn, a faint shield with a lock. */
+  --c-badge-earned: var(--c-lessons);
+  --c-badge-earned-deep: var(--c-lessons-deep);
+  --c-badge-earned-ink: #15121f;
+  /* A whole section's badge, earned: gold. */
+  --c-badge-gold: #f2c14e;
+  --c-badge-gold-deep: #b8860b;
+  --c-badge-gold-ink: #2a1d00;
+  --c-badge-locked: rgb(255 255 255 / 0.07);
+  --c-badge-locked-edge: rgb(255 255 255 / 0.22);
+  --c-badge-locked-ink: var(--c-dash-quiet);
+  --c-dash-tile: #0b0b0d; /* a Progress row under the pointer */
+  --c-dash-number: #c49164; /* a card's number: the first accent, turned down */
+  --c-dash-nav: var(--c-bar); /* the bar along the bottom */
+  --c-dash-nav-fg: #868787; /* a place you are not at */
+  --c-dash-nav-here: #f0c080; /* and the one you are */
+  /* The photograph turned down by a flat 30% of black: an even dim over the
+     whole picture, not a gradient. A background layer has to be an image,
+     hence the one-colour gradient. */
+  --dash-room-dim: linear-gradient(rgb(0 0 0 / 0.3), rgb(0 0 0 / 0.3));
+  --dash-room-fade: linear-gradient(
+    180deg,
+    rgb(var(--c-dash-shade) / 0.35),
+    rgb(var(--c-dash-shade) / 0.15) 35%,
+    rgb(var(--c-dash-shade) / 0.6)
+  );
+  /* Below 80rem the heading lands on the light columns; this shades them. */
+  --dash-room-side-shade: linear-gradient(
+    90deg,
+    rgb(var(--c-dash-shade) / 0.72),
+    rgb(var(--c-dash-shade) / 0.2) 70%
+  );
+  --shadow-dash-card: 0 22px 44px -22px rgb(0 0 0 / 0.85);
+  --shadow-dash-card-hover: 0 28px 52px -22px rgb(0 0 0 / 0.9);
+
+  /* --- The areas -----------------------------------------------------------
+     One accent each, on the dashboard card's icon and the ring round its
+     arrow. Six named for the areas they were first given to, and three more,
+     sampled from the mock of the nine lessons, named for what they are. */
+  --c-area-songs: #e2a877;
+  --c-area-scales: #a18af5;
+  --c-area-chords: #e6b07a;
+  --c-area-arpeggios: #5fb3f5;
+  --c-area-progressions: #e9a46a;
+  --c-area-exercises: #7fd48a;
+  --c-area-rose: #ef8c9f;
+  --c-area-teal: #6aeed6;
+  --c-area-pink: #f187bd;
+}
+
+/* ---- Color themes -----------------------------------------------------------
+   One hue runs through everything that is lit: the stage, the keys being
+   played, the buttons that start things. A theme is that hue changed, and
+   nothing else — so each is the accent's own tokens and the few of Motius's
+   that carry the hue, given again. Peaceful is the violet the tokens above
+   already are, and has no block of its own.
+
+   What means something keeps its meaning in every theme: the blue of the note
+   to play, the color of a wrong one, the green of a connected keyboard. Where
+   a theme's own hue would land on one of those, it is the meaning's color
+   that moves aside, in that theme only. */
+
+/* Powerful: a light gray stage under lime keys and buttons (#d8ff74, the
+   user's choice, 2026-11-21). It was red, as first asked; but danger — a
+   wrong note, an error — is red in every theme, and a key lit red for a right
+   note sat too close to one lit red for a wrong one. So the fill moved to gold
+   (2026-11-19), then to this lime; danger stays red. */
+:root[data-color-theme='powerful'] {
+  /* Dark text on the lime (17:1). Its hover a step lighter, pressed a step
+     deeper, each worked out from the one color given. */
+  --ds-accent: #d8ff74; /* written out: the menu's swatch matches it */
+  --ds-accent-hover: #e2ff95;
+  --ds-accent-active: #b9e04f;
+  --ds-accent-fg: #101114;
+  --ds-accent-subtle: rgb(216 255 116 / 0.18);
+  --ds-accent-subtle-hover: rgb(216 255 116 / 0.26);
+  --ds-accent-border: rgb(216 255 116 / 0.42);
+  --ds-accent-text: #d8ff74;
+  --ds-focus-ring: #e2ff95;
+  --ds-layer-selected: rgb(216 255 116 / 0.16);
+  --c-stage: #d9d9d9;
+  --c-wash-white: 216 255 116;
+  --c-wash-black: 226 255 149;
+  /* The C that names its octave is written in the accent, and lime on an
+     ivory key cannot be read: here it is the lime's deep olive (6.2:1). */
+  --c-key-label-anchor: #4a6600;
+  /* Danger is the app's own faint red here too, as in every theme. */
+}
+
+/* Dark Concert: the one theme where the paper is not white. The stage, the
+   staff's paper, its lines and its ink, the keys and the lit blue are the
+   colors asked for, as given; the rest is derived from them.
+
+   The lit blue is a light one, made to be read on a dark staff: 7.4:1 on the
+   paper. White on it is 2.1:1, so what is written on it — a button's label,
+   the number on a held key — is the stage's own near-black, at 9.1:1.
+
+   It is also the blue of the note to play, near enough: a key you are asked
+   for and a key you are holding would be two blues. So here the note to play
+   is a gold, the far side of the wheel from the blue and as bright on the
+   dark paper (9.2:1), and what is printed on a gold or a wrong key is dark.
+
+   The text colors given are the page's primary and secondary. The third, a
+   muted #8c909a, is 4.8:1 on this paper but 4.1:1 on a drawer and 3.4:1 in
+   a field, where muted text mostly lives — the Bible's stays there. */
+:root[data-color-theme='dark-concert'] {
+  /* A black key's name over the keys: on this dark stage, white. */
+  --c-key-name-above: rgb(255 255 255 / 0.5);
+  --c-stage: #101114;
+  /* Falling notes' rulings on a dark stage: light, not dark. */
+  --c-fall-rule: rgb(255 255 255 / 0.11);
+  --c-fall-lane: rgb(255 255 255 / 0.05);
+  --c-fall-line: rgb(255 255 255 / 0.3);
+  --c-paper: #22252b;
+  --c-ink: #e8eaf0;
+  --c-ink-line: #737a86;
+  /* Behind you: 2.9:1 on the paper, as the gray on white paper is 2.6:1. */
+  --c-ink-played: #666c78;
+
+  --c-key-white: #e5e5e5;
+  --c-key-white-hover: #f0f0f0;
+  --c-key-white-lip: #b9b9b9;
+  --c-key-black: #24272e;
+  --c-key-black-face: #16181d;
+  --c-key-black-hover: #30343d;
+  --c-key-gap: #555963;
+
+  --ds-accent: #82b7ff;
+  --ds-accent-hover: #a4caff;
+  --ds-accent-active: #5b97e7;
+  --ds-accent-fg: #101114;
+  --ds-accent-subtle: rgb(130 183 255 / 0.16);
+  --ds-accent-subtle-hover: rgb(130 183 255 / 0.24);
+  --ds-accent-border: rgb(130 183 255 / 0.4);
+  --ds-accent-text: #aacdfe;
+  --ds-focus-ring: #82b7ff;
+  --ds-layer-selected: rgb(130 183 255 / 0.16);
+  /* A tint has to show on a light key, so the white keys' is a deeper blue. */
+  --c-wash-white: 68 134 222;
+  --c-wash-black: 130 183 255;
+  --c-key-label-pressed: rgb(0 0 0 / 0.85);
+  /* 4.9:1 on the key: the lit blue's dark step is too pale to read there. */
+  --c-key-label-anchor: #2b5fb5;
+  --c-key-done: var(--ds-success-active);
+
+  --c-now: #f4c152;
+  --c-now-deep: #c69612;
+  --c-key-label-on-fill: rgb(0 0 0 / 0.85);
+
+  --ds-fg: #e8e8eb;
+  --ds-fg-secondary: #a6abb6;
+}

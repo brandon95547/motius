@@ -88,8 +88,8 @@ describe('learn mode', () => {
   })
 })
 
-describe('explore mode', () => {
-  beforeEach(() => store().setMode('explore'))
+describe('listen mode', () => {
+  beforeEach(() => store().setMode('listen'))
 
   it('lights every octave of the scale', () => {
     expect(roleOf(33)).toBe('root') // A1

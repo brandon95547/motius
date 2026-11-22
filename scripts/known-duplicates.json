@@ -18,14 +18,6 @@
       "hash": "63aa5f7fc2e8",
       "lines": 8,
       "files": ["scripts/icons.mjs", "scripts/verify-audio.mjs"]
-    },
-    {
-      "hash": "77d53dc140b3",
-      "lines": 8,
-      "files": [
-        "apps/web/src/features/songs/import-musescore.ts",
-        "apps/web/src/features/songs/import-musicxml.ts"
-      ]
     }
   ]
 }

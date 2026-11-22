@@ -12,9 +12,11 @@ import {
   type SongNote,
 } from '@motius/shared'
 import { SONG_CATALOG } from '@/features/songs/catalog'
-import { SongPicker, showMySongs } from '@/features/songs/SongPicker'
+import { SongPicker } from '@/features/songs/SongPicker'
+import { showMySongs } from '@/features/songs/shelf-store'
 import { shortKey, songKey, sortKeys } from '@/features/songs/song-keys'
 import { useSongStore } from '@/state/song-store'
+import { useAccountStore } from '@/state/account-store'
 
 /**
  * The song chooser: the dialog Songs opens on.
@@ -124,8 +126,16 @@ const shelvesToMoveBetween = () => {
   return { from, to: others.find((each) => each.songs.length === 0) ?? others[0]! }
 }
 
+const signedInAs = (isAdmin: boolean) =>
+  useAccountStore.setState({
+    status: 'signed-in',
+    user: { email: 'someone@example.com', name: 'Someone', picture: null, isAdmin },
+  })
+
 beforeEach(() => {
   vi.stubGlobal('fetch', serveScores())
+  // Moving a song to another shelf is an admin's.
+  signedInAs(true)
   useSongStore.setState({ library: [], builtIn: [], currentId: null })
   // The chooser keeps the shelf and the key it was left on; each case starts
   // on the first shelf, in any key.
@@ -238,6 +248,19 @@ describe('the song chooser', () => {
     expect(moods().value).toBe('')
     expect(mood(lacking.missing.label).disabled).toBe(true)
     expect(mood(had.label).disabled).toBe(false)
+  })
+
+  // The shelves are the same for everybody, so only an admin moves a song.
+  it('offers Edit categories to an admin', () => {
+    signedInAs(true)
+    show()
+    expect(screen.getByRole('button', { name: 'Edit categories' })).toBeDefined()
+  })
+
+  it('does not offer Edit categories to a player', () => {
+    signedInAs(false)
+    show()
+    expect(screen.queryByRole('button', { name: 'Edit categories' })).toBeNull()
   })
 
   it('changes the moods of a song, and tells the server', async () => {

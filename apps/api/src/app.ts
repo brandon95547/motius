@@ -14,6 +14,12 @@ import { API_PREFIX } from '@motius/shared'
 import type { Config } from './config.js'
 import { AppError } from './errors.js'
 import { dbPlugin } from './plugins/db.js'
+import { authPlugin, requireAccount } from './plugins/auth.js'
+import { googleVerifier, type VerifyGoogleCredential } from './clients/google.js'
+import { authRoutes } from './routes/auth.js'
+import { lessonRoutes } from './routes/lessons.js'
+import { runRoutes } from './routes/runs.js'
+import { goalRoutes } from './routes/goals.js'
 import { healthRoutes } from './routes/health.js'
 import { instrumentRoutes } from './routes/instruments.js'
 import { deviceRoutes } from './routes/devices.js'
@@ -25,7 +31,12 @@ declare module 'fastify' {
   }
 }
 
-export async function buildApp(config: Config): Promise<FastifyInstance> {
+/** What the app talks to outside itself, which a test swaps for its own. */
+export interface AppDeps {
+  verifyGoogle?: VerifyGoogleCredential
+}
+
+export async function buildApp(config: Config, deps: AppDeps = {}): Promise<FastifyInstance> {
   const app = Fastify({
     logger: {
       level: config.logLevel,
@@ -43,7 +54,7 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
     trustProxy: config.isProduction,
     // A MIDI device announcement is a few hundred bytes. Nothing this API
     // accepts is large, so the default 1MB body limit is an open door.
-    bodyLimit: 64 * 1024,
+    bodyLimit: config.bodyLimitBytes,
     // Fastify's built-in request logging serialises the whole request object
     // and the whole reply object — about fifteen lines per request, which
     // buries the messages actually worth reading (a boot failure, a new
@@ -114,10 +125,10 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
       .send({ error: { code: error.code ?? 'request_error', message: error.message } })
   })
 
-  app.setNotFoundHandler((request, reply) =>
-    reply.code(404).send({
-      error: { code: 'not_found', message: `No route for ${request.method} ${request.url}.` },
-    }),
+  // A fixed sentence: echoing the address back would put whatever a client
+  // sent into the response.
+  app.setNotFoundHandler((_request, reply) =>
+    reply.code(404).send({ error: { code: 'not_found', message: 'There is nothing here.' } }),
   )
 
   app.addHook('onResponse', (request, reply, done) => {
@@ -135,19 +146,62 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
 
   await app.register(cors, {
     origin: config.corsOrigins.length > 0 ? config.corsOrigins : false,
-    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
   })
 
   await app.register(dbPlugin, { databasePath: config.databasePath })
+  await app.register(authPlugin, {
+    adminEmails: config.adminEmails,
+    secureCookies: config.isProduction,
+  })
 
+  // The API reference, at /docs, outside production only: it lists every
+  // route, and nobody outside needs it.
+  if (!config.isProduction) {
+    await registerDocs(app, config)
+  }
+
+  await app.register(
+    async (api) => {
+      // Open to anyone: whether the server is up, and the way to sign in.
+      await api.register(healthRoutes)
+      await api.register(authRoutes, {
+        googleClientId: config.googleClientId,
+        sessionDays: config.sessionDays,
+        secureCookies: config.isProduction,
+        verifyGoogle:
+          deps.verifyGoogle ??
+          (config.googleClientId
+            ? googleVerifier(config.googleClientId, config.googleTimeoutMs)
+            : null),
+      })
+      // Everything else is for someone signed in.
+      await api.register(async (signedIn) => {
+        signedIn.addHook('onRequest', requireAccount)
+        await signedIn.register(instrumentRoutes)
+        await signedIn.register(deviceRoutes)
+        await signedIn.register(songRoutes)
+        await signedIn.register(lessonRoutes)
+        await signedIn.register(runRoutes, { bodyLimit: config.runsBodyLimitBytes })
+        await signedIn.register(goalRoutes)
+      })
+    },
+    { prefix: API_PREFIX },
+  )
+
+  return app
+}
+
+/** The OpenAPI document, built from the routes' own schemas, and the page that shows it. */
+async function registerDocs(app: FastifyInstance, config: Config) {
   await app.register(swagger, {
     openapi: {
       info: {
         title: 'Motius API',
         version: config.version,
         description:
-          'Backend for Motius — the piano catalog, the MIDI device profile and configuration store, and the categories of the built-in songs.',
+          'Backend for Motius — sign-in, the piano catalog, the MIDI device profile and configuration store, the categories of the built-in songs, how each lesson opens, and each player’s finished runs and goals.',
       },
       servers: [{ url: API_PREFIX }],
       tags: [
@@ -155,22 +209,17 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
         { name: 'instruments', description: 'The playable piano catalog' },
         { name: 'devices', description: 'MIDI keyboard detection and configuration' },
         { name: 'songs', description: 'The categories of the built-in songs' },
+        { name: 'auth', description: 'Signing in with Google, and out' },
+        { name: 'lessons', description: 'How each lesson opens, set by an admin' },
+        { name: 'runs', description: 'The signed-in player’s finished runs' },
+        {
+          name: 'goals',
+          description: 'The signed-in player’s weekly goal and the badges they have seen',
+        },
       ],
     },
     transform: jsonSchemaTransform,
   })
 
   await app.register(scalar, { routePrefix: '/docs' })
-
-  await app.register(
-    async (api) => {
-      await api.register(healthRoutes)
-      await api.register(instrumentRoutes)
-      await api.register(deviceRoutes)
-      await api.register(songRoutes)
-    },
-    { prefix: API_PREFIX },
-  )
-
-  return app
 }

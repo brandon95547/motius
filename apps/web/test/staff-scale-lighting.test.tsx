@@ -34,7 +34,7 @@ afterEach(cleanup)
 const store = () => useLearningStore.getState()
 const keys = () => useKeyboardStore.getState()
 
-function open(spec: Partial<ScaleSpec>, mode: 'explore' | 'learn' = 'learn') {
+function open(spec: Partial<ScaleSpec>, mode: 'listen' | 'learn' = 'learn') {
   store().setTopic('scales')
   store().updateSpec({
     ...DEFAULT_SCALE_SPEC,
@@ -103,7 +103,7 @@ describe('playing a two-handed scale by hand', () => {
   })
 
   it('finds the step from the keys when nobody has started anything', () => {
-    const { container } = open({ hand: 'both' }, 'explore')
+    const { container } = open({ hand: 'both' }, 'listen')
     const steps = store().exercise!.steps
 
     // Both hands on the eighth step. Each of its keys is also half of another
@@ -116,7 +116,7 @@ describe('playing a two-handed scale by hand', () => {
 
 describe('playing a one-handed scale by hand', () => {
   it('still lights the note wherever it is written', () => {
-    const { container } = open({ hand: 'right' }, 'explore')
+    const { container } = open({ hand: 'right' }, 'listen')
     const steps = store().exercise!.steps
 
     // Up and back: nothing says which of the two the player means.

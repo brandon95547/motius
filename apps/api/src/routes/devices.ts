@@ -5,20 +5,12 @@ import {
   deviceProfileSchema,
   deviceSchema,
   registerDeviceSchema,
+  registeredDeviceSchema,
   updateDeviceConfigSchema,
 } from '@motius/shared'
 import { AppError } from '../errors.js'
 
 const deviceIdParams = z.object({ id: z.string().min(1).max(200) })
-
-const registerResponseSchema = z.object({
-  device: deviceSchema,
-  created: z.boolean(),
-  detection: z.object({
-    source: z.enum(['profile', 'name-heuristic', 'default']),
-    profileLabel: z.string().nullable(),
-  }),
-})
 
 export const deviceRoutes: FastifyPluginAsyncZod = async (app) => {
   app.get(
@@ -38,11 +30,11 @@ export const deviceRoutes: FastifyPluginAsyncZod = async (app) => {
     {
       schema: {
         tags: ['devices'],
-        summary: 'Every keyboard this install has seen, most recent first',
+        summary: 'Every keyboard the signed-in player has announced, most recent first',
         response: { 200: collectionSchema(deviceSchema) },
       },
     },
-    async () => ({ items: app.devices.list() }),
+    async (request) => ({ items: app.devices.list(request.account!.id) }),
   )
 
   app.post(
@@ -54,11 +46,11 @@ export const deviceRoutes: FastifyPluginAsyncZod = async (app) => {
         description:
           'Idempotent. The browser calls this for every port on every page load and on every hot-plug; a keyboard already known keeps its saved configuration and only has its last-seen time refreshed. Responds 201 the first time a keyboard is seen and 200 afterwards.',
         body: registerDeviceSchema,
-        response: { 200: registerResponseSchema, 201: registerResponseSchema },
+        response: { 200: registeredDeviceSchema, 201: registeredDeviceSchema },
       },
     },
     async (request, reply) => {
-      const result = app.devices.register(request.body)
+      const result = app.devices.register(request.account!.id, request.body)
       if (result.created) {
         request.log.info(
           { deviceId: result.device.id, detection: result.detection },
@@ -80,7 +72,7 @@ export const deviceRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (request) => {
-      const device = app.devices.find(request.params.id)
+      const device = app.devices.find(request.account!.id, request.params.id)
       if (!device) throw AppError.notFound('device', request.params.id)
       return device
     },
@@ -100,7 +92,7 @@ export const deviceRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (request) => {
-      const device = app.devices.updateConfig(request.params.id, request.body)
+      const device = app.devices.updateConfig(request.account!.id, request.params.id, request.body)
       if (!device) throw AppError.notFound('device', request.params.id)
       return device
     },
@@ -117,7 +109,7 @@ export const deviceRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (request) => {
-      const device = app.devices.resetConfig(request.params.id)
+      const device = app.devices.resetConfig(request.account!.id, request.params.id)
       if (!device) throw AppError.notFound('device', request.params.id)
       return device
     },
@@ -134,7 +126,7 @@ export const deviceRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (request, reply) => {
-      if (!app.devices.delete(request.params.id)) {
+      if (!app.devices.delete(request.account!.id, request.params.id)) {
         throw AppError.notFound('device', request.params.id)
       }
       return reply.code(204).send(null)

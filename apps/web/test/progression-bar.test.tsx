@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { DEFAULT_CADENCE_SPEC, PROGRESSION_TYPE_LABELS, PROGRESSION_TYPES } from '@motius/shared'
-import { ProgressionOptions } from '@/features/learning/ChordControls'
+import { ProgressionOptions } from '@/features/learning/ProgressionControls'
 import { useLearningStore } from '@/state/learning-store'
 
 /**

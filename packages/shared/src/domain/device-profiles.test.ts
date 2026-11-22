@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { DeviceProfile } from './device.js'
+import type { DeviceProfile } from './device-schemas.js'
 import { keyCountFromName, matchDeviceProfile, STANDARD_RANGES } from './device-profiles.js'
 
 const profiles: DeviceProfile[] = [

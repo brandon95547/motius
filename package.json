@@ -23,6 +23,7 @@
     "lint:prune": "eslint . --prune-suppressions",
     "check:styles": "node scripts/check-styles.mjs",
     "check:duplicates": "node scripts/check-duplicates.mjs",
+    "check:budgets": "node scripts/check-budgets.mjs",
     "check": "npm run format:check && npm run lint && npm run check:styles && npm run check:duplicates && npm run typecheck && npm test",
     "test": "npm run build:shared && npm run test --workspaces --if-present",
     "verify:audio": "node scripts/verify-audio.mjs",

@@ -1,4 +1,5 @@
-import type { DeviceIdentity, DeviceProfile, KeyCount, NoteRange } from './device.js'
+import type { KeyCount } from './device.js'
+import type { DeviceIdentity, DeviceProfile, NoteRange } from './device-schemas.js'
 
 /**
  * Standard note ranges by key count.

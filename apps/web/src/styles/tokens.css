@@ -278,13 +278,13 @@
   --ds-warning-border: rgb(255 218 121 / 0.34);
   --ds-warning-text: #ffda79;       /* 5.6:1 on its own subtle fill over an overlay */
 
-  --ds-danger: #ff793f;             /* taken: Synthetic Pumpkin */
-  --ds-danger-hover: #ff9463;       /* derived: lightened */
-  --ds-danger-active: #cd6133;      /* taken: Chilean Fire */
-  --ds-danger-fg: #101010;          /* 7.4:1 on the fill */
-  --ds-danger-subtle: rgb(255 121 63 / 0.14);
-  --ds-danger-border: rgb(255 121 63 / 0.36);
-  --ds-danger-text: #ffa57b;        /* lifted 8%: 4.6:1 on its own subtle fill over an overlay */
+  --ds-danger: #ff929b;             /* a faint red: the danger ramp's 300 */
+  --ds-danger-hover: #ffbec4;       /* the ramp's 200 */
+  --ds-danger-active: #fa6470;      /* the ramp's 400: a wrong black key, a white one's edge */
+  --ds-danger-fg: #101010;          /* 8.1:1 on the fill, 6.1:1 on the active step */
+  --ds-danger-subtle: rgb(255 146 155 / 0.14);
+  --ds-danger-border: rgb(255 146 155 / 0.36);
+  --ds-danger-text: #ff929b;        /* the fill itself reads as text on the dark ground */
 
   --ds-info: #34ace0;               /* taken: Summer Sky */
   --ds-info-hover: #5cbde7;         /* derived: lightened */

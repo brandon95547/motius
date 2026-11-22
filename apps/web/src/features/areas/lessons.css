@@ -1,0 +1,364 @@
+/* ---- A section's stage: its lessons, and the one that is up --------------
+   The list is in a sheet from the left, so the staff and the keys keep the
+   whole width. The card sits over the staff on the bar's surface: the stage
+   cannot carry small text of its own. */
+.lesson-list__chapter-title {
+  padding: 14px 10px 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ds-fg-muted);
+}
+.lesson-list__chapter:first-child .lesson-list__chapter-title {
+  padding-top: 0;
+}
+.lesson-list__item {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 10px;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  line-height: 1.35;
+  text-align: left;
+  color: var(--ds-fg);
+}
+/* A lesson's name takes the room; its best score, once it has one, sits at
+   the end. */
+.lesson-list__name {
+  flex: 1;
+  min-width: 0;
+}
+.lesson-list__best {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  align-self: center;
+  font-size: var(--text-label);
+  color: var(--ds-fg-secondary);
+}
+/* A lesson's introduction: where it is in the section, what it asks, how to
+   play it in a panel of its own, and one thing to remember. */
+.lesson-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.lesson-intro .lesson-progress {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--ds-border-subtle);
+}
+.lesson-intro__part,
+.lesson-intro__how {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.lesson-intro__heading {
+  font-size: var(--text-h4);
+  line-height: var(--text-h4--line-height);
+  font-weight: var(--text-h4--font-weight);
+}
+.lesson-intro__how {
+  padding: 14px 18px;
+  border-radius: var(--radius-lg);
+  background-color: var(--ds-surface-raised);
+}
+.lesson-intro strong {
+  font-weight: 600;
+}
+.lesson-intro__remember {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.lesson-intro__remember svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--ds-accent-text);
+}
+/* How to play's heading, with Finger numbers beside it where the lines use them. */
+.lesson-intro__how-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+/* The chart: both hands, palms down, each fingertip numbered. */
+.finger-numbers {
+  width: min(22rem, calc(100vw - 2rem));
+  padding: 16px;
+}
+.finger-numbers__hands {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.finger-numbers__hand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-ui);
+  font-weight: 600;
+  color: var(--ds-fg);
+}
+.finger-numbers__hand svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.finger-numbers__palm,
+.finger-numbers__finger {
+  fill: var(--ds-layer-active);
+  stroke: var(--ds-border-strong);
+  stroke-width: 1.5;
+}
+.finger-numbers__tip {
+  fill: var(--ds-accent);
+}
+.finger-numbers__number {
+  fill: var(--ds-accent-fg);
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.finger-numbers__key {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 12px;
+  margin-top: 12px;
+  font-size: var(--text-ui);
+  color: var(--ds-fg);
+}
+.finger-numbers__note {
+  margin-top: 6px;
+  text-align: center;
+  font-size: var(--text-ui);
+  color: var(--ds-fg-secondary);
+}
+/* A lesson's results: where the player is in the section, the run's score as
+   a ring beside what it was made of, stacked on a phone. */
+.lesson-results {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  /* The dialog's height is set by its shape: the score takes what is left. */
+  min-height: 100%;
+}
+.lesson-results__place {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 16px;
+  font-size: var(--text-h4);
+  font-weight: 600;
+}
+.lesson-progress__bar {
+  flex: none;
+  height: 8px;
+  box-shadow: none;
+}
+/* One flat color, not the run meter's gradient. */
+.lesson-progress__bar .run-meter__fill {
+  background: var(--ds-accent);
+  box-shadow: none;
+}
+/* At the end of a run, the count in words: white, in the middle. */
+.lesson-progress__count {
+  font-size: var(--text-h4);
+  font-weight: 600;
+  text-align: center;
+  color: var(--ds-fg);
+}
+.lesson-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.lesson-progress__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--ds-fg-secondary);
+}
+/* ‹ Lesson 2 of 10 ›: the arrows hug the words, the first one flush left. */
+.lesson-steps {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: -8px;
+}
+.lesson-results__score {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ds-border-subtle);
+}
+.lesson-results__ring {
+  position: relative;
+  flex: none;
+  width: 160px;
+  aspect-ratio: 1;
+}
+.lesson-results__ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.lesson-results__ring-track,
+.lesson-results__ring-fill {
+  fill: none;
+}
+.lesson-results__ring-track {
+  stroke: var(--c-meter-track);
+}
+.lesson-results__ring-fill {
+  stroke: var(--ds-accent);
+  stroke-linecap: round;
+}
+.lesson-results__ring-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-ui);
+  color: var(--ds-fg-secondary);
+}
+.lesson-results__percent {
+  font-size: var(--text-h1);
+  line-height: var(--text-h1--line-height);
+  font-weight: var(--text-h1--font-weight);
+  color: var(--ds-fg);
+}
+.lesson-results__facts {
+  align-self: stretch;
+  border: 1px solid var(--ds-border-subtle);
+  border-radius: var(--radius-lg);
+}
+.lesson-results__facts li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+}
+.lesson-results__facts li + li {
+  border-top: 1px solid var(--ds-border-subtle);
+}
+.lesson-results__facts svg {
+  flex: none;
+  color: var(--ds-accent-text);
+}
+.lesson-results__note {
+  color: var(--ds-fg-secondary);
+}
+@container (min-width: 30rem) {
+  .lesson-results__score {
+    flex-direction: row;
+    gap: 32px;
+  }
+  .lesson-results__facts {
+    flex: 1 1 auto;
+    align-self: center;
+  }
+}
+.lesson-list__item:hover {
+  background-color: var(--ds-layer-hover);
+}
+.lesson-list__item[aria-current='step'] {
+  background-color: var(--ds-layer-active);
+  font-weight: 600;
+}
+.lesson-list__item:focus-visible {
+  outline: 2px solid var(--ds-focus-ring);
+  outline-offset: -2px;
+}
+.lesson-list__number {
+  flex: none;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+/* A lesson not written yet, said in the corner the stage's notices are not in. */
+.lesson-soon {
+  position: absolute;
+  top: 12px;
+  left: clamp(12px, 2.5vw, 36px);
+  z-index: 2;
+  color: var(--c-bar-fg-muted);
+}
+@media (pointer: coarse) {
+  .lesson-list__item {
+    min-height: 44px;
+  }
+}
+
+/* After a lesson: the badge it earned, revealed, or the one to aim for next. */
+.badge-news {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--c-dash-card-edge);
+  border-radius: var(--radius-lg);
+}
+.badge-news[data-earned='true'] {
+  border-color: var(--c-lessons);
+  background-color: var(--c-badge-locked);
+}
+.badge-news__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--text-body-sm);
+  color: var(--ds-fg-secondary);
+}
+.badge-news__title {
+  font-weight: 600;
+  color: var(--ds-fg);
+}
+.badge-news[data-earned='true'] .badge-news__title {
+  color: var(--c-lessons);
+}
+.badge-news[data-challenge='true'] {
+  border-color: var(--c-badge-gold-deep);
+}
+.badge-news[data-challenge='true'] .badge-news__title {
+  color: var(--c-badge-gold);
+}
+.badge-news[data-gold='true'] {
+  border-color: var(--c-badge-gold);
+}
+.badge-news[data-gold='true'] .badge-news__title {
+  color: var(--c-badge-gold);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .badge-news__badge {
+    animation: badge-reveal 700ms var(--ease-emphasized) both;
+  }
+}
+@keyframes badge-reveal {
+  from {
+    opacity: 0;
+    transform: scale(0.4) rotate(-12deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.12) rotate(3deg);
+  }
+  to {
+    transform: none;
+  }
+}

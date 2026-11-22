@@ -1,7 +1,9 @@
 import { MIDDLE_LINE, stemDirection } from '@motius/shared'
 import { STEP, yOn } from './staff-frame'
-import { placementOf, STEM_STEPS, stemXFor } from './StaffNotes'
-import { BEAM_LINES, staffOfLine, voiceOn, type BeamLine, type Placed } from './score'
+import { placementOf, STEM_STEPS, stemXFor } from './chord-layout'
+import { BEAM_LINES, staffOfLine, type BeamLine, type StepStems } from './notation'
+import { voiceOn } from './score-model'
+import type { Placed } from './score-lines'
 
 /**
  * Beams: the bars that join short notes into the beats they belong to.
@@ -33,16 +35,6 @@ import { BEAM_LINES, staffOfLine, voiceOn, type BeamLine, type Placed } from './
  * first: it lies between the staves, the upper staff's stems come down to it
  * and the lower staff's go up.
  */
-
-/** How one chord's stem is drawn when a beam decides it. */
-export interface StemOverride {
-  readonly up: boolean
-  /** Where the stem ends: on the beam's outer edge. */
-  readonly end: number
-}
-
-/** The stems of one step that beams have decided, by staff. */
-export type StepStems = Partial<Record<BeamLine, StemOverride>>
 
 /** One beam, or one level of it, as a four-cornered shape. */
 export interface BeamBar {

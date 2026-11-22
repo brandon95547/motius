@@ -1,0 +1,56 @@
+/* A badge: a shield, its icon in the middle, and a lock while it is still to earn. */
+.achievement-badge {
+  position: relative;
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+}
+.achievement-badge__shield {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.achievement-badge__shield path {
+  fill: var(--c-badge-locked);
+  stroke: var(--c-badge-locked-edge);
+  stroke-width: 1.5;
+}
+.achievement-badge__shield .achievement-badge__rim {
+  fill: none;
+}
+.achievement-badge[data-earned='true'] .achievement-badge__shield path {
+  fill: var(--c-badge-earned);
+  stroke: var(--c-badge-earned-deep);
+}
+.achievement-badge[data-earned='true'] .achievement-badge__shield .achievement-badge__rim {
+  fill: none;
+  stroke: var(--c-badge-earned-ink);
+  stroke-opacity: 0.25;
+}
+.achievement-badge__icon {
+  position: relative;
+  margin-top: -6%;
+  color: var(--c-badge-locked-ink);
+}
+.achievement-badge[data-earned='true'] .achievement-badge__icon {
+  color: var(--c-badge-earned-ink);
+}
+/* A whole section's badge, earned: gold. */
+.achievement-badge[data-gold='true'] .achievement-badge__shield path {
+  fill: var(--c-badge-gold);
+  stroke: var(--c-badge-gold-deep);
+}
+.achievement-badge[data-gold='true'] .achievement-badge__shield .achievement-badge__rim {
+  fill: none;
+  stroke: var(--c-badge-gold-ink);
+}
+.achievement-badge[data-gold='true'] .achievement-badge__icon {
+  color: var(--c-badge-gold-ink);
+}
+.achievement-badge__lock {
+  position: absolute;
+  right: 4%;
+  bottom: 6%;
+  color: var(--c-badge-locked-ink);
+}

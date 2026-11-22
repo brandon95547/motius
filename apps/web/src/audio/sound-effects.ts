@@ -1,3 +1,5 @@
+import badge from '@/assets/sounds/badge.mp3'
+import goldBadge from '@/assets/sounds/gold-badge.m4a'
 import success from '@/assets/sounds/success-2.mp3'
 import { clickContext, wakeClickContext } from './click'
 
@@ -30,6 +32,15 @@ const EFFECTS = {
   // of clipping), and it starts on its first sound rather than an eighth of a
   // second after the last note.
   success: { url: success, gain: 2, offset: 0.12 },
+  // A badge earned: "Success.wav" by Kagateni on Freesound (CC0), its 0.6 s of
+  // leading silence cut off in the file. It peaks at -0.2 dB, so it plays at
+  // half, near the success sound's level.
+  badge: { url: badge, gain: 0.5, offset: 0 },
+  // A gold badge earned, which is rarer and gets a bigger sound: "Mission
+  // Successful" by rocketpancake on Freesound (CC0), as AAC at 96 kbps. It
+  // starts on its first sound and peaks at -7.8 dB, so 1.2 brings it to the
+  // badge sound's level.
+  goldBadge: { url: goldBadge, gain: 1.2, offset: 0 },
 } as const satisfies Record<string, Effect>
 
 export type SoundEffect = keyof typeof EFFECTS

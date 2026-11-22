@@ -1,8 +1,12 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import type * as React from 'react'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { FallingNotes } from '@/features/keyboard/FallingNotes'
-import { StartButton } from '@/features/learning/ScaleControls'
-import { buildLayout } from '@/features/keyboard/keyboard-layout'
+import { PlayControls } from '@/components/PlayControls'
+import { AudioProvider } from '@/audio/AudioProvider'
+import { MidiProvider } from '@/midi/MidiProvider'
+import { buildLayout } from '@/lib/keyboard-layout'
 import { fallingClock, useFallingStore } from '@/state/falling-store'
 import { useKeyboardStore } from '@/state/keyboard-store'
 import { useLearningStore } from '@/state/learning-store'
@@ -17,7 +21,7 @@ import { sizeEverything } from './layout-size'
  * its finger; Learn holding the next notes at the keys until they are played;
  * Practice judging each step against its beat, and moving on from one missed;
  * a note played right lit while it is held; and the field paused by a tap or
- * Space, moved through by a drag, and looped.
+ * Space, and moved through by a drag.
  */
 
 // Four beats shown in a field 400 high: a hundred pixels a beat.
@@ -50,11 +54,28 @@ const hold = (note: number) =>
   })
 const frame = () => act(() => new Promise<void>((done) => requestAnimationFrame(() => done())))
 const field = () => document.querySelector<HTMLElement>('.falling')!
+/** The field under the bar whose Play Space presses, and anything else wanted beside them. */
+const withBar = (extra?: React.ReactNode) => {
+  act(() => useViewStore.getState().setStageView('falling'))
+  return render(
+    <AudioProvider>
+      <QueryClientProvider client={new QueryClient()}>
+        <MidiProvider>
+          <PlayControls />
+        </MidiProvider>
+      </QueryClientProvider>
+      <FallingNotes />
+      {extra}
+    </AudioProvider>,
+  )
+}
 /** How the step at this beat was played, by its bars' ring. */
 const timing = (beat: number) =>
   notes().find((bar) => bar.style.getPropertyValue('--start') === String(beat))!.dataset.timing
 
 beforeEach(() => {
+  // Which hand is which is its own test's (`hands-reminder.test.tsx`): here Start starts.
+  globalThis.localStorage.setItem('motius.hands-reminder-hidden', 'true')
   act(() => {
     learning().setLesson('two-black-key-groups')
     learning().setTopic('lesson')
@@ -67,7 +88,8 @@ afterEach(() => {
   act(() => {
     learning().reset()
     useKeyboardStore.getState().panic()
-    useFallingStore.setState({ paused: false, loop: null, playedAt: {} })
+    useFallingStore.setState({ paused: false, playedAt: {} })
+    useViewStore.getState().setStageView('staff')
   })
 })
 
@@ -91,9 +113,10 @@ describe('falling notes', () => {
       whites.slice(1).filter((key) => key.note % 12 === 0).length,
     )
     // Labeled as the keys are: the note's name by default, its finger if asked.
-    expect(first.textContent).toBe('C♯')
+    const label = (note: HTMLElement) => note.querySelector('.falling__label')!.textContent
+    expect(label(first)).toBe('C♯')
     act(() => learning().setKeyLabels('fingers'))
-    expect(notes()[0]!.textContent).toBe('4')
+    expect(label(notes()[0]!)).toBe('4')
     act(() => learning().setKeyLabels('notes'))
     // A beat apart, each a beat long.
     expect(notes().map((note) => note.style.getPropertyValue('--start'))).toEqual([
@@ -132,7 +155,10 @@ describe('falling notes', () => {
     expect(partway).toBeLessThan(100)
     await waitFor(() => expect(track().style.transform).toBe('translateY(100px)'))
     const now = notes().filter((note) => note.dataset.now === 'true')
-    expect(now.map((note) => note.textContent)).toEqual(['C♯', 'D♯'])
+    expect(now.map((note) => note.querySelector('.falling__label')!.textContent)).toEqual([
+      'C♯',
+      'D♯',
+    ])
     // The keys they fall to are asked for in the hand's color.
     expect(learning().annotations[49]).toMatchObject({ role: 'target', hand: 'left' })
     expect(notes().filter((note) => note.dataset.done === 'true')).toHaveLength(2)
@@ -165,6 +191,26 @@ describe('falling notes', () => {
     expect(document.querySelectorAll('.falling__glow')).toHaveLength(0)
   })
 
+  it('lights the note the demonstration is playing in Listen, without counting it as played', () => {
+    act(() => learning().setMode('listen'))
+    render(<FallingNotes />)
+    // As the demonstration does it: the step it is on, and its keys held.
+    act(() => {
+      learning().setDemoStep(0)
+      useKeyboardStore.getState().noteOn(37, 80, 'pointer')
+    })
+    const lit = notes().filter((note) => note.dataset.lit === 'true')
+    expect(lit.map((note) => note.style.getPropertyValue('--start'))).toEqual(['0'])
+    expect(document.querySelectorAll('.falling__glow[data-hand="left"]')).toHaveLength(1)
+    expect(learning().session.completedSteps).toBe(0)
+    act(() => {
+      useKeyboardStore.getState().noteOff(37)
+      learning().setDemoStep(null)
+      learning().setMode('learn')
+    })
+    expect(notes().filter((note) => note.dataset.lit === 'true')).toHaveLength(0)
+  })
+
   it('judges each step in Practice against its beat, and moves on from one that went by', async () => {
     act(() => learning().setMode('practice'))
     const beatMs = 60_000 / learning().targetBpm
@@ -193,8 +239,8 @@ describe('falling notes', () => {
     expect(second.every((note) => note.dataset.missed === 'true')).toBe(true)
   })
 
-  it('pauses on a tap or Space, and goes on from where it stopped', () => {
-    render(<FallingNotes />)
+  it('pauses on a tap or Space (the bar’s Play), and goes on from where it stopped', () => {
+    withBar()
     act(() => learning().start())
     fireEvent.pointerDown(field(), { clientY: 200, pointerId: 1 })
     fireEvent.pointerUp(field(), { clientY: 201, pointerId: 1 })
@@ -206,13 +252,10 @@ describe('falling notes', () => {
 
   it('pauses on Space even with focus left on a button the mouse pressed, without pressing it', () => {
     const stop = vi.fn()
-    render(
-      <>
-        <FallingNotes />
-        <button type="button" onClick={stop}>
-          Stop
-        </button>
-      </>,
+    withBar(
+      <button type="button" onClick={stop}>
+        Stop
+      </button>,
     )
     act(() => learning().start())
     const button = screen.getByRole('button', { name: 'Stop' })
@@ -235,13 +278,10 @@ describe('falling notes', () => {
     const beatMs = 60_000 / learning().targetBpm
     const clock = vi.spyOn(Date, 'now').mockReturnValue(0)
     const stop = vi.fn()
-    render(
-      <>
-        <FallingNotes />
-        <button type="button" onClick={stop}>
-          Stop
-        </button>
-      </>,
+    withBar(
+      <button type="button" onClick={stop}>
+        Stop
+      </button>,
     )
     act(() => learning().start())
     await frame()
@@ -281,24 +321,6 @@ describe('falling notes', () => {
     expect(learning().session.stepIndex).toBe(2)
   })
 
-  it('loops a stretch: past its end, the music goes back to its start', async () => {
-    render(<FallingNotes />)
-    act(() => {
-      useFallingStore.getState().setLoop({ from: 1, to: 3 })
-      learning().start()
-      learning().seekStep(1)
-    })
-    for (const [low, high] of [
-      [49, 51],
-      [85, 87],
-    ]) {
-      press(low!)
-      press(high!)
-    }
-    await waitFor(() => expect(learning().session.stepIndex).toBe(1))
-    expect(document.querySelector('.falling__loop')).not.toBeNull()
-  })
-
   it('starts again from the top on Again after a run, and after Stop and Start', async () => {
     act(() => learning().setMode('practice'))
     const beatMs = 60_000 / learning().targetBpm
@@ -330,7 +352,15 @@ describe('falling notes', () => {
 
   it('makes the bar’s button Pause and Go on during a run, with the way back to the start beside it', () => {
     act(() => useViewStore.getState().setStageView('falling'))
-    render(<StartButton />)
+    render(
+      <AudioProvider>
+        <QueryClientProvider client={new QueryClient()}>
+          <MidiProvider>
+            <PlayControls />
+          </MidiProvider>
+        </QueryClientProvider>
+      </AudioProvider>,
+    )
     const start = screen.getByRole('button', { name: 'Start' })
     fireEvent.click(start)
     expect(learning().session.status).toBe('running')

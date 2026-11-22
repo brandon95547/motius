@@ -140,6 +140,13 @@ export interface MenuAction {
   readonly title?: string
   /** A hairline before this item, starting a new group. */
   readonly separated?: boolean
+  /** The name of the group this item starts, shown above it: "Background film". */
+  readonly heading?: string
+  /**
+   * An item that is on or off by itself (a `menuitemcheckbox`), rather than
+   * one choice of several (`menuitemradio`): `checked` says which.
+   */
+  readonly toggle?: boolean
   readonly className?: string
 }
 
@@ -177,7 +184,7 @@ export function ActionMenu({
   const onMenuKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const items = [
       ...event.currentTarget.querySelectorAll<HTMLButtonElement>(
-        '[role="menuitem"], [role="menuitemradio"]',
+        '[role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"]',
       ),
       // An item the stylesheet folds away at this width is not there to move to.
     ].filter((item) => !item.disabled && getComputedStyle(item).display !== 'none')
@@ -229,9 +236,20 @@ export function ActionMenu({
               {action.separated && (
                 <div role="separator" className={cn('menu-separator', action.className)} />
               )}
+              {action.heading && (
+                <div className={cn('menu-heading', action.className)} aria-hidden>
+                  {action.heading}
+                </div>
+              )}
               <button
                 type="button"
-                role={action.checked === undefined ? 'menuitem' : 'menuitemradio'}
+                role={
+                  action.checked === undefined
+                    ? 'menuitem'
+                    : action.toggle
+                      ? 'menuitemcheckbox'
+                      : 'menuitemradio'
+                }
                 aria-checked={action.checked}
                 tabIndex={-1}
                 disabled={action.disabled}

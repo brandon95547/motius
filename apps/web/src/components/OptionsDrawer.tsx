@@ -1,20 +1,26 @@
 import * as React from 'react'
-import { SlidersHorizontal, X } from 'lucide-react'
-import { IconButton } from '@/ui/Button'
-import { Field } from '@/ui/Controls'
-import { Divider } from '@/ui/Display'
+import { SlidersHorizontal } from 'lucide-react'
+import { BarButton } from '@/ui/BarButton'
+import { Drawer } from '@/ui/Drawer'
+import { lazyExport } from '@/ui/OnDemand'
 import { useLearningStore, type LearningTopic } from '@/state/learning-store'
 import { panelActions, usePanelStore } from '@/state/panel-store'
 import { useCurrentSong, useSongStore } from '@/state/song-store'
-import { MetronomeToggle, ScaleOptions, TempoControl } from '@/features/learning/ScaleControls'
-import {
-  ArpeggioOptions,
-  ChordOptions,
-  ExerciseOptions,
-  FingeringOptions,
-  ProgressionOptions,
-} from '@/features/learning/ChordControls'
-import { SongMetronomeToggle, SongOptions, SongTempoControl } from '@/features/songs/SongControls'
+import { ScaleOptions } from '@/features/learning/ScaleControls'
+import { SongOptions } from '@/features/songs/SongControls'
+
+// The areas' options, each loaded the first time its panel opens. Scales' and
+// songs' are loaded with the app: their engines share a module with them.
+const ChordControls = () => import('@/features/learning/ChordControls')
+const ChordOptions = lazyExport(ChordControls, 'ChordOptions')
+const ArpeggioOptions = lazyExport(ChordControls, 'ArpeggioOptions')
+const ProgressionOptions = lazyExport(
+  () => import('@/features/learning/ProgressionControls'),
+  'ProgressionOptions',
+)
+const RoutineControls = () => import('@/features/learning/RoutineControls')
+const ExerciseOptions = lazyExport(RoutineControls, 'ExerciseOptions')
+const FingeringOptions = lazyExport(RoutineControls, 'FingeringOptions')
 
 const TRIGGER_ID = 'bar-options'
 const PANEL_ID = 'options-panel'
@@ -53,19 +59,16 @@ export function OptionsButton() {
   const label = set ? `${TITLES[topic]}: ${set}` : TITLES[topic]
 
   return (
-    <button
+    <BarButton
+      look="options"
       id={TRIGGER_ID}
-      type="button"
-      className="bar-options"
+      label={label}
       aria-haspopup="dialog"
       aria-expanded={open}
       aria-controls={open ? PANEL_ID : undefined}
-      aria-label={label}
-      title={label}
       onClick={() => (open ? panelActions.close() : panelActions.open('options'))}
-    >
-      <SlidersHorizontal size={18} aria-hidden />
-    </button>
+      icon={<SlidersHorizontal size={18} aria-hidden />}
+    />
   )
 }
 
@@ -92,38 +95,14 @@ export function OptionsButton() {
 export function OptionsDrawer() {
   const open = usePanelStore((state) => state.panel === 'options')
   const topic = useLearningStore((state) => state.topic)
-  const panelRef = React.useRef<HTMLDivElement>(null)
-  const titleId = React.useId()
 
   const close = React.useCallback(() => {
     // Focus goes back to the button only if it was in the panel: a press
     // somewhere else has already put it where the player meant.
-    if (panelRef.current?.contains(document.activeElement))
+    if (document.getElementById(PANEL_ID)?.contains(document.activeElement))
       document.getElementById(TRIGGER_ID)?.focus()
     closeOptions()
   }, [])
-
-  React.useEffect(() => {
-    if (!open) return
-    panelRef.current?.focus()
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') close()
-    }
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target as Element | null
-      // The bar is not "outside": the mode, the tempo and Hear are what a
-      // setting is tried out with, and the panel's own button is up there.
-      if (panelRef.current?.contains(target) || target?.closest?.('.top-bar')) return
-      close()
-    }
-    document.addEventListener('keydown', onKeyDown)
-    document.addEventListener('pointerdown', onPointerDown, true)
-    return () => {
-      document.removeEventListener('keydown', onKeyDown)
-      document.removeEventListener('pointerdown', onPointerDown, true)
-    }
-  }, [open, close])
 
   // Another area's options are another panel. Leaving this one — for the
   // dashboard too, which unmounts it — puts it away.
@@ -135,44 +114,14 @@ export function OptionsDrawer() {
     if (running || songGoing) closeOptions()
   }, [running, songGoing])
 
-  if (!open) return null
-
   return (
-    <div
-      ref={panelRef}
-      id={PANEL_ID}
-      role="dialog"
-      aria-labelledby={titleId}
-      tabIndex={-1}
-      className="options-drawer"
+    <Drawer
+      open={open}
+      onClose={close}
+      title={TITLES[topic]}
+      docked={{ className: 'options-drawer', id: PANEL_ID, within: '.top-bar' }}
     >
-      <header className="options-drawer__header">
-        <h2 id={titleId} className="text-h4 text-[var(--ds-fg)]">
-          {TITLES[topic]}
-        </h2>
-        <IconButton label="Close" icon={<X />} size="sm" onClick={close} />
-      </header>
-      <div className="options-drawer__body">
-        {/* The tempo and the metronome, on a bar too narrow to hold them: one
-            press away here, where Settings is three. */}
-        <div className="options-only-xs">
-          <Field label="Tempo">
-            <div className="flex items-center gap-2 coarse:gap-3">
-              {topic === 'songs' ? (
-                <>
-                  <SongTempoControl panel />
-                  <SongMetronomeToggle className="bar-icon-button--panel" />
-                </>
-              ) : (
-                <>
-                  <TempoControl panel />
-                  <MetronomeToggle className="bar-icon-button--panel" />
-                </>
-              )}
-            </div>
-          </Field>
-          <Divider />
-        </div>
+      <React.Suspense fallback={null}>
         {topic === 'scales' ? (
           <ScaleOptions />
         ) : topic === 'chords' ? (
@@ -188,7 +137,7 @@ export function OptionsDrawer() {
         ) : (
           <SongOptions />
         )}
-      </div>
-    </div>
+      </React.Suspense>
+    </Drawer>
   )
 }

@@ -1,0 +1,346 @@
+/* ---- Grand staff ---------------------------------------------------------
+   A picture of what is sounding right now, not a score: no time axis, no bar
+   lines beyond the ones that close the system. */
+.staff-fit {
+  width: 100%;
+  height: 100%;
+}
+
+/* ---- A song's score ------------------------------------------------------
+   The whole piece, scrolled rather than scaled. Fitting a four-minute song
+   into one panel width would make every notehead a speck; the panel is a
+   window onto it and follows where you are, which is what the keyboard does
+   with the keys. */
+.staff-scroll {
+  /* Positioned by FlowView: from the end of the clef gutter to where the paper ends. */
+  position: absolute;
+  inset-block: 0;
+  right: 0;
+  z-index: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* Deliberately not `scroll-behavior: smooth`. Where an engine does not
+     implement it, setting `scrollLeft` under it does nothing at all rather than
+     jumping — the score simply stops following and says nothing. A follower
+     that must keep up with playing is better off arriving. */
+  /* Momentum on a trackpad, and a scrollbar that does not eat the staff. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--ds-border-strong) transparent;
+}
+.staff-score {
+  position: relative;
+}
+/* The brace and clefs, held still while the music passes behind them. Opaque,
+   because notes scrolling out of the system have to disappear under it rather
+   than through it. */
+.staff-gutter {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  display: block;
+  height: 100%;
+  /* Deliberately not `.staff`, which is 100% wide. The width comes from the
+     element's own attribute, which is the gutter's share of the drawing.
+     Transparent over the paper: the music's window starts where this ends
+     (FlowView), so there is nothing underneath to cover. */
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Sheet music: lines stacked down the page, scrolled vertically. The page
+   turns only when the line being played would otherwise leave the panel — see
+   `SheetView`, which lands it at the top so the unplayed music is all below. */
+.staff-sheet {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ds-border-strong) transparent;
+}
+.staff-sheet .staff {
+  /* The SVG sets its own pixel height from the number of systems, so it must
+     not be squashed back to the container the way a single-system staff is. */
+  width: 100%;
+  height: auto;
+}
+
+.staff-scroll .staff {
+  /* The SVG sets its own pixel width from the panel height, so it must not be
+     stretched back to the container the way a single-screen staff is. */
+  width: auto;
+  min-width: 100%;
+}
+
+.staff {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---- The staff --------------------------------------------------------------
+   One hierarchy, and everything below is in its order:
+
+     active notes → notation → fingering → barlines → staff lines → playhead glow
+
+   The staff is scaffolding. It has to be legible and it has to stay out of the
+   way of the notes standing on it, which is why its lines are the faintest
+   thing here and the noteheads are the brightest. Getting that the wrong way
+   round is what makes a drawn stave look drawn rather than engraved. */
+
+/* Staff lines: the quietest thing on the page. Hairlines that do not scale with
+   the drawing, so they stay one pixel however large the panel is. */
+.staff__line {
+  stroke: var(--c-ink-line);
+  stroke-width: 0.9;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Barlines and the line closing the system: punctuation. Above the staff lines,
+   well below the notes. */
+.staff__bar,
+.staff__system-line {
+  stroke: var(--c-ink);
+  stroke-width: 1.1;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Above the staff, so on the stage rather than the paper: full ink, which
+   measures 8.4:1 on the stage and 17.9:1 on white. */
+.staff__bar-number {
+  fill: var(--c-ink);
+  font-size: 11px;
+  font-weight: 600;
+  text-anchor: start;
+}
+
+/* The thick half of the final bar line, and of a repeat sign. */
+.staff__final-bar {
+  fill: var(--c-ink);
+}
+/* The bracket over an ending, and the number that says which time through. */
+.staff__volta path {
+  fill: none;
+  stroke: var(--c-ink);
+  stroke-width: 1.1;
+  vector-effect: non-scaling-stroke;
+}
+.staff__volta-number {
+  fill: var(--c-ink);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* The brace and clefs belong with the notation, not with the lines: they are
+   what tells you how to read everything else. */
+.staff__brace {
+  fill: none;
+  stroke: var(--c-ink);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+/* Sized and placed by measuring the glyph's ink (see `fitClef`), since the
+   fonts that carry it disagree about how big a font size is. */
+.staff__clef {
+  fill: var(--c-ink);
+  font-family: var(--font-music);
+}
+.staff__clef-dot {
+  fill: var(--c-ink);
+}
+.staff__clef-letter {
+  fill: var(--c-ink);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* Notation. Bright, because it is the thing being read. */
+.staff__note ellipse {
+  fill: var(--c-ink);
+}
+.staff__note--hollow ellipse {
+  fill: none;
+  stroke: var(--c-ink);
+  stroke-width: 2.4;
+  vector-effect: non-scaling-stroke;
+}
+.staff__stem {
+  stroke: var(--c-ink);
+  stroke-width: 1.7;
+  vector-effect: non-scaling-stroke;
+}
+.staff__flag,
+.staff__dot {
+  fill: var(--c-ink);
+}
+.staff__accidental {
+  fill: var(--c-ink);
+  font-family: var(--font-music);
+  font-size: 22px;
+}
+/* A beam is the flags of the notes under it, joined: the same ink, and the
+   same quiet ink once every one of them is behind the player. */
+.staff__beam polygon {
+  fill: var(--c-ink);
+}
+.staff__beam[data-played='true'] :is(polygon, .staff__tuplet) {
+  fill: var(--c-ink-played);
+}
+/* The 3 over a triplet. Italic, as it is engraved, and small: it qualifies the
+   beam and must not read as a fingering. */
+.staff__tuplet {
+  fill: var(--c-ink);
+  font-size: 11px;
+  font-style: italic;
+  font-weight: 650;
+  text-anchor: middle;
+}
+.staff__ledger {
+  stroke: var(--c-ink);
+  stroke-width: 1.4;
+  vector-effect: non-scaling-stroke;
+}
+.staff__time-digit {
+  fill: var(--c-ink);
+  /* Each numeral fills two spaces — 20 units — and a digit's cap height is
+     about three quarters of its point size. */
+  font-size: 26px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+/* Fingering: wanted, but never at the expense of the note it belongs to —
+   which is size and weight here, not a paler ink. A number above or below the
+   staff is off the paper, and grey on the stage measures 1.1:1. */
+.staff__finger {
+  fill: var(--c-ink);
+  font-size: 10px;
+  font-weight: 650;
+  text-anchor: middle;
+}
+
+/* The notes under a finger right now.
+   The accent is spent on these and nothing else. Not the next note to play —
+   that is the blue it shares with its key — and not the playhead, which is
+   cyan: a colour that turned up whether or not anybody was touching the
+   keyboard would stop saying anything. Everything else is ink. */
+.staff__note[data-sounding='true'] :is(ellipse, .staff__accidental, .staff__dot) {
+  fill: var(--ds-accent);
+}
+.staff__note--hollow[data-sounding='true'] ellipse {
+  fill: none;
+  stroke: var(--ds-accent);
+}
+/* A chord too wide to close on at once is spread, and says so the way a score
+   says it. Same weight as a stem: it is notation, not an annotation. */
+.staff__arpeggio {
+  fill: none;
+  stroke: var(--c-ink);
+  stroke-width: 1.6;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Ledger lines stay ink whatever their note is doing: they are where a note
+   leaves the paper, and only black reads on both the paper and the stage. */
+.staff__stem[data-sounding='true'] {
+  stroke: var(--ds-accent);
+}
+.staff__flag[data-sounding='true'] {
+  fill: var(--ds-accent);
+}
+
+/* The playhead. A line with a glow, not a block over the music: a translucent
+   column dims the very notes it is pointing at, and the eye reads the column
+   instead of them. */
+.staff__playhead {
+  stroke: var(--c-playhead);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 5px var(--c-playhead)) drop-shadow(0 0 14px var(--c-playhead));
+}
+
+/* ---- Paper, and your place on it -----------------------------------------
+   One strip per staff, from its top line to its bottom line (see STAFF_BANDS).
+   Square-ended, because the outer lines are its edges and a rounded corner
+   would bend them away. */
+.staff__paper,
+.staff-card {
+  fill: var(--c-paper);
+  background-color: var(--c-paper);
+}
+.staff-card {
+  position: absolute;
+  inset-inline: 0;
+  border-radius: 2px;
+  box-shadow: var(--shadow-staff-card);
+}
+.staff__paper {
+  filter: drop-shadow(var(--shadow-paper));
+}
+
+/* Off the paper. A note on ledger lines stands on the stage, and both colours
+   that mark a note — the blue of where you are, the violet of what is sounding
+   — all but vanish against it, at 2.6:1 and 2.3:1. A hairline of paper round
+   them keeps them readable there; on the paper it is white on white. */
+.staff__step[data-role='target'] :is(.staff__note, .staff__stem, .staff__flag),
+:is(.staff__note, .staff__stem, .staff__flag)[data-sounding='true'] {
+  filter: drop-shadow(0 0 0.6px var(--c-paper)) drop-shadow(0 0 0.6px var(--c-paper));
+}
+
+/* Behind you: still on the page, clearly done. */
+.staff__step[data-role='played'] :is(ellipse, .staff__accidental, .staff__dot, .staff__flag) {
+  fill: var(--c-ink-played);
+}
+.staff__step[data-role='played'] :is(.staff__stem, .staff__ledger) {
+  stroke: var(--c-ink-played);
+}
+.staff__step[data-role='played'] .staff__note--hollow ellipse {
+  fill: none;
+  stroke: var(--c-ink-played);
+}
+/* Where you are: the note to play now, in the same blue as its key. Sounding
+   still wins — the rule for held notes is later in the cascade than this. */
+.staff__step[data-role='target']
+  .staff__note:not([data-sounding='true'], [data-held='true'])
+  :is(ellipse, .staff__accidental, .staff__dot) {
+  fill: var(--c-now);
+}
+.staff__step[data-role='target']
+  .staff__note--hollow:not([data-sounding='true'], [data-held='true'])
+  ellipse {
+  fill: none;
+  stroke: var(--c-now);
+}
+/* Rests: the blocks of the long ones, and the strokes of the short. */
+.staff__rest {
+  fill: var(--c-ink);
+}
+.staff__rest-line {
+  fill: none;
+  stroke: var(--c-ink);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.staff__rest-line--heavy {
+  stroke-width: 2.3;
+}
+.staff__step[data-role='played'] .staff__rest-mark :is(.staff__rest, .staff__dot) {
+  fill: var(--c-ink-played);
+}
+.staff__step[data-role='played'] .staff__rest-mark .staff__rest-line {
+  stroke: var(--c-ink-played);
+}
+/* A tie, and the notehead it leads to. That head is written here and not
+   struck here — the key is already down — so it never takes the colour of the
+   note to play: it stays ink, and the tie says why. */
+.staff__tie {
+  fill: var(--c-ink);
+}
+.staff__step[data-role='played'] .staff__tie {
+  fill: var(--c-ink-played);
+}
+.staff__step[data-role='target'] .staff__stem:not([data-sounding='true']) {
+  stroke: var(--c-now);
+}

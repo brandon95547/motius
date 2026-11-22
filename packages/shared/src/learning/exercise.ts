@@ -87,7 +87,19 @@ export interface ExerciseStep {
    * melody note and outlasts it.
    */
   readonly holds?: readonly number[]
+  /**
+   * How hard the step asks to be played, where it asks: soft or loud. The right
+   * key at the wrong loudness is not the step (`session.ts`, `STEP_DYNAMICS`).
+   */
+  readonly dynamic?: StepDynamic
+  /**
+   * Held for the whole of its length before it counts, as a long note is: let
+   * go early and it is played again.
+   */
+  readonly hold?: boolean
 }
+
+export type StepDynamic = 'soft' | 'loud'
 
 /** How long a step lasts, in beats. */
 export const stepBeats = (step: ExerciseStep): number => step.beats ?? 1
@@ -112,7 +124,7 @@ export interface Exercise {
   readonly subtitle: string
   readonly steps: readonly ExerciseStep[]
   /**
-   * Pitch classes belonging to the material. Explore mode lights every octave
+   * Pitch classes belonging to the material. Listen mode lights every octave
    * of these, because "the notes of A minor" is a fact about the whole keyboard
    * and not about the two octaves this exercise happens to walk.
    */
@@ -156,6 +168,17 @@ export interface Exercise {
    */
   readonly stepsAre?: string
   /**
+   * Learn marks the whole walk on the keys: every step still to come, the one
+   * now, and every one played filled in as done — a lesson's keyboard filling
+   * up as it is played. Without it, the next few are marked and the rest wash.
+   */
+  readonly marksProgress?: boolean
+  /** A word for a wrong key of a kind the lesson expects: "That's three. Look for a pair." */
+  readonly wrongHints?: readonly {
+    readonly pitchClasses: readonly number[]
+    readonly text: string
+  }[]
+  /**
    * The metre, where the exercise has one to state.
    *
    * Left out for material that is one note a beat with nothing to group — a
@@ -164,6 +187,12 @@ export interface Exercise {
    * the time signature, beams by the beat, and the click accents the bar.
    */
   readonly meter?: ExerciseMeter
+  /**
+   * Beats before the first full bar, where it starts on a pickup: "Oh when the |
+   * saints". Only with a `meter`. A rest is not a step: a step whose notes are
+   * all let go early (`holds`) is followed by one.
+   */
+  readonly pickup?: number
 }
 
 /** Whether the note belongs to the material, in any octave. */

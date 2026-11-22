@@ -24,7 +24,8 @@ import {
   SystemBrace,
   SystemContext,
 } from '@/features/staff/staff-frame'
-import { KeySignature, staffOf, TimeSignature } from '@/features/staff/StaffNotes'
+import { staffOf } from '@/features/staff/chord-layout'
+import { KeySignature, TimeSignature } from '@/features/staff/StaffNotes'
 
 afterEach(cleanup)
 

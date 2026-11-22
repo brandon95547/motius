@@ -1,28 +1,28 @@
 import * as React from 'react'
 import {
   AlignEndHorizontal,
-  AudioWaveform,
+  Eye,
   BookOpen,
   ChevronRight,
   Circle,
   CircleOff,
-  Film,
   Flame,
   Gauge,
   Hand,
   Music,
   LayoutGrid,
   MoreVertical,
-  Palette,
   Piano,
-  Settings,
   Square,
   Upload,
+  Info,
+  GraduationCap,
+  LibraryBig,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { BarButton } from '@/ui/BarButton'
 import logoUrl from '@/assets/motius-logo.svg'
 import { ActionMenu, type MenuAction } from '@/ui/Menu'
-import { useMidi } from '@/midi/MidiProvider'
 import { useLearningStore } from '@/state/learning-store'
 import { panelActions } from '@/state/panel-store'
 import { pageActions, usePageStore } from '@/state/page-store'
@@ -31,25 +31,25 @@ import { useCurrentSong } from '@/state/song-store'
 import { BACKDROPS, useBackdropStore } from '@/state/backdrop-store'
 import { COLOR_THEMES, useThemeStore } from '@/state/theme-store'
 import { useViewStore } from '@/state/view-store'
-import { findCategory, pagesUnder } from '@/features/areas/areas'
-import { LessonAboutButton, LessonsButton } from '@/features/areas/Lessons'
-import { OptionsButton } from '@/components/OptionsDrawer'
-import { LastTakeButton, RecordButton } from '@/features/recording/RecordControls'
+import { findCategory, pagesUnder } from '@/lib/outline/outline'
 import {
-  DemoButton,
-  MetronomeToggle,
-  ModeTabs,
-  StartButton,
-  TempoControl,
-} from '@/features/learning/ScaleControls'
-import {
-  SongMetronomeToggle,
-  SongModeTabs,
-  SongTempoControl,
-  SongTransport,
-} from '@/features/songs/SongControls'
-import { SongSearch } from '@/features/songs/SongSearch'
-import { showMySongs } from '@/features/songs/SongPicker'
+  LessonAboutButton,
+  LessonsButton,
+  openLessonAbout,
+  useHasLessonAbout,
+} from '@/features/areas/Lessons'
+import { useHere } from '@/features/areas/lesson-here'
+import { MidiButton } from '@/components/MidiButton'
+import { showMySongs } from '@/features/songs/shelf-store'
+import { AccountMenu } from '@/components/AccountMenu'
+import { loadWorkspace } from '@/components/workspace-chunk'
+import { lazyExport, OnDemand } from '@/ui/OnDemand'
+
+const GoalChip = lazyExport(() => import('@/features/progress/GoalChip'), 'GoalChip')
+// Shown only where there is music to play, so they come with the workspace.
+const OptionsButton = lazyExport(loadWorkspace, 'OptionsButton')
+const SongSearch = lazyExport(loadWorkspace, 'SongSearch')
+const PlayControls = lazyExport(loadWorkspace, 'PlayControls')
 
 /**
  * How you are practising, in one row across the top.
@@ -60,10 +60,11 @@ import { showMySongs } from '@/features/songs/SongPicker'
  * words.
  *
  * On the right, how: the mode as three tabs, the tempo as a number with its
- * arrows, the metronome, then the buttons that act — Hear, Record, Start. Past
- * a divider, the utilities that do not change what is being practised — the
- * MIDI readout, the Progress and Settings panels, and the menu, which is also
- * how you move between the dashboard and the areas.
+ * arrows, the metronome, then the buttons that act — Record, and Play, each
+ * kind in a pill of its own. Then the tools that do not change what is being
+ * practised — the view, the MIDI keyboard, This run, and the menu, which is
+ * also how you move between the dashboard and the areas — and, last, the
+ * account: Settings, Progress and signing out.
  *
  * The row does not wrap and does not scroll. It folds, and the widths it folds
  * at are written next to the classes that do it, in the stylesheet. Every
@@ -75,6 +76,9 @@ export function TopBar() {
   const area = page === 'area' ? topic : null
   // A lesson that is written plays like an area: shown, walked through, or kept score of.
   const playable = useLearningStore((state) => page === 'lesson' && state.exercise !== null)
+  const onProgress = usePageStore(
+    (state) => state.page === 'category' && state.category === 'progress',
+  )
 
   return (
     // A click on the bar's controls leaves focus where it was. They drive what
@@ -92,111 +96,103 @@ export function TopBar() {
       }}
     >
       <div className="top-bar__row">
-        <Brand keep={area === null} deep={page === 'category' || page === 'lesson'} />
-        {page === 'lesson' && <LessonsButton />}
-        {page === 'lesson' && <LessonAboutButton />}
-        {area === null && <PageTitle />}
-        {area && <OptionsButton />}
-        {area === 'songs' && <NowPlaying />}
+        <Brand keep={area === null && !playable} deep={page === 'category' || page === 'lesson'} />
+        {area === null && <PageTitle lesson={page === 'lesson'} />}
+        <React.Suspense fallback={null}>
+          {area && <OptionsButton />}
+          {area === 'songs' && <NowPlaying />}
+          {area === 'songs' && <SongSearch className="bar-roomy" />}
+        </React.Suspense>
 
         <span className="top-bar__spacer" />
 
-        {area && <BackdropMenu className="bar-sm" />}
-        {area && <ThemeMenu className="bar-sm" />}
-
-        {area && area !== 'songs' && (
-          <>
-            <ModeTabs />
-            <span className="top-bar__divider bar-sm" aria-hidden />
-            <TempoControl className="bar-xs" />
-            <MetronomeToggle className="bar-mid" />
-            <span className="top-bar__divider bar-sm" aria-hidden />
-            <DemoButton />
-            <span className="bar-mid top-bar__cluster">
-              <RecordButton />
-              <LastTakeButton />
-            </span>
-            <StartButton />
-          </>
+        {/* The playing controls: one set, wherever there is music to play. */}
+        {(area || playable) && (
+          <React.Suspense fallback={null}>
+            <PlayControls />
+          </React.Suspense>
         )}
 
-        {playable && (
-          <>
-            <ModeTabs />
-            <span className="top-bar__divider bar-sm" aria-hidden />
-            <DemoButton />
-            <StartButton />
-          </>
+        {/* The next badge, where the bar has no music to play — but not on
+            Progress, which shows it. */}
+        {!area && !playable && !onProgress && (
+          <OnDemand when>
+            <GoalChip />
+          </OnDemand>
         )}
-
-        {area === 'songs' && (
-          <>
-            <SongModeTabs />
-            <span className="top-bar__divider bar-sm" aria-hidden />
-            <SongTempoControl className="bar-xs" />
-            <SongMetronomeToggle className="bar-mid" />
-            <span className="top-bar__divider bar-sm" aria-hidden />
-            <SongTransport />
-            <SongSearch className="bar-roomy" />
-          </>
-        )}
-
-        <span className="top-bar__divider bar-mid" aria-hidden />
-        <Utilities area={area} />
+        <Utilities area={area} playing={Boolean(area || playable)} />
+        <AccountMenu />
       </div>
     </header>
   )
 }
 
 /**
- * The name, which gives way as the bar narrows: the word first, then the mark.
- * The tab already says where you are, and the controls cannot. The dashboard
- * has no controls to make room for, so there it stays whole. A page under the
- * dashboard has the way down to it to show, and on a phone the word gives its
- * room to that: `Practice › Sight-Reading` matters more there than a name the
- * mark already stands for.
+ * The name, and the way home: the mark and the word take you to the dashboard,
+ * which is why the trail beside it starts below it. It gives way as the bar
+ * narrows: the word first, then the mark. The dashboard has no controls to
+ * make room for, so there it stays whole. A page under the dashboard has the
+ * way down to it to show, and on a phone the word gives its room to that:
+ * `Practice › Sight-Reading` matters more there than a name the mark already
+ * stands for. The menu has Dashboard too, on every screen.
  */
 function Brand({ keep, deep = false }: { keep: boolean; deep?: boolean }) {
   return (
-    <div className={cn('top-bar__brand', !keep && 'bar-mid')}>
-      <img className="top-bar__logo" src={logoUrl} alt="" title="Motius" />
-      <span className={cn('top-bar__name', !keep && 'bar-full', deep && 'bar-sm')}>Motius</span>
-    </div>
+    <button
+      type="button"
+      className={cn('top-bar__brand', !keep && 'bar-mid')}
+      aria-label="Motius: dashboard"
+      onClick={pageActions.openDashboard}
+    >
+      <img className="top-bar__logo" src={logoUrl} alt="" />
+      <span className={cn('top-bar__name', !keep && 'bar-roomy', deep && 'bar-sm')} aria-hidden>
+        Motius
+      </span>
+    </button>
   )
 }
 
 /**
- * Where you are, off the areas: the dashboard's name, or the way down to the
- * page or the stage that is up — Dashboard, Piano Foundations, Keyboard
- * Layout — each step but the last a way back to it. On a section's stage the
- * trail ends at the section: which lesson is up is said on the stage, in the
- * list of them and over the staff.
+ * Where you are, off the areas: the way down to the page or the lesson that is
+ * up — Piano Foundations, Keyboard Layout, Two black keys — each step
+ * but the last a way back to it. The dashboard is not a step: the logo beside
+ * the trail is the way home, so on the dashboard itself the trail is empty and
+ * its name is for screen readers only.
  *
  * It is the page's heading. Those pages have none of their own: the bar is the
  * one place a page's name is on every page, and a second, larger one under it
  * was the same word twice over a grid of cards that were the point.
  *
  * Each step back says how far up it is, which is what the stylesheet folds the
- * trail by when the bar is too narrow for the whole way down.
+ * trail by when the bar is too narrow for the whole way down. The unit is the
+ * one step that never folds away: it leads with the books the lessons' last
+ * results go back to it by, and when the bar narrows it is the books alone, so
+ * the way back to the unit is on the bar wherever a lesson is.
  */
-function PageTitle() {
+function PageTitle({ lesson }: { lesson: boolean }) {
   const categoryId = usePageStore((state) => state.category)
   const path = usePageStore((state) => state.path)
+  const here = useHere()
   const category = findCategory(categoryId)
   const way = category ? pagesUnder(category, path).slice(0, 1) : []
-  const trail = [
-    { label: 'Dashboard', open: pageActions.openDashboard },
+  const up = lesson && here ? here.lessons[here.index] : undefined
+  const trail: { label: string; open: () => void; unit?: boolean }[] = [
     ...(category
-      ? [{ label: category.label, open: () => pageActions.openCategory(category) }]
+      ? [{ label: category.label, open: () => pageActions.openCategory(category), unit: true }]
       : []),
     ...way.map((section) => ({
       label: section.label,
       open: () => pageActions.openSection(category!, [section]),
     })),
+    ...(up ? [{ label: up.lesson.label, open: () => {} }] : []),
   ]
 
+  if (trail.length === 0) return <h1 className="sr-only">Dashboard</h1>
   return (
-    <nav className="top-bar__trail" aria-label="You are here">
+    <nav
+      className={cn('top-bar__trail', lesson && 'top-bar__trail--lesson')}
+      aria-label="You are here"
+    >
       {trail.map((step, index) =>
         index === trail.length - 1 ? (
           <h1 key={index} className="top-bar__title" aria-current="page">
@@ -206,11 +202,20 @@ function PageTitle() {
           <React.Fragment key={index}>
             <button
               type="button"
-              className="top-bar__crumb"
+              className={cn('top-bar__crumb', step.unit && 'top-bar__crumb--unit')}
               data-up={trail.length - 1 - index}
+              aria-label={step.unit ? step.label : undefined}
+              title={step.unit ? step.label : undefined}
               onClick={step.open}
             >
-              {step.label}
+              {step.unit ? (
+                <>
+                  <LibraryBig size={18} className="top-bar__crumb-icon" aria-hidden />
+                  <span className="top-bar__crumb-label">{step.label}</span>
+                </>
+              ) : (
+                step.label
+              )}
             </button>
             <ChevronRight size={16} className="top-bar__crumb-mark" aria-hidden />
           </React.Fragment>
@@ -230,13 +235,17 @@ function PageTitle() {
  */
 function NowPlaying() {
   const song = useCurrentSong()
-  // With nothing open it says what to do instead, in the quieter voice: it is
-  // a prompt, not a name.
+  // With nothing open, what to do instead, in the quieter voice — and the way
+  // to do it: the song chooser, at every width.
   if (!song)
     return (
-      <p className="top-bar__now bar-full">
-        <span className="top-bar__now-prompt">Choose a song</span>
-      </p>
+      <button
+        type="button"
+        className="top-bar__now top-bar__now-prompt"
+        onClick={() => panelActions.open('library')}
+      >
+        Choose a song
+      </button>
     )
   return (
     <p className="top-bar__now bar-full" title={song.title}>
@@ -246,83 +255,29 @@ function NowPlaying() {
 }
 
 /**
- * The color theme, beside the mode tabs: a palette, and the three themes under
- * it, each with a dot of its own color.
- *
- * On a bar too narrow to hold it, the same choice is in Settings.
+ * How the stage looks, in one menu on every screen: what is above the keys
+ * (the staff or falling notes), the see-through hands, the film behind the
+ * music and the color theme. Each is the same choice wherever it is made, so
+ * it is made in one place, and kept. The menu is always on the bar, at every
+ * width: nothing in it needs a second home in Settings.
  */
-function ThemeMenu({ className }: { className?: string }) {
+function ViewMenu() {
+  const view = useViewStore((state) => state.stageView)
+  const setView = useViewStore((state) => state.setStageView)
+  const hands = useViewStore((state) => state.hands)
+  const setHands = useViewStore((state) => state.setHands)
+  const backdrop = useBackdropStore((state) => state.backdrop)
+  const setBackdrop = useBackdropStore((state) => state.setBackdrop)
   const theme = useThemeStore((state) => state.theme)
   const setTheme = useThemeStore((state) => state.setTheme)
   return (
     <ActionMenu
-      label="Color theme"
-      icon={<Palette size={18} aria-hidden />}
-      className={className}
-      actions={COLOR_THEMES.map((option) => ({
-        id: option.id,
-        label: option.label,
-        icon: <span className="theme-swatch" style={{ backgroundColor: option.swatch }} />,
-        checked: theme === option.id,
-        onSelect: () => setTheme(option.id),
-      }))}
-    />
-  )
-}
-
-/**
- * The film behind the music, beside the color theme: none, or one of the
- * loops. A menu though there is one film so far — the next is a line in the
- * list.
- *
- * On a bar too narrow to hold it, the same choice is in Settings.
- */
-function BackdropMenu({ className }: { className?: string }) {
-  const backdrop = useBackdropStore((state) => state.backdrop)
-  const setBackdrop = useBackdropStore((state) => state.setBackdrop)
-  return (
-    <ActionMenu
-      label="Background video"
-      icon={<Film size={18} aria-hidden />}
-      // Lit while a film is playing, as the metronome's button is while it ticks.
-      className={cn(className, backdrop !== 'none' && 'bar-icon-button--on')}
-      actions={[
-        {
-          id: 'none',
-          label: 'None',
-          icon: <CircleOff size={16} aria-hidden />,
-          checked: backdrop === 'none',
-          onSelect: () => setBackdrop('none'),
-        },
-        ...BACKDROPS.map((option) => ({
-          id: option.id,
-          label: option.label,
-          icon: <Flame size={16} aria-hidden />,
-          checked: backdrop === option.id,
-          onSelect: () => setBackdrop(option.id),
-        })),
-      ]}
-    />
-  )
-}
-
-/**
- * What is above the keys: the staff, or falling notes. Beside Settings, on
- * every screen with keys, at every width — the one place it is chosen. The
- * icon is the choice that is up. Songs have only the staff so far.
- */
-function StageViewMenu() {
-  const view = useViewStore((state) => state.stageView)
-  const setView = useViewStore((state) => state.setStageView)
-  const songs = useLearningStore((state) => state.topic === 'songs')
-  const Icon = view === 'falling' ? AlignEndHorizontal : Music
-  return (
-    <ActionMenu
-      label={view === 'falling' ? 'Above the keys: falling notes' : 'Above the keys: staff'}
-      icon={<Icon size={18} aria-hidden />}
+      label="View"
+      icon={<Eye size={18} aria-hidden />}
       actions={[
         {
           id: 'staff',
+          heading: 'Above the keys',
           label: 'Staff',
           icon: <Music size={16} />,
           checked: view === 'staff',
@@ -333,30 +288,65 @@ function StageViewMenu() {
           label: 'Falling notes',
           icon: <AlignEndHorizontal size={16} />,
           checked: view === 'falling',
-          disabled: songs,
-          title: songs ? 'Songs keep the staff for now' : undefined,
           onSelect: () => setView('falling'),
         },
+        {
+          id: 'hands',
+          label: 'Hands on the keys',
+          icon: <Hand size={16} />,
+          toggle: true,
+          checked: hands,
+          title: 'See-through hands playing the fingering, wherever the music has one',
+          separated: true,
+          onSelect: () => setHands(!hands),
+        },
+        {
+          id: 'none',
+          heading: 'Background film',
+          label: 'None',
+          icon: <CircleOff size={16} aria-hidden />,
+          checked: backdrop === 'none',
+          separated: true,
+          onSelect: () => setBackdrop('none'),
+        },
+        ...BACKDROPS.map((option) => ({
+          id: option.id,
+          label: option.label,
+          icon: <Flame size={16} aria-hidden />,
+          checked: backdrop === option.id,
+          onSelect: () => setBackdrop(option.id),
+        })),
+        ...COLOR_THEMES.map((option, index) => ({
+          id: option.id,
+          heading: index === 0 ? 'Color theme' : undefined,
+          label: option.label,
+          icon: <span className="theme-swatch" style={{ backgroundColor: option.swatch }} />,
+          checked: theme === option.id,
+          separated: index === 0,
+          onSelect: () => setTheme(option.id),
+        })),
       ]}
     />
   )
 }
 
-function Utilities({ area }: { area: string | null }) {
+function Utilities({ area, playing }: { area: string | null; playing: boolean }) {
   const recording = useRecordingStore((state) => state.status)
   const page = usePageStore((state) => state.page)
   const live = recording === 'recording' || recording === 'counting'
-  const progressLabel = area === 'songs' ? 'Hand position' : 'Progress'
-  const ProgressIcon = area === 'songs' ? Hand : Gauge
+  // An exercise's run and what it is; a song has none of its own to show; its
+  // fingers are on the keys, and its place is over the music.
+  const progress = area !== null && area !== 'songs'
+  const about = useHasLessonAbout() && page === 'lesson'
 
   /*
    * What the bar has folded away at this width, and only that. At full width
-   * Progress, Settings and Record are on the bar already, and a menu repeating
+   * This run and Record are on the bar already, and a menu repeating
    * them is a second place to look for the same thing. `menu-only-*` shows an
    * item exactly where its `bar-*` twin is hidden.
    */
   const folded: MenuAction[] = [
-    ...(area && area !== 'songs'
+    ...(area
       ? [
           {
             id: 'record',
@@ -368,44 +358,59 @@ function Utilities({ area }: { area: string | null }) {
           },
         ]
       : []),
-    ...(area
+    ...(page === 'lesson'
       ? [
           {
-            id: 'progress',
-            label: progressLabel,
-            icon: <ProgressIcon size={16} />,
+            id: 'lessons',
+            label: 'Lessons',
+            icon: <GraduationCap size={16} className="lessons-icon" />,
+            onSelect: () => panelActions.open('lessons'),
+            className: 'menu-only-sm',
+          },
+        ]
+      : []),
+    ...(about
+      ? [
+          {
+            id: 'about-lesson',
+            label: 'About this lesson',
+            icon: <Info size={16} />,
+            onSelect: openLessonAbout,
+            className: 'menu-only-sm',
+          },
+        ]
+      : []),
+    ...(progress
+      ? [
+          {
+            id: 'this-run',
+            label: 'This run',
+            icon: <Gauge size={16} />,
             onSelect: () => panelActions.open('session'),
             className: 'menu-only-sm',
           },
         ]
       : []),
-    {
-      id: 'settings',
-      label: 'Settings',
-      icon: <Settings size={16} />,
-      onSelect: () => panelActions.open('settings'),
-      className: 'menu-only-sm',
-    },
   ].map((action, index) => (index === 0 ? { ...action, separated: true } : action))
 
   const actions: MenuAction[] = [
-    // The way home, which an area has no other of: its bar has no trail, and
-    // the bar along the bottom is not there. The places on the dashboard are
-    // on the dashboard, and the menu does not list them again.
+    ...folded,
+    // The way home, on every screen, beside the logo that is one too: a name
+    // to read in a menu is easier to find than a mark to know. The places on
+    // the dashboard are on the dashboard, and the menu does not list them again.
     {
       id: 'dashboard',
       label: 'Dashboard',
       icon: <LayoutGrid size={16} />,
       checked: page === 'dashboard',
       onSelect: pageActions.openDashboard,
+      separated: true,
     },
-    ...folded,
     {
       id: 'fundamentals',
       label: 'Fundamentals',
       icon: <BookOpen size={16} />,
       onSelect: () => panelActions.open('fundamentals'),
-      separated: true,
     },
     {
       id: 'devices',
@@ -427,54 +432,25 @@ function Utilities({ area }: { area: string | null }) {
   ]
 
   return (
-    <>
-      <MidiStatus className="bar-full" />
-      {area && (
-        <button
-          type="button"
-          className="bar-icon-button bar-sm"
-          aria-label={progressLabel}
-          title={progressLabel}
+    // The tools, in one pill: how the stage looks, the keyboard, what the
+    // lesson asks, this run, and the rest in the menu. Settings is the
+    // account's, beside it.
+    <div className="bar-group bar-group--tools">
+      <ViewMenu />
+      {/* Beside the metronome where there is music to play; here, where there is none. */}
+      {!playing && <MidiButton className="bar-mid" />}
+      {page === 'lesson' && <LessonsButton className="bar-sm" />}
+      {page === 'lesson' && <LessonAboutButton className="bar-sm" />}
+      {progress && (
+        <BarButton
+          look="icon"
+          label="This run"
+          className="bar-sm"
           onClick={() => panelActions.open('session')}
-        >
-          <ProgressIcon size={18} aria-hidden />
-        </button>
+          icon={<Gauge size={18} aria-hidden />}
+        />
       )}
-      {(page === 'area' || page === 'lesson') && <StageViewMenu />}
-      <button
-        type="button"
-        className="bar-icon-button bar-sm"
-        aria-label="Settings"
-        title="Settings"
-        onClick={() => panelActions.open('settings')}
-      >
-        <Settings size={18} aria-hidden />
-      </button>
       <ActionMenu label="Menu" icon={<MoreVertical size={18} aria-hidden />} actions={actions} />
-    </>
-  )
-}
-
-/**
- * Whether a MIDI keyboard is connected — a readout, not a button, because it is
- * the thing you check without meaning to. The status sits on the icon rather
- * than beside it: it belongs to the thing.
- */
-function MidiStatus({ className }: { className?: string }) {
-  const midi = useMidi()
-  const connected = midi.connectedPorts.length
-  const name = connected === 1 ? (midi.connectedPorts[0]?.name ?? 'Keyboard') : null
-  const label =
-    connected === 0
-      ? 'No MIDI keyboard connected'
-      : connected === 1
-        ? `${name} connected`
-        : `${connected} keyboards connected`
-
-  return (
-    <span className={cn('midi-status', className)} role="img" aria-label={label} title={label}>
-      <AudioWaveform size={17} aria-hidden />
-      <span className="midi-status__dot" data-connected={connected > 0} aria-hidden />
-    </span>
+    </div>
   )
 }

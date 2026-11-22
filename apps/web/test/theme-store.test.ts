@@ -69,8 +69,11 @@ describe('the color theme', () => {
     const fills: Record<string, string | undefined> = {
       // Peaceful is the tokens as they are: the dark theme's own accent.
       peaceful: accentIn(styles('tokens.css'), ":root,\n[data-theme='dark']"),
-      powerful: accentIn(styles('motius.css'), ":root[data-color-theme='powerful'] {"),
-      'dark-concert': accentIn(styles('motius.css'), ":root[data-color-theme='dark-concert'] {"),
+      powerful: accentIn(styles('motius-tokens.css'), ":root[data-color-theme='powerful'] {"),
+      'dark-concert': accentIn(
+        styles('motius-tokens.css'),
+        ":root[data-color-theme='dark-concert'] {",
+      ),
     }
     for (const option of COLOR_THEMES) expect(option.swatch).toBe(fills[option.id])
   })

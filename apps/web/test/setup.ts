@@ -1,3 +1,5 @@
+import { LESSON_EXERCISES, loadLessons, loadPracticeBuilder, PRACTICE_KINDS } from '@motius/shared'
+
 /**
  * What jsdom does not have and every test needs alike.
  *
@@ -18,3 +20,38 @@ globalThis.matchMedia ??= ((query: string) => ({
 // Pointer capture: a drag keeps its element, which jsdom has no notion of.
 Element.prototype.setPointerCapture ??= () => {}
 Element.prototype.releasePointerCapture ??= () => {}
+
+/*
+ * The account's own data, which the app loads once someone is signed in:
+ * empty, as for a new player, so a test of a screen does not depend on a
+ * server. A test about this data stubs these itself, over these.
+ */
+import { beforeEach, vi } from 'vitest'
+import { api } from '@/lib/api'
+
+beforeEach(() => {
+  vi.spyOn(api, 'listRuns').mockResolvedValue({ items: [], lessonsResetAt: null })
+  vi.spyOn(api, 'addRuns').mockImplementation(async (runs) => ({
+    items: runs.map((run, index) => ({ ...run, id: `test-${run.at}-${index}` })),
+    skipped: 0,
+  }))
+  vi.spyOn(api, 'listLessonSettings').mockResolvedValue({ items: [] })
+  vi.spyOn(api, 'goals').mockResolvedValue({ weeklyGoal: null, seenBadges: [] })
+  vi.spyOn(api, 'setWeeklyGoal').mockImplementation(async (weeklyGoal) => ({
+    weeklyGoal,
+    seenBadges: [],
+  }))
+  vi.spyOn(api, 'seeBadges').mockImplementation(async (badges) => ({
+    weeklyGoal: null,
+    seenBadges: [...badges],
+  }))
+})
+
+// Lessons and each practice area's builder are fetched when first opened.
+// Every test here may open any of them and expects it on the keys at once, so
+// all are loaded before any test module (and its stores) is: the loading itself
+// is tested where it lives (`lesson-loading.test.ts`, `practice-builders.test.ts`).
+await Promise.all([
+  ...LESSON_EXERCISES.map(loadLessons),
+  ...PRACTICE_KINDS.map(loadPracticeBuilder),
+])

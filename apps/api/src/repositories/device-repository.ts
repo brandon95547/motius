@@ -79,7 +79,9 @@ export interface RegisterResult {
 }
 
 /**
- * All device persistence. A class rather than loose functions so the prepared
+ * All device persistence. Every keyboard belongs to the player who announced
+ * it, and every method takes that player's id: one player never reads or
+ * changes another's. A class rather than loose functions so the prepared
  * statements are built once per connection instead of once per request —
  * better-sqlite3's prepare is the expensive half of a query.
  */
@@ -97,15 +99,21 @@ export class DeviceRepository {
     return rows.map(toProfile)
   }
 
-  list(): Device[] {
+  /** A player's keyboards, most recent first. */
+  list(userId: number): Device[] {
     const rows = this.#db
-      .prepare<[], DeviceRow>('SELECT * FROM devices ORDER BY last_seen_at DESC')
-      .all()
+      .prepare<[number], DeviceRow>(
+        'SELECT * FROM devices WHERE user_id = ? ORDER BY last_seen_at DESC',
+      )
+      .all(userId)
     return rows.map(toDevice)
   }
 
-  find(id: string): Device | null {
-    const row = this.#db.prepare<[string], DeviceRow>('SELECT * FROM devices WHERE id = ?').get(id)
+  /** One of a player's keyboards; another player's is not found, as if it were not there. */
+  find(userId: number, id: string): Device | null {
+    const row = this.#db
+      .prepare<[number, string], DeviceRow>('SELECT * FROM devices WHERE user_id = ? AND id = ?')
+      .get(userId, id)
     return row ? toDevice(row) : null
   }
 
@@ -117,15 +125,15 @@ export class DeviceRepository {
    * saved settings. A device we already know only has its `last_seen_at` and
    * its reported name refreshed; detection runs once, at first sight.
    */
-  register(identity: DeviceIdentity): RegisterResult {
+  register(userId: number, identity: DeviceIdentity): RegisterResult {
     const id = fingerprintDevice(identity)
     const now = new Date().toISOString()
-    const existing = this.find(id)
+    const existing = this.find(userId, id)
 
     if (existing) {
       this.#db
-        .prepare('UPDATE devices SET last_seen_at = ?, name = ? WHERE id = ?')
-        .run(now, identity.name, id)
+        .prepare('UPDATE devices SET last_seen_at = ?, name = ? WHERE user_id = ? AND id = ?')
+        .run(now, identity.name, userId, id)
       const profileLabel = existing.profileId
         ? (this.#db
             .prepare<[string], { label: string }>('SELECT label FROM device_profiles WHERE id = ?')
@@ -147,10 +155,11 @@ export class DeviceRepository {
 
     this.#db
       .prepare(
-        `INSERT INTO devices (id, name, manufacturer, profile_id, key_count, config, first_seen_at, last_seen_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO devices (user_id, id, name, manufacturer, profile_id, key_count, config, first_seen_at, last_seen_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
+        userId,
         id,
         identity.name,
         identity.manufacturer,
@@ -178,32 +187,37 @@ export class DeviceRepository {
   }
 
   /** Merges a partial config over the stored one. Returns null if unknown. */
-  updateConfig(id: string, patch: UpdateDeviceConfigInput): Device | null {
-    const device = this.find(id)
+  updateConfig(userId: number, id: string, patch: UpdateDeviceConfigInput): Device | null {
+    const device = this.find(userId, id)
     if (!device) return null
 
     const merged = deviceConfigSchema.parse({ ...device.config, ...patch })
-    this.#db.prepare('UPDATE devices SET config = ? WHERE id = ?').run(JSON.stringify(merged), id)
+    this.#db
+      .prepare('UPDATE devices SET config = ? WHERE user_id = ? AND id = ?')
+      .run(JSON.stringify(merged), userId, id)
     return { ...device, config: merged }
   }
 
   /** Restores the config detection would have produced for this device today. */
-  resetConfig(id: string): Device | null {
-    const device = this.find(id)
+  resetConfig(userId: number, id: string): Device | null {
+    const device = this.find(userId, id)
     if (!device) return null
 
     const match = matchDeviceProfile(
       { name: device.name, manufacturer: device.manufacturer },
       this.listProfiles(),
     )
-    return this.updateConfig(id, {
+    return this.updateConfig(userId, id, {
       ...DEFAULT_DEVICE_CONFIG,
       velocityCurve: match.profile?.defaultVelocityCurve ?? DEFAULT_DEVICE_CONFIG.velocityCurve,
       range: match.range,
     })
   }
 
-  delete(id: string): boolean {
-    return this.#db.prepare('DELETE FROM devices WHERE id = ?').run(id).changes > 0
+  delete(userId: number, id: string): boolean {
+    return (
+      this.#db.prepare('DELETE FROM devices WHERE user_id = ? AND id = ?').run(userId, id).changes >
+      0
+    )
   }
 }

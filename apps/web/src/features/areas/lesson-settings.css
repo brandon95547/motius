@@ -1,0 +1,79 @@
+/* ---- Lesson settings (the admin's page) -----------------------------------
+   Each written lesson a row: its name, then how it opens, four choices that
+   stack on a phone and sit side by side where there is room. */
+.lesson-settings {
+  gap: 28px;
+}
+.lesson-settings__title {
+  font-size: var(--text-h2);
+  line-height: var(--text-h2--line-height);
+  font-weight: var(--text-h2--font-weight);
+  color: var(--c-dash-ink);
+}
+.lesson-settings__line {
+  max-width: 48rem;
+  color: var(--c-dash-body);
+}
+.lesson-settings__section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.lesson-settings__section-title {
+  font-size: var(--text-h4);
+  font-weight: 600;
+  color: var(--c-dash-ink);
+}
+.lesson-settings__rows {
+  container-type: inline-size;
+  overflow: hidden;
+  border: 1px solid var(--c-dash-card-edge);
+  border-radius: var(--radius-lg);
+  background-color: var(--c-dash-card);
+}
+.lesson-settings__rows > li + li {
+  border-top: 1px solid var(--c-dash-card-edge);
+}
+.lesson-settings__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+  padding: 14px 16px;
+}
+.lesson-settings__lesson {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.lesson-settings__name {
+  font-weight: 600;
+  color: var(--c-dash-ink);
+}
+.lesson-settings__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-ui);
+  color: var(--c-dash-body);
+}
+.lesson-settings__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--text-ui);
+  color: var(--c-dash-body);
+}
+@container (min-width: 52rem) {
+  .lesson-settings__row {
+    grid-template-columns: minmax(12rem, 1.4fr) repeat(4, minmax(0, 1fr));
+    align-items: end;
+  }
+  .lesson-settings__lesson {
+    grid-column: auto;
+    flex-direction: column;
+    align-self: center;
+    gap: 2px;
+  }
+}

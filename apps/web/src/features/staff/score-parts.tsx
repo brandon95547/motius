@@ -20,7 +20,8 @@ import {
   type StaffClefs,
   type Volta,
 } from './score'
-import type { BeamShape, StepStems } from './beams'
+import type { BeamShape } from './beams'
+import type { StepStems } from './notation'
 
 /**
  * The marks a system is made of, drawn the same way in both views.

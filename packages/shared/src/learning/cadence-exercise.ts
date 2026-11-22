@@ -1,5 +1,4 @@
-import { z } from 'zod'
-import type { NoteRange } from '../domain/device.js'
+import type { NoteRange } from '../domain/device-schemas.js'
 import {
   CADENCE_POSITION_NAMES,
   CADENCE_VOICINGS,
@@ -7,12 +6,14 @@ import {
   ROOTED_CADENCE,
   type CadenceChord,
 } from '../music/cadences.js'
-import { KEY_MODE_LABELS, KEY_MODES, keyTriads } from '../music/chords.js'
+import { KEY_MODE_LABELS, keyTriads } from '../music/chords.js'
 import type { Hand } from '../music/fingering.js'
 import { normalisePitchClass } from '../music/pitch.js'
 import { keySignatureOf } from '../music/scales.js'
 import type { Exercise, ExerciseStep, StepFinger } from './exercise.js'
-import { DEFAULT_PLAYABLE_RANGE, HAND_LABELS, SCALE_HANDS } from './scale-exercise.js'
+import { HAND_LABELS } from './scale-exercise.js'
+import { DEFAULT_PLAYABLE_RANGE } from './practice-defaults.js'
+import type { CadenceSpec } from './practice-specs.js'
 
 /**
  * Cadences: the first kind of progression.
@@ -41,31 +42,6 @@ export const CADENCE_FORM_LABELS: Record<CadenceForm, string> = {
 /** The chord before the last: the dominant triad, or the dominant seventh. */
 export const CADENCE_DOMINANTS = ['V', 'V7'] as const
 export type CadenceDominant = (typeof CADENCE_DOMINANTS)[number]
-
-export const cadenceSpecSchema = z.object({
-  kind: z.literal('progression'),
-  rootPitchClass: z.number().int().min(0).max(11),
-  /** Which of the key's names it is written under. See `ScaleSpec.tonic`. */
-  tonic: z.string().optional(),
-  mode: z.enum(KEY_MODES),
-  /** Which hand plays the chords in `positions`. The other forms take both. */
-  hand: z.enum(SCALE_HANDS),
-  form: z.enum(CADENCE_FORMS),
-  /** 0, 1 or 2 for one position of the tonic; `all` for the three in turn. */
-  position: z.union([z.literal('all'), z.number().int().min(0).max(2)]),
-  dominant: z.enum(CADENCE_DOMINANTS),
-})
-export type CadenceSpec = z.infer<typeof cadenceSpecSchema>
-
-export const DEFAULT_CADENCE_SPEC: CadenceSpec = {
-  kind: 'progression',
-  rootPitchClass: 0,
-  mode: 'major',
-  hand: 'both',
-  form: 'positions',
-  position: 'all',
-  dominant: 'V7',
-}
 
 export interface CadenceExerciseOptions {
   /** The keys the player has. A 61-key instrument when left out. */

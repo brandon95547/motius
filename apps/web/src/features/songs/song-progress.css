@@ -1,0 +1,26 @@
+/* ---- Song progress -------------------------------------------------------
+   Above the staff and inside the instrument panel, so where you are in the
+   piece sits with the piece rather than with the controls that change it. */
+/* A strip in the bar's colour, the same surface as the stage's pills: the
+   stage cannot carry small text of its own — white on it is 2.1:1. */
+.song-progress {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  padding: 3px 8px 3px 14px;
+  border-radius: var(--radius-pill);
+  background-color: var(--c-bar);
+}
+.song-progress__range {
+  flex: 1;
+  min-width: 0;
+}
+.song-progress__label {
+  flex-shrink: 0;
+  min-width: 5.5rem;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-bar-fg);
+}

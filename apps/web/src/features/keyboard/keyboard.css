@@ -1,0 +1,200 @@
+/* ============================================================================
+   KEYBED
+   ========================================================================= */
+
+.keybed {
+  position: relative;
+  display: flex;
+  width: 100%;
+  isolation: isolate;
+  /* The keyboard handles its own pointer semantics: a drag across the keys is
+     a glissando, not a text selection or a page scroll. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.piano-key {
+  position: relative;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  /* No transition, on anything. A key lights on the frame its note sounds and
+     goes out on the frame it is let go, which is what a key does. A fade of
+     even 75ms was also the dearest thing on the page: for as long as a song
+     played there was always a key part-way through one, so the whole keyboard
+     was drawn again on every frame instead of only when a key changed —
+     two-fifths of what it cost to play a fast piece. */
+}
+
+.piano-key:focus-visible {
+  outline: 2px solid var(--ds-focus-ring);
+  outline-offset: -3px;
+  z-index: 4;
+}
+
+/* --- White ---------------------------------------------------------------- */
+.piano-key--white {
+  flex: 1 1 0;
+  min-width: 0;
+  align-self: stretch;
+  border-right: 1px solid var(--c-key-gap);
+  border-radius: var(--c-key-radius);
+  background-color: var(--c-key-white);
+  box-shadow: inset 0 -4px 0 var(--c-key-white-lip);
+  z-index: 1;
+}
+.keybed > .piano-key--white:last-of-type {
+  border-right: 0;
+}
+@media (hover: hover) {
+  .piano-key--white:hover:not([data-active='true']) {
+    background-color: var(--c-key-white-hover);
+  }
+}
+.piano-key--white[data-active='true'] {
+  background-color: var(--c-key-press);
+  box-shadow: inset 0 -4px 0 var(--ds-accent-active);
+}
+
+/* --- Black ---------------------------------------------------------------- */
+.piano-key--black {
+  position: absolute;
+  top: 0;
+  z-index: 3;
+  border-radius: var(--c-key-radius);
+  background-color: var(--c-key-black-face);
+  /* Two flat bands rather than a gradient: the top face catches the light and
+     the body does not, which is all the depth a flat design needs. */
+  box-shadow:
+    inset 0 6px 0 var(--c-key-black),
+    inset 0 -3px 0 var(--c-key-bevel),
+    0 2px 4px -1px var(--c-key-drop);
+  /* Each on a layer of its own, for the shadow just above. A blurred shadow is
+     the one costly thing a key is drawn with, and the keys share a surface:
+     light one and all thirty-six shadows were blurred again with it. Kept
+     apart, a black key is drawn when it changes and at no other time, which
+     took a third off what the keyboard costs while a song plays. */
+  will-change: transform;
+}
+@media (hover: hover) {
+  .piano-key--black:hover:not([data-active='true']) {
+    background-color: var(--c-key-black-hover);
+  }
+}
+.piano-key--black[data-active='true'] {
+  background-color: var(--c-key-press-black);
+  box-shadow:
+    inset 0 6px 0 var(--ds-accent),
+    inset 0 -3px 0 var(--c-key-bevel-lit);
+}
+
+/* --- Velocity ------------------------------------------------------------
+   How hard the note was struck, shown as the strength of the accent wash. A
+   pianissimo note and a fortissimo note both light the key, but they do not
+   light it the same amount — which is the whole point of watching a keyboard
+   while you play. */
+.piano-key[data-active='true']::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--c-key-veil);
+  opacity: calc((1 - var(--key-velocity, 0.75)) * 0.5);
+  pointer-events: none;
+}
+
+/* --- The label on middle C and every other C ------------------------------ */
+.piano-key__label {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 6px;
+  text-align: center;
+  font-size: var(--text-label);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--c-key-label);
+  pointer-events: none;
+}
+.piano-key--white[data-active='true'] .piano-key__label {
+  color: var(--c-key-label-pressed);
+}
+.piano-key__label--anchor {
+  color: var(--c-key-label-anchor);
+  font-weight: 700;
+}
+
+/* ============================================================================
+   INSTRUMENT BODY
+   ========================================================================= */
+
+.piano-body {
+  background-color: var(--c-piano-body);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--ds-shadow-4);
+  overflow: hidden;
+}
+
+/* The felt. 3px, full-bleed, sitting directly on top of the keybed. */
+.piano-felt {
+  height: 3px;
+  background: linear-gradient(
+    to right,
+    var(--ds-accent-active),
+    var(--c-piano-felt) 18%,
+    var(--c-piano-felt) 82%,
+    var(--ds-accent-active)
+  );
+}
+
+/* ============================================================================
+   OUT-OF-VIEW MARKERS
+   A note played outside the visible window still has to be visible as *having
+   happened*, or a player on a phone gets silence from the interface.
+   ========================================================================= */
+
+.range-edge {
+  position: absolute;
+  inset-block: 0;
+  width: 18px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--duration-quick) var(--ease-standard);
+  z-index: 5;
+}
+.range-edge[data-lit='true'] {
+  opacity: 1;
+}
+.range-edge--start {
+  left: 0;
+  background: linear-gradient(to right, var(--ds-accent), transparent);
+}
+.range-edge--end {
+  right: 0;
+  background: linear-gradient(to left, var(--ds-accent), transparent);
+}
+
+/* The black keys' names in a strip just above the keys, with the labels set
+   to notes, each centred over its key; the white keys' are on the keys.
+   Half-transparent white, so it reads as a guide and not as part of the
+   music above it. */
+.key-names {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 100%;
+  height: 1.75rem;
+  pointer-events: none;
+  z-index: 6;
+}
+.key-names__name {
+  position: absolute;
+  bottom: 0.5rem;
+  transform: translateX(-50%);
+  font-size: var(--text-label);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--c-key-name-above);
+}

@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SCALE_GROUPS, SCALE_TYPES } from '@motius/shared'
 import { ScaleOptions } from '@/features/learning/ScaleControls'
-import { ScaleTheoryDialog } from '@/features/learning/ScaleTheoryDialog'
+import { ScaleTheoryDialog } from '@/features/theory/ScaleTheoryDialog'
 import { useLearningStore } from '@/state/learning-store'
 import { Combobox } from '@/ui/Controls'
 

@@ -47,4 +47,20 @@ describe('finishing a scale', () => {
     act(() => store().start())
     expect(effects.stop).toHaveBeenCalledWith('success')
   })
+
+  it('leaves a lesson’s sound to the lesson, which picks the badge’s or this one', async () => {
+    const { useLearningStore } = await import('@/state/learning-store')
+    const { ScaleEngine } = await import('@/features/learning/ScaleControls')
+    act(() =>
+      useLearningStore.setState((state) => ({
+        topic: 'lesson',
+        session: { ...state.session, status: 'running' },
+      })),
+    )
+    render(<ScaleEngine />)
+    act(() =>
+      useLearningStore.setState((state) => ({ session: { ...state.session, status: 'complete' } })),
+    )
+    expect(effects.play).not.toHaveBeenCalled()
+  })
 })

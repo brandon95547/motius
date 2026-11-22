@@ -13,8 +13,8 @@ touchscreen or a USB MIDI keyboard, and watch every note land on the keys.
 The dashboard has nine categories, each a numbered card, three to a row, in the
 order they are taught. Each is laid out from the outline written for it:
 
-1. **Piano Foundations** — Keyboard Layout, Understanding Pitch, Fingers & Hand
-   Positions, Playing Your First Notes.
+1. **Piano Foundations** — Keyboard Layout, Fingers & Hand Positions, First Notes
+   (where pitch is learned by playing it).
 2. **Music Notation & Reading** — Musical Staff, Notes & Notation, Musical
    Symbols, Sight-Reading, Music Writing.
 3. **Rhythm & Timing** — Beat & Counting, Tempo & Metronome, Time Signatures,
@@ -22,14 +22,14 @@ order they are taught. Each is laid out from the outline written for it:
 4. **Scales, Intervals & Keys** — Intervals, Keys & Tonality, Circle of Fifths,
    Major Scales, Minor Scales, Additional Scales, Diatonic Modes, Scale
    Technique.
-5. **Chords & Harmony** — Chord Foundations, Triads, Seventh & Extended Chords,
+5. **Chords & Harmony** — Chord Foundations, Triads, Sevenths & Beyond,
    Chord Inversions, Chord Voicings, Chord Progressions, Cadences, Harmonic
    Relationships, Chord Application.
 6. **Piano Technique** — Fingering, Hand Coordination, Technical Exercises,
-   Pedal Technique, Ornaments & Special Techniques.
+   Pedal Technique, Ornaments & Effects.
 7. **Musical Expression** — Dynamics, Articulation, Musical Phrasing, Tempo &
    Interpretation.
-8. **Musical Structure & Styles** — Musical Structure, Musical Textures,
+8. **Structure & Styles** — Musical Structure, Musical Textures,
    Accompaniment Patterns, Arpeggios, Musical Styles, Music History &
    Composers.
 9. **Practice & Repertoire** — Reading Practice, Rhythm Practice, Technical
@@ -38,37 +38,96 @@ order they are taught. Each is laid out from the outline written for it:
 
 A category opens a page of its sections, and a section opens straight onto the
 stage, the keyboard to play on at the stage's full width. The section's lessons
-are a list that slides in from the left, from the button beside its name in the
-bar.
+are a list that slides in from the right, from the graduation cap among the
+bar's tools (in the ⋮ menu on a phone).
 Whatever the outline has between the section and a lesson is a chapter of that
 list, not another page of cards, so the keys are two choices from the dashboard
 however deep the outline goes. In Piano Foundations, Keyboard Layout's list has
 White and black keys, Musical alphabet and Keyboard navigation as its chapters;
-Understanding Pitch and Playing Your First Notes are lessons with no chapters.
+First Notes is lessons with no chapters.
 Where an outline has a lesson beside a topic — Time Signatures has Common time
 next to Simple meter — the list has both, the section's own lessons headed with
 its name.
 
-A written lesson opens with its introduction in a dialog — what it asks, as a
-teacher would say it, with Start — which goes when it is closed or a run
-starts. Unticking "Show next time" opens that lesson straight on the stage
+A written lesson opens with its introduction in a dialog, which goes when it
+is closed or a run starts: its chapter above its name, where it comes in the
+section with a thin bar of the lessons played, Your objective in a sentence,
+How to play a line at a time (led by Left hand or Right hand where each has its
+own part, with Finger numbers beside it, a chart of both
+hands, wherever the lines use them), one thing to Remember, and Start lesson. Each lesson's `about` in
+`lib/outline/categories.ts` holds those parts. Unticking "Show lesson instructions next time"
+opens that lesson straight on the stage
 from then on; the bar's About this lesson (ⓘ) opens the introduction again at
-any time, and ticking the box there turns it back on. A run's
-end offers Again and Next lesson. A lesson not written yet has no introduction,
+any time, and ticking the box there turns it back on. Both dialogs have
+Previous lesson (none on the first). A run ends in Lesson N results: where the
+lesson is in the section, a bar of how many of its lessons have been played,
+the accuracy as a ring, what the run was made of (steps, wrong notes, misses)
+and the best so far, with Try again and Next lesson (Close after the last). A
+lesson not written yet has no introduction,
 only a Coming soon tag in the stage's corner.
 
-There are 534 lessons in the nine outlines. Two are written: **Two-black-key
-groups** and **Three-black-key groups**, taught before any note has a name and
-fingered as the fingering guide has them (Verbalis, _Natural Fingering_, stage
-1): every group pressed as a block, the left hand climbing from the bottom of
-the keyboard to middle C with 4-3 (4-3-2 for three), then the right hand coming
-down from the top with 3-4 (2-3-4). Each introduction says what to do, and the
-bar has Explore, Learn and Practice as an area does: Explore lights every group,
-Learn walks them, and Practice takes the lights away and counts a key of the
+There are 534 lessons in the nine outlines. Ten are written: the whole of
+Keyboard Layout — White and black keys, Musical alphabet and Keyboard
+navigation. The first three are taught before any note has a name and fingered as the
+fingering guide has them (Verbalis, _Natural Fingering_, stage 1): every group
+pressed as a block with the long fingers. **Two black keys** and
+**Three black keys** find each kind alone, the left hand climbing from
+the bottom of the keyboard to middle C with 4-3 (4-3-2 for three), then the
+right hand coming down from the top with 3-4 (2-3-4). **Recognizing keyboard
+patterns** then plays the pattern they make — two, three, two, three — every
+group in order up the keyboard and back down, hand over hand: the left hand on
+every two (4-3), the right hand on every three (2-3-4), as the guide's next
+step has it. **Notes A to G** then names the white keys: A found between
+the top two keys of a group of three (Alfred, p. 11), and the seven letters
+played up from it and back down to it one key at a time, said aloud — the way
+down is where a beginner has to look, and its crossings are the other way
+round — the left hand from the A
+below, then the right hand from the A just below middle C. From here to
+Octaves the lessons ask for the right keys and name no finger ("where is this
+note?" before "which finger?", Verbalis, stages 2 and 4). The keys still carry
+the real fingering for a player who looks: a run up the white keys as the
+scale it begins (A to G as A minor, 1-2-3, thumb under, 1-2-3-4), a short walk
+as the five-finger position, and a key found on its own with finger 3. **Repeating note names** walks the letters
+up the whole keyboard from its lowest A, the left hand to
+middle C and the right hand on to the top, the cue saying "After G, A again"
+each time the names start over (Dummies p. 76: seven letters, and after G, A
+again; Alfred p. 11: the lowest key is A, the highest C). **Finding C and F**
+plays every C bottom to top, then every F — C just left of each
+group of two black keys, F just left of each group of three (Dummies p. 77,
+its key finder and landmark key hunt; Cazaubon; Turner p. 13). **Finding
+Middle C** starts on middle C — the C nearest the centre (Alfred p. 11), the
+reference point (Turner), the one to sit facing (Learn & Master), marked C4
+under the keys — and goes out to every other C and straight back, the nearest
+first, the left hand below it and the right hand above. **Locating notes across the
+keyboard** finishes the landmark key hunt (Dummies p. 77): every D and every G,
+then every E, A and B, bottom to top, each found from its group of
+black keys — D between the two, E right of them; G, A between the three, B
+right of them (the notes' keyboard table; Alfred p. 11). It and Finding C and
+F are one hunt in the code (`landmarkHunt`), given different letters.
+**Left and right** takes the right hand from middle C right to G and
+back, each key higher, then the left hand left to F and back, each key lower
+(Alfred p. 10: left is down and lower, right up and higher; Turner
+p. 14). **Octaves** counts eight names from middle C to the next C,
+then F to F in the left hand, and plays a short line (C-D-E) at middle C, an
+octave higher and an octave lower (Dummies pp. 76 and 79: an octave
+is eight letter names, counted inclusively; Cazaubon; Alfred p. 334, a line
+replayed an octave away). The thumb-to-5 octave stretch waits for the hand
+positions. Each introduction says what to do, and the
+bar has Listen, Lesson and Practice: Listen lights every group and plays them
+to you, Lesson (an area's Learn, under the lesson's name) walks them, and Practice takes the lights away and counts a key of the
 other kind of group as a mistake. A written lesson names its exercise in the
 outline, and the exercise is built in
 `packages/shared/src/learning/lesson-exercise.ts`. Lessons are written against
 the fingering guide kept outside this repo (see `CLAUDE.md`).
+
+**Two black keys, played in Lesson mode**, puts the whole pattern on the
+keys from the start: every group of two lit, the first one (the lowest, for
+the left hand) in the strong "start here" colour with its fingers. Each group
+played fills in as done and the next takes the strong colour, so the keyboard
+fills up as the lesson goes, with the count beside it. A group of three pressed
+instead is said for what it is ("That's three. Look for a pair."); a white key
+flashes red. The introduction is an objective and two lines. (`Exercise.marksProgress` and
+`wrongHints`, which the other lessons can take up as they are reworked.)
 
 The rest are not written yet: each says so, and the keys are free to play
 meanwhile. Each has the address it will keep —
@@ -82,7 +141,8 @@ places at the top of the app: Home (the dashboard), Lessons, Songs, Practice,
 Progress and Search. Songs is the song library. Practice has the other practice
 areas, which no outline names — Scales, Chords, Arpeggios, Cadences, Fingering
 Exercises, Daily Practice — until the lessons that use them say where they
-belong. Lessons, Progress and Search are not built, and say so. The bar is not
+belong. Progress is your practice history (below). Lessons and Search are not
+built, and say so. The bar is not
 there in an area, where the bottom of the screen is the keyboard's and the menu
 is the way out: it has the Dashboard, and the app's tools (Fundamentals, Keyboard
 & MIDI setup, Import a song), but not the dashboard's places over again.
@@ -91,7 +151,7 @@ Where you are is said in the bar across the top — `Dashboard › Piano
 Foundations › Keyboard Layout` — and each step of it is a way back; on a
 narrow bar the steps furthest up fold away first.
 
-The whole of it is one table (`features/areas/areas.tsx`), from which the
+The whole of it is one table (`lib/outline/categories.ts`), from which the
 dashboard, those pages and stages and the bar along the bottom are all drawn.
 
 ### The instrument
@@ -108,12 +168,36 @@ dashboard, those pages and stages and the bar along the bottom are all drawn.
   bright upright is the one a new player hears.
 - **USB MIDI in**, with per-keyboard detection and configuration: transpose,
   octave shift, velocity curve, channel filter and sustain pedal, saved against
-  the keyboard and restored the next time it is plugged in.
+  the keyboard and restored the next time it is plugged in. The keyboard
+  button at the top right shows it: its light is green and steady with a
+  keyboard connected, and flashes with none; pressed, it connects one (asking
+  the browser the first time) and opens Keyboard & MIDI setup. Once the browser
+  has allowed it, the keyboard is connected as the page opens, with no click.
 - **A live grand staff** above the keyboard, and view controls beneath it —
-  follow, key labels (off, notes, degrees or fingers), scale structure, and
-  what is shown above the keys.
-- **Falling notes**, the other choice for above the keys (Settings ▸ Above the
-  keys: Staff, Falling notes or Nothing). Each note is a bar in its key's
+  follow, key labels (off, notes, degrees or fingers) and scale structure.
+- **One View menu on every screen** (the eye on the top bar), for what is the
+  same wherever you are, each choice kept from screen to screen: what is above
+  the keys (Staff or Falling notes), the see-through hands on the keys, the
+  background film, and the color theme.
+- **One set of playing controls** on the top bar, the same in a practice area,
+  a lesson and a song, in the same order: mode, tempo, metronome, Record and
+  one **Play** button. The mode says what Play does, the same three everywhere:
+  - **Listen** plays the music to you — an exercise's demonstration, or the
+    song.
+  - **Learn** starts a run that waits at each step until you play it.
+  - **Practice** starts a run that goes on at the tempo and judges each step.
+  - Once something is going, Play is Pause / Go on, with Back to the start
+    beside it (a Learn run over the staff, which waits anyway, is stopped
+    instead).
+  - On a narrow screen the bar folds the tempo, the metronome and Record away:
+    the tempo and the metronome to Settings, Record to the ⋮ menu, each only
+    at the widths where the bar has let it go.
+  - **Space presses Play** on every screen that has it: it plays, starts,
+    pauses and goes on — even with focus left on a button the mouse pressed.
+    Not in a text field, a menu or a dialog, nor on a control reached with Tab,
+    where Space presses that control; and never to stop a run.
+- **Falling notes**, the other choice for above the keys (View ▸ Above the
+  keys). Each note is a bar in its key's
   column, as wide as the key, as long as it is held, in its hand's color (right
   green, left blue), labeled as the keys are (Key labels: note name, degree or
   finger), reaching the keys on its beat. The key a note falls to is asked for
@@ -123,7 +207,7 @@ dashboard, those pages and stages and the bar along the bottom are all drawn.
   - **Practice**: they fall at the tempo after a four-beat lead-in, in time with
     the click. Each step is ringed on time (within 150 ms) or early/late, and
     one that goes by unplayed is missed and the run moves on.
-  - **Hear**: they fall with the demonstration.
+  - **Listen**: they fall with the demonstration.
   - A note pressed right lights its bar and its key in the hand's color while
     held, each key of a chord as it goes down, with a white glow on the
     keyboard's top edge above it; a played step flashes.
@@ -132,14 +216,17 @@ dashboard, those pages and stages and the bar along the bottom are all drawn.
     beside it); the music goes on from exactly where it stood. No control on
     the bar takes focus from a click, so Space and the keys stay with the music.
     **Drag or scroll** them to move through the music (a run is paused, and
-    goes on from the step it is left at). While still, **Loop from here / to
-    here** loops a stretch.
-  - Every exercise and lesson has them; songs keep the staff for now.
+    goes on from the step it is left at).
+  - Every exercise, lesson and song has them. A song's fall with its playhead
+    as it plays, at the tempo it is played at; in Learn they fall to the step
+    you are on and wait, the steps played marked done; in Practice each step
+    is ringed as it was played, or marked missed. Pausing and dragging
+    are for exercises; a song is moved with its own controls.
 
 ### Learning a scale
 
-- **Explore, Learn, Practice.** Explore lights every note of the scale across
-  the whole keyboard; Learn walks you through one note at a time with the
+- **Listen, Learn, Practice.** Listen lights every note of the scale across
+  the whole keyboard and plays it to you when you press Play; Learn walks you through one note at a time with the
   recommended finger on the key; Practice takes the guidance away and keeps
   score.
 - **A hundred and twenty scale types** — major, all three minors, the five
@@ -169,8 +256,8 @@ dashboard, those pages and stages and the bar along the bottom are all drawn.
   switches to the **Natural** system, after Penelope Roskell, which puts the
   long fingers on the black keys: the same in most keys, and a different left
   hand in G, D, A and F major and in a number of the minors.
-- **Play it to hear it.** A demo button walks the scale at the tempo you have
-  set, driving the same finger and target guidance Learn uses.
+- **Play it to hear it.** In Listen, Play walks the scale at the tempo you
+  have set, driving the same finger and target guidance Learn uses.
 - **Chords and arpeggios.** Two more areas, built on the same engine: each
   key's triad, its four-note form and its seventh chord (dominant in a major
   key, diminished in a minor) in every position, solid and broken; and the
@@ -262,8 +349,7 @@ trains and how to practise it. (`learning/fingering-exercise.ts`.)
   part named for it, an "m.d." or "L.H." over the note — is taken at its word.
   Where the page leaves it open (a line on the other hand's staff, a middle
   staff of three) the note keeps the hand of the line it belongs to, is never
-  switched on a guess, and the Hand position panel says "suggested" when you
-  reach it.
+  switched on a guess.
 - **A tied note is written wherever the score writes it**, including where
   nothing is struck beside it: a chord held through the last bar has its
   noteheads, its ties and its bar.
@@ -276,18 +362,88 @@ trains and how to practise it. (`learning/fingering-exercise.ts`.)
   when the music thickens, and the bars before the change are shared between
   the last two lines rather than leaving one alone.
 - **Fingering is worked out for files that have none** — see below.
-- **Hands over the keys, playing the fingering.** Switched on from the song's
-  options, two see-through hands are drawn on the keyboard where the fingering
+- **Hands over the keys, playing the fingering.** Switched on from View ▸ Hands
+  on the keys, for songs and for exercises and lessons alike, two see-through hands are drawn on the keyboard where the fingering
   puts them: each finger on its key, the others where the hand would have
   them, the thumb reaching in from the side. Playing, a finger sets off just
   before its note and is on the key as it sounds, and its tip fills when the
-  key goes down; in Learn the hands show the step you are on and wait. Only
-  for a song that has fingering, since that is all they are drawn from.
+  key goes down; in Learn the hands show the step you are on and wait. An
+  exercise's show the step asked for or being heard, and before a run the
+  first, so you see where to begin. Only where there is fingering, since that
+  is all they are drawn from.
 - **Drums are played as drums.** A MIDI file's percussion channel is routed to a
   synthesized kit rather than onto the piano, and accompaniment parts sound
   without lighting keys you are not being asked to play.
-- **Explore and Learn for songs**, with part selection, tempo, a metronome and a
-  progress bar over the staff. Imported songs persist between sessions.
+- **Listen, Learn and Practice for songs**, with part selection, tempo, a
+  metronome and a progress bar over the staff. Listen plays the song; Learn
+  waits for you at each step; Practice counts you in for four beats, then plays
+  on at the tempo with the part you chose left silent and unlit for you to play
+  — the other instruments and the drums still sound — and rings each step on
+  time (within 150 ms), early or late, or misses it once the next is due. At
+  the end it says how the run went, with Again. Imported songs persist between
+  sessions.
+
+### Signing in, and the admin's Lesson settings
+
+- **Motius is for signed-in players.** Before anything else is a sign-in page
+  with Google's button (`features/account/`); signing up is signing in for the
+  first time. The server checks Google's ID token against Google's published
+  keys (`apps/api/src/clients/google.ts`) and keeps the sign-in in an HttpOnly
+  cookie, of which the database holds only a hash. Every API route but health
+  and sign-in needs it; a 401 from any of them puts the sign-in page back.
+- **Admins** are the addresses in the API's `ADMIN_EMAILS`. Taking one off the
+  list takes effect on the next request. The ⋮ menu shows the account's
+  address over Sign out and, for an admin, **Lesson settings**.
+- **Lesson settings** (`#/admin`, `features/areas/LessonSettingsPage.tsx`):
+  for each written lesson, the key labels (note names, finger numbers, scale
+  degrees or nothing), the view (staff or falling notes), the hands, and the
+  tempo, each "Player's choice" (or the lesson's own tempo) until set. A change
+  is saved as it is made. They are where a lesson starts, not rules
+  (`components/use-lesson-settings.ts`): the player can change any of them
+  once in, the view and hands a lesson sets are not saved as the player's
+  preference, and leaving the lesson puts back what it changed, unless the
+  player changed it themselves.
+- **Moving a song to another shelf** (the song chooser's Edit categories) is
+  the same for everybody, so it is an admin's too: the button is shown to
+  admins only, and the server takes the change from an admin only.
+
+### Goals, badges and your title
+
+The Progress page opens on where you stand. **Your title** comes from how far you
+are in the course: Beginner, then Apprentice with your first lesson, Foundation
+Pianist with every Piano Foundations lesson, and on to Advanced Pianist with all
+nine categories. **Your practice streak** counts the days you have played, and
+forgives one day off a week; **your weekly goal** is so many runs at 90% or
+better, Monday to Sunday, at a number you pick. **The lesson journey** shows each
+category done, under way, next or still to be written. **Badges** are earned for
+finishing parts of the course (First Steps, Black-Key Explorer, Note Navigator,
+Pathfinder, Keyboard Master) and for habits (streaks, the weekly goal, a spotless
+Practice run, a song played through, 25 and 100 runs); each locked badge says what
+it takes and how close you are. A lesson's results reveal a badge the moment it is
+earned, or show the next one to aim for, and the dashboard names your next goal.
+All of it is worked out from your runs (`docs/adr/0006`), so starting over takes it
+away with them.
+
+### Progress: your practice history
+
+- **Every finished run is kept**: a lesson's, a run in a practice area (Learn or
+  Practice), and a song played through in Practice — what it was, when, at
+  what tempo, and how it went (accuracy, mistakes, misses, and for a song how
+  many steps were on time). Kept with the player's account (`/runs`), so it
+  follows them to any device (`state/history-store.ts`, saved by
+  `components/use-run-history.ts`). A run is shown the moment it ends; one the
+  server has not taken yet waits on the device, under the player's address, and
+  goes with the next load. The history a device kept before there were
+  accounts goes to the first account signed in on it.
+- **The Progress page** (the bottom bar's Progress) is the one home for it,
+  like a game's records: totals, the latest runs, then each lesson, practice
+  area exercise and song played with its best score, how many tries, and when
+  it was last played. Each row opens what it is a record of.
+- **A summary where it helps**: each lesson's best beside its name in the
+  lessons list, and "Your best" and the section's progress bar in the dialog at the end of a
+  lesson.
+- The bar's own run panel (the gauge, on an exercise) is **This run**: the run
+  going now, not the history.
 
 ### Recording
 
@@ -382,6 +538,20 @@ npm run dev
 That starts both halves: the API on **:5175** and the app on **:5174**. Vite
 proxies `/api` to the API, so the browser only ever talks to one origin — no
 CORS in development and no difference from production.
+
+Signing in needs a Google OAuth client. In the Google Cloud console, under
+APIs & Services → Credentials, create an OAuth client ID of type _Web
+application_, and add `http://localhost:5174` (and the real domain, for
+production) to its Authorized JavaScript origins. Then, in `.env` at the root
+of the repository (copied from `.env.example` there; one file for the API and
+the web app):
+
+```bash
+GOOGLE_CLIENT_ID=1234567890-abc.apps.googleusercontent.com
+ADMIN_EMAILS=you@gmail.com
+```
+
+Without a client ID the sign-in page says sign-in is not set up.
 
 | Command             | What it does                         |
 | ------------------- | ------------------------------------ |
@@ -482,7 +652,7 @@ verbatim copy of its token layer — three tiers, primitive → semantic →
 component, and a component that reaches past the semantic tier is a bug. Fix
 values upstream and re-copy rather than editing them here.
 
-Motius's own additions live in `motius.css`, in the component tier. The
+Motius's own additions are in the component tier: its tokens in `motius-tokens.css`, and each part's rules beside the code they style, imported in order by `motius.css`. The
 keyboard is the one deliberate exception to reasoning from the elevation ramp:
 a piano key is a depiction of a physical object, and a "white key" assigned
 `--ds-surface-raised` because that is where it sits in the hierarchy is a piano
@@ -741,7 +911,7 @@ has to on a piano: lit for as long as each is written, a repeated note is one
 unbroken light, the first ending as the second begins (`keyRestrikes`, and
 `LIFT_MS` in the playback).
 
-The hands over the keys are drawn from the same reading (`features/hands`).
+The hands over the keys are drawn from the same reading (`features/keyboard/hands`).
 `hand-poses.ts` is the part with no drawing in it: which key each finger is
 on from moment to moment, and where that puts the fingertips and the knuckles
 over a keyboard, in the keys' own percentages. `HandsOverlay.tsx` draws it, on
@@ -753,7 +923,7 @@ to its key.
 The page is engraved from the same song, by one engraver for both views. A
 staff that carries two voices in a bar is written as two: each voice a chord
 of its own, with its own length and its stem pointing away from the other
-(`VoicePart`, decided bar by bar in `staff/score.ts`). A tied note is one note
+(`VoicePart`, decided bar by bar in `staff/measure-score.ts`). A tied note is one note
 to play and as many noteheads as the score wrote, the later ones standing at
 their own moments with a tie back to the one before. Rests are drawn where a
 hand is waiting — in the middle of the bar for a whole bar's rest, with the

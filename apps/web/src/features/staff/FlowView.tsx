@@ -45,7 +45,8 @@ import {
   type Measured,
   type Placed,
 } from './score'
-import { beamsIn, type StepStems } from './beams'
+import { beamsIn } from './beams'
+import type { StepStems } from './notation'
 
 /**
  * The music as one endless system, running past a fixed clef.

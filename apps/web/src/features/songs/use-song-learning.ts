@@ -28,12 +28,12 @@ export function useSongLearning(song: Song | null) {
   const resetLearning = useSongStore((state) => state.resetLearning)
   const setSongAnnotations = useLearningStore((state) => state.setSongAnnotations)
   const setStepCount = useSongStore((state) => state.setStepCount)
-  const setCurrent = useSongStore((state) => state.setCurrent)
   const setWrongNotes = useSongStore((state) => state.setWrongNotes)
   const wrongNotes = useSongStore((state) => state.wrongNotes)
 
+  // Practice counts along the same steps, so its meter is the same meter.
   const steps = React.useMemo<SongStep[]>(
-    () => (song && mode === 'learn' ? songSteps(song, part) : []),
+    () => (song && mode !== 'listen' ? songSteps(song, part) : []),
     [song, mode, part],
   )
 
@@ -49,27 +49,6 @@ export function useSongLearning(song: Song | null) {
   )
 
   React.useEffect(() => setStepCount(played.length), [played, setStepCount])
-
-  // Flatten the step to what the hand card needs, so it can live anywhere.
-  // Every note of it, low to high: a chord is a hand shape, and one finger out
-  // of three is not one.
-  React.useEffect(() => {
-    const notes = [...(played[stepIndex]?.notes ?? [])].sort((a, b) => a.note - b.note)
-    setCurrent(
-      notes.flatMap((note) =>
-        note.finger === undefined
-          ? []
-          : [
-              {
-                finger: note.finger,
-                hand: note.hand,
-                // Carried to the card, which says so: see `SongNote.handSuggested`.
-                ...(note.handSuggested ? { handSuggested: true } : {}),
-              },
-            ],
-      ),
-    )
-  }, [played, stepIndex, setCurrent])
 
   // What the keyboard shows. Rebuilt only when the step moves, not per frame.
   React.useEffect(() => {

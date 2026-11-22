@@ -148,7 +148,7 @@ describe.each(['flow', 'sheet'] as const)('a key press against the %s view', (st
     useSongStore.setState({
       library: [song],
       currentId: song.id,
-      mode: 'explore',
+      mode: 'listen',
       part: 'both',
       positionMs: 0,
       staffView,
@@ -273,7 +273,7 @@ describe.each(['flow', 'sheet'] as const)('a chord still held, in the %s view', 
     useSongStore.setState({
       library: [song],
       currentId: song.id,
-      mode: 'explore',
+      mode: 'listen',
       part: 'both',
       positionMs: 0,
       staffView,

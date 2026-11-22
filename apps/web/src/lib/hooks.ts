@@ -156,6 +156,8 @@ export function useDismissable(
   open: boolean,
   onDismiss: () => void,
   refs: readonly React.RefObject<HTMLElement | null>[],
+  /** Where a press does not count as outside, beside the refs: the bar, for a panel docked under it. */
+  within?: string,
 ) {
   React.useEffect(() => {
     if (!open) return
@@ -166,6 +168,7 @@ export function useDismissable(
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Node
       if (refs.some((ref) => ref.current?.contains(target))) return
+      if (within && target instanceof Element && target.closest(within)) return
       onDismiss()
     }
 

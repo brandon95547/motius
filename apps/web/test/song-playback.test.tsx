@@ -1,6 +1,6 @@
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { buildSong, type SongNote, type SongSection } from '@motius/shared'
+import { buildSong, leadInMs, type SongNote, type SongSection } from '@motius/shared'
 import { useKeyboardStore } from '@/state/keyboard-store'
 import { useSongStore } from '@/state/song-store'
 
@@ -310,5 +310,75 @@ describe('a note that outlasts the hand on its key', () => {
     expect(down()).toEqual([43, 59])
     act(() => vi.advanceTimersByTime(300))
     expect(down()).toEqual([])
+  })
+})
+
+describe('practising a song', () => {
+  // At 120 a minute a beat is half a second, and the lead-in two seconds.
+  const notes = [note(60, 0, 400), note(62, 500, 400), note(64, 1000, 400)]
+
+  const practise = async () => {
+    const song = buildSong({
+      id: 'practised',
+      title: 'Practised',
+      bpm: 120,
+      beatsPerMeasure: 4,
+      notes,
+      source: 'midi',
+      handsInferred: false,
+    })
+    const { useSongPlayback } = await import('@/features/songs/use-song-playback')
+    const { useSongPractice } = await import('@/features/songs/use-song-practice')
+    useSongStore.setState({ library: [song], currentId: song.id, tempoScale: 1, mode: 'practice' })
+    renderHook(() => {
+      useSongPlayback(song)
+      useSongPractice(song)
+    })
+    act(() => useSongStore.getState().startPractice(leadInMs(song)))
+  }
+  /** A key put down by the player, and let go. */
+  const strike = (pitch: number) =>
+    act(() => {
+      useKeyboardStore.getState().noteOn(pitch, 80, 'midi')
+      useKeyboardStore.getState().noteOff(pitch)
+    })
+
+  afterEach(() => act(() => useSongStore.getState().setMode('listen')))
+
+  it('counts in from before the start, and leaves the part being practised to the player', async () => {
+    await practise()
+    expect(useSongStore.getState().positionMs).toBe(-2000)
+    const lit: number[] = []
+    const stop = useKeyboardStore.subscribe((state, before) => {
+      if (state.lastNote !== before.lastNote) lit.push(state.lastNote!.note)
+    })
+    act(() => vi.advanceTimersByTime(3000))
+    stop()
+    expect(audio.play).not.toHaveBeenCalled()
+    expect(lit).toEqual([])
+  })
+
+  it('judges each step against its beat, and ends with the result', async () => {
+    await practise()
+    act(() => vi.advanceTimersByTime(2000))
+    strike(60)
+    act(() => vi.advanceTimersByTime(700))
+    strike(62)
+    act(() => vi.advanceTimersByTime(1000))
+
+    const state = useSongStore.getState()
+    expect(state.practice.results).toEqual(['on-time', 'late'])
+    expect(state.practiced).toBe(true)
+    expect(state.playing).toBe(false)
+  })
+
+  it('goes back to the start of the run when asked, mid-song', async () => {
+    await practise()
+    act(() => vi.advanceTimersByTime(2600))
+    strike(62)
+    act(() => useSongStore.getState().startPractice(2000))
+    expect(useSongStore.getState().practice.results).toEqual([])
+    act(() => vi.advanceTimersByTime(100))
+    expect(useSongStore.getState().positionMs).toBeLessThan(-1800)
   })
 })

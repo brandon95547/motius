@@ -1,11 +1,11 @@
 import { create } from 'zustand'
-import { STANDARD_RANGES } from '@motius/shared'
+import { STAGE_VIEWS, STANDARD_RANGES, type StageView } from '@motius/shared'
 import {
   DEFAULT_SPAN,
   shiftWindow,
   windowForSpan,
   type KeyboardWindow,
-} from '@/features/keyboard/keyboard-layout'
+} from '@/lib/keyboard-layout'
 
 /**
  * How the instrument is being looked at: which stretch of the keyboard is on
@@ -30,10 +30,23 @@ export const AUTO_SPAN = 'auto'
  * falling toward the keys that play them. Chosen from the bar, and kept: on
  * every screen, and the next time the app is opened.
  */
-export const STAGE_VIEWS = ['staff', 'falling'] as const
-export type StageView = (typeof STAGE_VIEWS)[number]
+// One list of views, in the contract, which lesson settings use too.
+export { STAGE_VIEWS, type StageView }
 
 const STAGE_VIEW_KEY = 'motius.stage-view'
+const HANDS_KEY = 'motius.hands'
+/** Where the hands were kept when only songs had them. Read once, so a choice made then holds. */
+const OLD_HANDS_KEY = 'motius.songs.hands'
+
+function storedHands(): boolean {
+  try {
+    const value =
+      globalThis.localStorage?.getItem(HANDS_KEY) ?? globalThis.localStorage?.getItem(OLD_HANDS_KEY)
+    return value === 'on'
+  } catch {
+    return false
+  }
+}
 
 function storedStageView(): StageView {
   try {
@@ -50,12 +63,15 @@ interface ViewState {
   spanId: string
   follow: boolean
   stageView: StageView
+  /** See-through hands over the keys, playing the music's fingering where it has one. */
+  hands: boolean
   window: KeyboardWindow
   autoSpanLabel: string
 
   setSpanId: (spanId: string) => void
   setFollow: (follow: boolean) => void
   setStageView: (view: StageView) => void
+  setHands: (on: boolean) => void
   setWindow: (update: KeyboardWindow | ((current: KeyboardWindow) => KeyboardWindow)) => void
   shiftOctave: (octaves: number) => void
   setAutoSpanLabel: (label: string) => void
@@ -65,6 +81,7 @@ export const useViewStore = create<ViewState>((set) => ({
   spanId: AUTO_SPAN,
   follow: true,
   stageView: storedStageView(),
+  hands: storedHands(),
   window: windowForSpan(DEFAULT_SPAN, STANDARD_RANGES[DEFAULT_SPAN.keyCount].low),
   autoSpanLabel: DEFAULT_SPAN.label,
 
@@ -77,6 +94,14 @@ export const useViewStore = create<ViewState>((set) => ({
       // Not kept past this visit, which is all that is lost.
     }
     set({ stageView })
+  },
+  setHands: (hands) => {
+    try {
+      globalThis.localStorage?.setItem(HANDS_KEY, hands ? 'on' : 'off')
+    } catch {
+      // Not kept past this visit, which is all that is lost.
+    }
+    set({ hands })
   },
   setWindow: (update) =>
     set((state) => ({ window: typeof update === 'function' ? update(state.window) : update })),

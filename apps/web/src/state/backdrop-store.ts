@@ -11,7 +11,9 @@ import { create } from 'zustand'
  * A list from the start, though it has one film in it: adding another is an
  * entry here and a file in `public/backdrops`.
  */
-export const BACKDROPS = [{ id: 'fireplace', label: 'Fireplace', file: 'fireplace.mp4' }] as const
+export const BACKDROPS = [
+  { id: 'fireplace', label: 'Fireplace', file: 'fireplace.mp4', poster: 'fireplace-poster.webp' },
+] as const
 
 export type Backdrop = (typeof BACKDROPS)[number]['id']
 /** What is chosen: one of the films, or nothing. */
@@ -23,8 +25,14 @@ export const isBackdropChoice = (value: unknown): value is BackdropChoice =>
   value === 'none' || BACKDROPS.some((backdrop) => backdrop.id === value)
 
 /** Where a film is served from. Under the app's base, like the built-in songs. */
+const backdropOf = (id: Backdrop) => BACKDROPS.find((backdrop) => backdrop.id === id)!
+
 export const backdropUrl = (id: Backdrop): string =>
-  `${import.meta.env.BASE_URL}backdrops/${BACKDROPS.find((backdrop) => backdrop.id === id)!.file}`
+  `${import.meta.env.BASE_URL}backdrops/${backdropOf(id).file}`
+
+/** A still of it, shown until the film can play. */
+export const backdropPosterUrl = (id: Backdrop): string =>
+  `${import.meta.env.BASE_URL}backdrops/${backdropOf(id).poster}`
 
 function stored(): BackdropChoice {
   try {

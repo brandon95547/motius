@@ -3,9 +3,11 @@ import { clampVelocity, WRONG_NOTE_FLASH_MS } from '@motius/shared'
 import { useAudio } from '@/audio/AudioProvider'
 import { keyboardActions, useKeyboardStore } from '@/state/keyboard-store'
 import { learningActions, useLearningStore, type KeyRole } from '@/state/learning-store'
-import { HandsOverlay } from '@/features/hands/HandsOverlay'
+import { HandsOverlay } from '@/features/keyboard/hands/HandsOverlay'
+import { useKeyAnnotations } from './key-annotations'
 import { PianoKey } from './PianoKey'
-import { buildLayout, type KeyboardLayout, type KeyboardWindow } from './keyboard-layout'
+import { NoteNamesAbove } from './NoteNamesAbove'
+import { buildLayout, type KeyboardLayout, type KeyboardWindow } from '@/lib/keyboard-layout'
 
 /**
  * The keybed.
@@ -122,12 +124,13 @@ export function PianoKeyboard({ window: keyWindow, className }: PianoKeyboardPro
     // The learning session is told directly rather than by watching the
     // keyboard store, so a chord played in one frame arrives as three notes
     // instead of as whichever one happened to land last.
-    learningActions.noteOn(note)
+    learningActions.noteOn(note, velocity)
   }, [])
 
   const release = React.useCallback((note: number) => {
     keyboardActions.noteOff(note)
     audioRef.current.noteOff(note)
+    learningActions.noteOff(note)
   }, [])
 
   const velocityFor = React.useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
@@ -298,6 +301,7 @@ export function PianoKeyboard({ window: keyWindow, className }: PianoKeyboardPro
         <RangeEdges window={keyWindow} />
         <HandsOverlay layout={layout} />
         {keyLabels === 'fingers' && <FingerBadges layout={layout} />}
+        {keyLabels === 'notes' && <NoteNamesAbove layout={layout} />}
       </div>
     </div>
   )
@@ -315,11 +319,8 @@ export function PianoKeyboard({ window: keyWindow, className }: PianoKeyboardPro
  * not report which finger played it, and Motius does not pretend otherwise.
  */
 function FingerBadges({ layout }: { layout: KeyboardLayout }) {
-  // The same switch every key makes. Reading only the scale annotations left
-  // the badges empty for songs no matter what the song knew.
-  const annotations = useLearningStore((state) =>
-    state.topic === 'songs' ? state.songAnnotations : state.annotations,
-  )
+  // The same choice every key makes (`key-annotations.ts`).
+  const annotations = useKeyAnnotations()
 
   const badges = React.useMemo(() => {
     const all = [

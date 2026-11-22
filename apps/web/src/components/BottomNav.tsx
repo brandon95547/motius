@@ -1,6 +1,6 @@
 import { cn } from '@/lib/cn'
 import { pageActions, usePageStore } from '@/state/page-store'
-import { DESTINATIONS, HOME } from '@/features/areas/areas'
+import { DESTINATIONS, HOME } from '@/lib/outline/outline'
 
 /**
  * The places at the top of the app that are not cards on the dashboard, in one

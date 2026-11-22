@@ -73,7 +73,7 @@ export const SongScore = React.memo(function SongScore() {
    * at, and Sheet and Flow must agree about what the page says.
    *
    * The finger stays on every note either way. This decides what the staff
-   * prints; the hand card and the keys still show whatever is under them.
+   * prints; the keys and the hands still show whatever is under them.
    */
   const hints = React.useMemo(() => {
     if (!song || density === 'off') return new Set<SongNote>()

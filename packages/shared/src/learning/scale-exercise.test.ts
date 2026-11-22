@@ -3,17 +3,16 @@ import { noteName } from '../midi/notes.js'
 import {
   buildScaleExercise,
   CHROMATIC_INTERVALS,
-  DEFAULT_PLAYABLE_RANGE,
-  DEFAULT_SCALE_SPEC,
   inEvenNotes,
   scaleHasCadence,
   scaleMotionsFor,
   scaleTexturesFor,
   type ScaleExerciseOptions,
-  type ScaleSpec,
 } from './scale-exercise.js'
 import { isInExercise, stepBeats } from './exercise.js'
 import { SCALE_TYPES } from '../music/scales.js'
+import { DEFAULT_PLAYABLE_RANGE, DEFAULT_SCALE_SPEC } from './practice-defaults.js'
+import type { ScaleSpec } from './practice-specs.js'
 
 const build = (spec: Partial<ScaleSpec> = {}, options: ScaleExerciseOptions = {}) =>
   buildScaleExercise({ ...DEFAULT_SCALE_SPEC, ...spec }, options)

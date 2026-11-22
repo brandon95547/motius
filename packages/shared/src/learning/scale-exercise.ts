@@ -1,4 +1,3 @@
-import { z } from 'zod'
 import { normalisePitchClass } from '../music/pitch.js'
 import {
   findScaleType,
@@ -19,9 +18,11 @@ import {
   type FingeringSystemId,
   type ScaleForm,
 } from '../music/fingering-system.js'
-import type { NoteRange } from '../domain/device.js'
+import type { NoteRange } from '../domain/device-schemas.js'
 import { tetrachords } from '../music/theory.js'
 import type { Exercise, ExerciseFingering, ExerciseMeter, ExerciseStep } from './exercise.js'
+import { DEFAULT_PLAYABLE_RANGE, DEFAULT_PRACTICE_BPM } from './practice-defaults.js'
+import type { ScaleSpec } from './practice-specs.js'
 
 /**
  * Turns a scale request into a generic exercise.
@@ -252,46 +253,6 @@ const CONTRARY_DIRECTION_LABELS: Record<ScaleDirection, string> = {
 /** Which hand a cue belongs to, once there are two it could be. */
 const HAND_CUE_PREFIX: Record<Hand, string> = { right: 'Right', left: 'Left' }
 
-export const scaleSpecSchema = z.object({
-  kind: z.literal('scale'),
-  rootPitchClass: z.number().int().min(0).max(11),
-  /**
-   * Which of the key's names it is written under — `E♭` rather than `D♯`.
-   *
-   * Left out, the scale takes its usual name. Named, because two keys on the
-   * same piano keys are still two keys: different signatures, different
-   * spellings, and in a method book, different pages.
-   */
-  tonic: z.string().optional(),
-  scaleTypeId: z.string().min(1),
-  hand: z.enum(SCALE_HANDS),
-  /** How the two hands move against each other. Similar motion when left out. */
-  motion: z.enum(SCALE_MOTIONS).optional(),
-  /** What each hand plays. Single notes when left out. */
-  texture: z.enum(SCALE_TEXTURES).optional(),
-  /** How far apart the hands of a chromatic scale are. An octave when left out. */
-  apart: z.enum(CHROMATIC_INTERVALS).optional(),
-  /**
-   * Close with I – IV – V – I, as a scale book ends each scale. Only where
-   * the scale comes back down to finish on its tonic.
-   */
-  cadence: z.boolean().optional(),
-  /** How many notes to a beat. One when left out. */
-  notesPerBeat: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]).optional(),
-  octaves: z.number().int().min(1).max(4),
-  direction: z.enum(SCALE_DIRECTIONS),
-})
-export type ScaleSpec = z.infer<typeof scaleSpecSchema>
-
-export const DEFAULT_SCALE_SPEC: ScaleSpec = {
-  kind: 'scale',
-  rootPitchClass: 9, // A
-  scaleTypeId: 'natural-minor',
-  hand: 'right',
-  octaves: 2,
-  direction: 'up',
-}
-
 /**
  * Where to place the root.
  *
@@ -318,12 +279,6 @@ export const DEFAULT_SCALE_SPEC: ScaleSpec = {
  * that one runs off the bottom of a 61 — it needs the bigger keyboard anyway.
  */
 const PREFERRED_START = 58.5 // midway through F3-E4, so no two octaves tie
-
-/**
- * The keys an exercise may use, unless it is told about a bigger keyboard: a
- * 61-key instrument, C2 to C7, which is also the default view.
- */
-export const DEFAULT_PLAYABLE_RANGE: NoteRange = { low: 36, high: 96 }
 
 /**
  * The two minor keys the Brown Scale Book starts an octave above the rule.
@@ -1018,6 +973,6 @@ export function buildScaleExercise(spec: ScaleSpec, options: ScaleExerciseOption
       source: fingering.source,
       ...(perStep > 1 ? { perStep } : {}),
     })),
-    defaultBpm: 72,
+    defaultBpm: DEFAULT_PRACTICE_BPM,
   }
 }

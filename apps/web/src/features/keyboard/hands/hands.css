@@ -1,0 +1,128 @@
+/* ---- Hands ---------------------------------------------------------------
+   Over the keys and under their finger numbers, so a number reads on the
+   finger that plays it. Drawn in the keybed's own pixels and clipped to it:
+   the wrists are off the front of the keys, where a player's are. Nothing in
+   it takes a pointer — the keys under it are still the keys. */
+.hands {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 5;
+}
+.hands svg {
+  display: block;
+}
+.hand__palm {
+  fill: var(--c-hand-skin);
+  stroke: var(--c-hand-rest);
+  stroke-width: 1.5px;
+  opacity: 0.7;
+}
+.hand__edge,
+.hand__skin {
+  fill: none;
+  stroke-linecap: round;
+}
+.hand__edge {
+  stroke: var(--c-hand-edge);
+}
+.hand__skin {
+  stroke: var(--c-hand-skin);
+}
+.hand__tip {
+  fill: none;
+  stroke: none;
+}
+/* A finger on no key: there, and saying less. */
+.hand__finger[data-state='idle'] {
+  opacity: 0.75;
+}
+.hand__finger[data-state='idle'] .hand__edge {
+  stroke: var(--c-hand-rest);
+}
+/* On its way to a key, or showing which: a ring where it will land. */
+.hand__finger[data-state='ready'] .hand__tip {
+  stroke: var(--c-hand-tip);
+  stroke-width: 1.5px;
+}
+/* Down: the ring filled. */
+.hand__finger[data-state='down'] .hand__tip {
+  fill: var(--c-hand-tip);
+}
+
+/* ---- Finger badges -------------------------------------------------------
+   In their own layer above every key. A badge drawn inside a white key would
+   be hidden by the black keys that overlap it, and a badge inside a black key
+   would be 12px wide. */
+.key-badges {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 100%;
+  pointer-events: none;
+  z-index: 6;
+}
+
+.key-badge {
+  position: absolute;
+  /* Down on the part of the key a finger actually lands on, clear of the black
+     keys — which end at 62% — and above the note name. Up at the top the number
+     floated in the black-key band, reading as a label for the keyboard rather
+     than for one key. A percentage because the keybed's height follows its
+     width, so this holds its place on a phone and on a wide desktop.
+
+     Not flush under the black keys either: sitting right against their ends
+     made the number look attached to the black key above it. */
+  top: 70%;
+  transform: translate(-50%, -50%);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  /* A numeral on the key, not a pill on top of it. */
+  color: var(--c-key-numeral);
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+
+/* A black key's number cannot follow the white ones down: at 70% it would have
+   left the bottom of its own key and be sitting in the gap between the two
+   white keys it divides, next to their numbers and claimed by neither. It goes
+   low on the black key instead — same idea, the key it has. */
+.key-badge[data-black='true'] {
+  top: 50%;
+  font-size: 11px;
+  color: var(--c-key-numeral-black);
+}
+
+/* The key underneath is filled: in blue as the current target, in the accent
+   while it is held down. A dark numeral on the accent measures 3.8:1, under AA
+   at this size; white clears both, at 5.5:1 on the blue and 4.8:1 on the accent. */
+.key-badge[data-role='target'],
+.key-badge[data-active='true'] {
+  color: var(--c-key-press-fg);
+}
+
+/* The cue that arrives with the note it applies to. Anchored to the key rather
+   than parked in a panel, because "thumb under" is about THIS key and reading
+   it three inches away at the wrong moment is no use. */
+.key-cue {
+  position: absolute;
+  /* Between its number and the note name. Both cues are two words, so it wraps
+     to two lines inside the key's width rather than spilling over the
+     neighbours the way a nowrap pill did. */
+  top: 81.5%;
+  transform: translate(-50%, -50%);
+  width: 5ch;
+  text-align: center;
+  white-space: normal;
+  text-wrap: balance;
+  padding: 0;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  background: none;
+  color: var(--c-key-cue);
+  box-shadow: none;
+}

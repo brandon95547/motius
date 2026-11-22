@@ -97,7 +97,7 @@ describe('the tempo', () => {
 })
 
 function Mode({ onChange }: { onChange: (mode: string) => void }) {
-  const [mode, setMode] = React.useState('explore')
+  const [mode, setMode] = React.useState('listen')
   return (
     <BarTabs
       label="Mode"
@@ -107,7 +107,7 @@ function Mode({ onChange }: { onChange: (mode: string) => void }) {
         setMode(next)
       }}
       options={[
-        { value: 'explore', label: 'Explore', icon: <Compass />, description: 'Play freely.' },
+        { value: 'listen', label: 'Explore', icon: <Compass />, description: 'Play freely.' },
         { value: 'learn', label: 'Learn', icon: <GraduationCap /> },
       ]}
     />
@@ -137,7 +137,7 @@ describe('the mode tabs', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Learn' }))
     expect(onChange).toHaveBeenLastCalledWith('learn')
     fireEvent.keyDown(screen.getByRole('radio', { name: 'Learn' }), { key: 'ArrowRight' })
-    expect(onChange).toHaveBeenLastCalledWith('explore')
+    expect(onChange).toHaveBeenLastCalledWith('listen')
   })
 })
 

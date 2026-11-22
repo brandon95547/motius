@@ -1,21 +1,9 @@
 import * as React from 'react'
-import {
-  BookOpen,
-  Compass,
-  GraduationCap,
-  Headphones,
-  Pause,
-  Play,
-  RotateCcw,
-  Target,
-  type LucideIcon,
-} from 'lucide-react'
+import { OptionGroup } from '@/ui/Surface'
+import { BookOpen, GraduationCap, Headphones, Target, type LucideIcon } from 'lucide-react'
 import {
   CHROMATIC_INTERVAL_LABELS,
   CHROMATIC_INTERVALS,
-  LEARNING_MODE_DESCRIPTIONS,
-  LEARNING_MODE_LABELS,
-  LEARNING_MODES,
   NOTES_PER_BEAT,
   NOTES_PER_BEAT_LABELS,
   SCALE_DIRECTIONS,
@@ -40,21 +28,13 @@ import {
   type ScaleSpec,
   type ScaleTexture,
 } from '@motius/shared'
-import { cn } from '@/lib/cn'
+import { Button } from '@/ui/Button'
 import { Combobox, Field, SegmentedControl, Select, Switch } from '@/ui/Controls'
 import { Divider } from '@/ui/Display'
-import { BarButton } from '@/ui/BarButton'
-import { BarTabs } from '@/ui/BarTabs'
-import { TempoField } from '@/ui/TempoField'
-import { useMidi } from '@/midi/MidiProvider'
-import { useFallingStore } from '@/state/falling-store'
 import { useLearningStore } from '@/state/learning-store'
-import { useViewStore } from '@/state/view-store'
 import { panelActions } from '@/state/panel-store'
 import { useMetronome } from '@/audio/use-metronome'
 import { playSoundEffect, stopSoundEffect } from '@/audio/sound-effects'
-import { useScaleDemo } from './use-scale-demo'
-import { MetronomeIcon } from '@/ui/MetronomeIcon'
 
 /**
  * The Scales controls: what the bar carries, and what the options panel holds.
@@ -159,7 +139,7 @@ export const DIRECTION_SHORT: Record<ScaleDirection, string> = {
   'up-down': 'Up & Down',
 }
 
-/** What an exercise is called in a sentence: "Hear the scale", "the arpeggio". */
+/** What an exercise is called in a sentence: "Play the scale", "the arpeggio". */
 export const EXERCISE_NOUNS: Record<ExerciseKind, string> = {
   scale: 'scale',
   chord: 'chords',
@@ -168,9 +148,16 @@ export const EXERCISE_NOUNS: Record<ExerciseKind, string> = {
   exercise: 'exercise',
 }
 
-/** Shared with Songs, so a mode looks the same wherever it is chosen. */
+const NOTES_PER_BEAT_WORDS: Record<NotesPerBeat, string> = {
+  1: 'once',
+  2: 'twice',
+  3: 'three times',
+  4: 'four times',
+}
+
+/** One per mode, wherever a mode is chosen, so it looks the same everywhere. */
 export const MODE_ICONS: Record<LearningMode, LucideIcon> = {
-  explore: Compass,
+  listen: Headphones,
   learn: GraduationCap,
   practice: Target,
 }
@@ -191,31 +178,12 @@ function rootOptions(scaleTypeId: string, selected: { pitchClass: number; tonic?
   }))
 }
 
-/**
- * Tells the exercises which keys the player actually has.
- *
- * So that an exercise is placed where the book prints it when the keyboard
- * reaches that far: A major in contrary motion goes down to the A at the very
- * bottom of an 88, which a 61-key instrument does not have. With nothing
- * plugged in it is a 61-key instrument's: every exercise then fits the smallest
- * keyboard most players own, and the keyboard on screen shows at least that.
- */
-export function KeyboardRangeSync() {
-  const { connectedPorts } = useMidi()
-  const low = Math.min(...connectedPorts.flatMap((port) => port.device?.config.range.low ?? []))
-  const high = Math.max(...connectedPorts.flatMap((port) => port.device?.config.range.high ?? []))
-  const setPlayableRange = useLearningStore((state) => state.setPlayableRange)
-  React.useEffect(() => {
-    setPlayableRange(Number.isFinite(low) && Number.isFinite(high) ? { low, high } : null)
-  }, [low, high, setPlayableRange])
-  return null
-}
-
 /** Runs whatever the Scales bar needs running, wherever its buttons happen to be. */
 export function ScaleEngine() {
   const metronome = useLearningStore((state) => state.metronome)
   const bpm = useLearningStore((state) => state.targetBpm)
   const status = useLearningStore((state) => state.session.status)
+  const lesson = useLearningStore((state) => state.topic === 'lesson')
   // The bar the click accents is the exercise's own, where it states one.
   const beatsPerBar = useLearningStore((state) => state.exercise?.meter?.beats ?? 4)
   const pulseEpoch = useLearningStore((state) => state.pulseEpoch)
@@ -226,13 +194,28 @@ export function ScaleEngine() {
   // run fades out whatever is left of it rather than playing over the start.
   const previous = React.useRef(status)
   React.useEffect(() => {
-    if (status === 'complete' && previous.current === 'running') playSoundEffect('success')
+    // A lesson chooses its own: the badge's sound, or this one (`LessonFanfare`).
+    if (status === 'complete' && previous.current === 'running' && !lesson)
+      playSoundEffect('success')
     if (status === 'running') stopSoundEffect('success')
     previous.current = status
-  }, [status])
+  }, [status, lesson])
+
+  // A long note being held counts once it has been held long enough: time is
+  // told to the run only while one is (`holdTick`).
+  const holding = useLearningStore((state) => state.session.holding !== null)
+  const holdTick = useLearningStore((state) => state.holdTick)
+  React.useEffect(() => {
+    if (!holding) return
+    const timer = globalThis.setInterval(holdTick, HOLD_TICK_MS)
+    return () => globalThis.clearInterval(timer)
+  }, [holding, holdTick])
 
   return null
 }
+
+/** How often a held long note is checked: often enough that it moves on as the bar ends. */
+const HOLD_TICK_MS = 50
 
 /**
  * Everything about the scale that is practised, for the options panel: which
@@ -338,7 +321,7 @@ export function ScaleOptions() {
         {/* How two hands are set against each other, so asked only of two. */}
         {spec.hand === 'both' && (
           <Field label="Motion" hint={PLAYING_DESCRIPTIONS[playing]}>
-            <RadioGrid<ScaleMotion>
+            <SegmentedControl<ScaleMotion>
               label="Motion"
               columns={2}
               value={playing as ScaleMotion}
@@ -386,7 +369,7 @@ export function ScaleOptions() {
       <Divider />
       <OptionGroup>
         <Field label="Played in" hint={TEXTURE_DESCRIPTIONS[texture]}>
-          <RadioGrid<ScaleTexture>
+          <SegmentedControl<ScaleTexture>
             label="Played in"
             columns={2}
             value={texture}
@@ -470,306 +453,18 @@ export function ScaleOptions() {
   )
 }
 
-/** Settings that go together, in the options panel: a field's gap apart. */
-export function OptionGroup({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-col gap-3">{children}</div>
-}
-
 /** The way from an area's options to the theory of what is on the keys. */
 export function TheoryLink({ children }: { children: React.ReactNode }) {
   return (
-    <button
-      type="button"
-      className="inline-flex items-center gap-2 self-start text-label text-[var(--ds-accent-text)] underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ds-focus-ring)]"
+    <Button
+      variant="text"
+      size="sm"
+      className="self-start"
+      startIcon={<BookOpen size={15} aria-hidden />}
       // The theory is a panel of its own, and takes this one's place.
       onClick={() => panelActions.open('theory')}
     >
-      <BookOpen size={15} aria-hidden />
       {children}
-    </button>
-  )
-}
-
-/**
- * A grid of choices, one of which is on — the motions, the ways a scale is
- * played.
- *
- * One Tab stop for the group and arrow keys inside it, the way a radio group
- * works everywhere else; six choices that were each a Tab stop would put the
- * next setting six presses away. The arrows step over a choice that is not on
- * offer, and hovering it says why it is not.
- */
-export function RadioGrid<T extends string | number>({
-  label,
-  value,
-  options,
-  onChange,
-  columns,
-}: {
-  /** The group's accessible name. A visible label is the `Field` round it. */
-  label: string
-  value: T
-  options: readonly { value: T; label: string; disabled?: boolean; title?: string }[]
-  onChange: (value: T) => void
-  columns: number
-}) {
-  const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    const group = event.currentTarget
-    const step =
-      event.key === 'ArrowRight' || event.key === 'ArrowDown'
-        ? 1
-        : event.key === 'ArrowLeft' || event.key === 'ArrowUp'
-          ? -1
-          : 0
-    if (step === 0) return
-    event.preventDefault()
-    const offered = options.filter((option) => !option.disabled)
-    const index = offered.findIndex((option) => option.value === value)
-    const next = offered[(index + step + offered.length) % offered.length]
-    if (!next) return
-    onChange(next.value)
-    // The chosen button is re-rendered as the Tab stop; move focus onto it.
-    requestAnimationFrame(() =>
-      group.querySelector<HTMLButtonElement>(`[data-value="${String(next.value)}"]`)?.focus(),
-    )
-  }
-
-  return (
-    <div
-      role="radiogroup"
-      aria-label={label}
-      className="choice-grid"
-      style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
-      onKeyDown={onKeyDown}
-    >
-      {options.map((option) => {
-        const checked = option.value === value
-        return (
-          <button
-            key={String(option.value)}
-            type="button"
-            role="radio"
-            aria-checked={checked}
-            data-value={String(option.value)}
-            tabIndex={checked ? 0 : -1}
-            disabled={option.disabled}
-            title={option.title}
-            className={cn('choice', checked && 'choice--on')}
-            onClick={() => onChange(option.value)}
-          >
-            {option.label}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
-/**
- * Explore, Learn or Practice, side by side on the bar.
- *
- * It was an icon that opened a menu, and the icon was the only sign of which
- * mode the screen was in. The three are few enough to show.
- */
-export function ModeTabs() {
-  const mode = useLearningStore((state) => state.mode)
-  const setMode = useLearningStore((state) => state.setMode)
-  return (
-    <BarTabs<LearningMode>
-      label="Mode"
-      value={mode}
-      onChange={setMode}
-      options={LEARNING_MODES.map((option) => {
-        const Icon = MODE_ICONS[option]
-        return {
-          value: option,
-          label: LEARNING_MODE_LABELS[option],
-          icon: <Icon size={18} />,
-          description: LEARNING_MODE_DESCRIPTIONS[option],
-        }
-      })}
-    />
-  )
-}
-
-/** The range the store keeps the target tempo in. */
-const MIN_BPM = 30
-const MAX_BPM = 208
-
-const NOTES_PER_BEAT_WORDS: Record<NotesPerBeat, string> = {
-  1: 'once',
-  2: 'twice',
-  3: 'three times',
-  4: 'four times',
-}
-
-/** The target tempo: on the bar, and in Settings for a bar too narrow to hold it. */
-export function TempoControl({ className, panel }: { className?: string; panel?: boolean }) {
-  const bpm = useLearningStore((state) => state.targetBpm)
-  const setTargetBpm = useLearningStore((state) => state.setTargetBpm)
-  // A divided beat is part of how fast the scale goes, so the tooltip says it.
-  const divided = useLearningStore((state) =>
-    state.topic === 'scales' && (state.spec.notesPerBeat ?? 1) > 1
-      ? NOTES_PER_BEAT_LABELS[state.spec.notesPerBeat ?? 1].toLowerCase()
-      : undefined,
-  )
-  return (
-    <TempoField
-      value={bpm}
-      min={MIN_BPM}
-      max={MAX_BPM}
-      onChange={setTargetBpm}
-      detail={divided}
-      panel={panel}
-      className={className}
-    />
-  )
-}
-
-export function MetronomeToggle({ className }: { className?: string }) {
-  const on = useLearningStore((state) => state.metronome)
-  const bpm = useLearningStore((state) => state.targetBpm)
-  const setMetronome = useLearningStore((state) => state.setMetronome)
-  return (
-    <button
-      type="button"
-      className={cn('bar-icon-button', className)}
-      aria-pressed={on}
-      aria-label={on ? `Metronome on, ${bpm} BPM` : `Metronome off, ${bpm} BPM`}
-      title={on ? 'Metronome on' : 'Metronome'}
-      onClick={() => setMetronome(!on)}
-    >
-      <MetronomeIcon />
-    </button>
-  )
-}
-
-/**
- * Hear the scale before you try to play it.
- *
- * Kept mounted in the bar at every width: the demonstration's state lives in
- * this component's hook, and a button tucked inside a menu that closes would
- * stop the scale mid-phrase.
- *
- * Headphones rather than a play triangle: Start is a play triangle, one button
- * along, and two of them side by side ask which one begins the run.
- */
-export function DemoButton() {
-  const running = useLearningStore((state) => state.session.status === 'running')
-  // What is about to be heard, in the words of the area it is in.
-  const what = useLearningStore((state) => EXERCISE_NOUNS[state.exercise?.kind ?? 'scale'])
-  const demo = useScaleDemo()
-  const playing = demo.status === 'playing'
-  // The label is the tooltip too, so a disabled button says why it is off
-  // instead of leaving a dead control to be puzzled over.
-  const label = running
-    ? `Stop the run to hear the ${what}`
-    : playing
-      ? 'Pause'
-      : demo.status === 'paused'
-        ? `Resume the ${what}`
-        : `Hear the ${what}`
-
-  return (
-    <button
-      type="button"
-      className="bar-icon-button"
-      aria-label={label}
-      title={label}
-      disabled={running || !demo.available}
-      onClick={demo.toggle}
-    >
-      {playing ? <Pause size={18} aria-hidden /> : <Headphones size={18} aria-hidden />}
-    </button>
-  )
-}
-
-/**
- * Start, or Stop while a run is going.
- *
- * Explore has nothing to start — the scale is already lit and the keyboard is
- * already yours — so there the button is off, and says why. It keeps its place
- * rather than giving it up: the mode tabs sit to its left, and a button that
- * came and went would slide them out from under the press that changed them.
- *
- * With falling notes the music moves, and can stand still: during a run the
- * button is Pause and Go on, as a player's is, and going back to the start is
- * its own button beside it.
- */
-export function StartButton() {
-  const mode = useLearningStore((state) => state.mode)
-  const running = useLearningStore((state) => state.session.status === 'running')
-  const start = useLearningStore((state) => state.start)
-  const reset = useLearningStore((state) => state.reset)
-  const playable = useLearningStore((state) => state.topic !== 'songs' && state.exercise !== null)
-  const fallingView = useViewStore((state) => state.stageView === 'falling')
-  const falling = playable && fallingView
-  const paused = useFallingStore((state) => state.paused)
-  const setPaused = useFallingStore((state) => state.setPaused)
-
-  if (falling && running)
-    return (
-      <>
-        <BarButton
-          look="icon"
-          label="Back to the start"
-          icon={<RotateCcw size={18} aria-hidden />}
-          onClick={reset}
-        />
-        <BarButton
-          look="start"
-          label={paused ? 'Go on' : 'Pause'}
-          icon={paused ? <Play size={18} aria-hidden /> : <Pause size={18} aria-hidden />}
-          onClick={() => setPaused(!paused)}
-        />
-      </>
-    )
-
-  return (
-    <StartStopButton
-      running={running}
-      onStart={start}
-      onStop={reset}
-      unavailable={
-        mode === 'explore' ? 'Explore is always on: there is nothing to start' : undefined
-      }
-    />
-  )
-}
-
-/**
- * The learn-mode Start, as an icon: play to begin, back-to-the-top while the
- * run is going. Both states are the same square, so pressing it does not shift
- * the rest of the bar. Not a stop square: Record, one button along, turns into
- * one while it records, and two of them side by side ask which one ends what.
- * Shared with Songs, whose Learn works the same way.
- */
-export function StartStopButton({
-  running,
-  onStart,
-  onStop,
-  unavailable,
-}: {
-  running: boolean
-  onStart: () => void
-  onStop: () => void
-  /** Why there is nothing to start, where there is not. The button's name while it is off. */
-  unavailable?: string
-}) {
-  return running ? (
-    <BarButton
-      look="stop"
-      label="Stop"
-      icon={<RotateCcw size={18} aria-hidden />}
-      onClick={onStop}
-    />
-  ) : (
-    <BarButton
-      look="start"
-      label={unavailable ?? 'Start'}
-      icon={<Play size={18} aria-hidden />}
-      disabled={unavailable !== undefined}
-      onClick={onStart}
-    />
+    </Button>
   )
 }

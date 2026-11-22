@@ -1,0 +1,46 @@
+/* ---- Signing in ----------------------------------------------------------
+   The way in, before anything else: the room behind, and one card with
+   Google's button. */
+.sign-in {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: 24px;
+  background-color: var(--c-bar);
+}
+.sign-in__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: min(100%, 26rem);
+  padding: 40px 32px;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--radius-2xl);
+  background-color: var(--c-bar-raised);
+  box-shadow: var(--shadow-e5);
+  text-align: center;
+  color: var(--ds-fg);
+}
+.sign-in__title {
+  font-size: var(--text-h2);
+  line-height: var(--text-h2--line-height);
+  font-weight: var(--text-h2--font-weight);
+}
+.sign-in__line {
+  color: var(--ds-fg-secondary);
+}
+/* Google's button is 44px tall: its room is kept before it arrives. */
+.sign-in__google {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
+}
+.sign-in__note {
+  font-size: var(--text-ui);
+  color: var(--ds-fg-secondary);
+}
+.sign-in__error {
+  color: var(--ds-danger-text);
+}

@@ -4,7 +4,7 @@ import { pageActions, usePageStore, usePageSync } from '@/state/page-store'
 import { useLearningStore } from '@/state/learning-store'
 import { usePanelStore } from '@/state/panel-store'
 import { useSongStore } from '@/state/song-store'
-import { RunMeter } from '@/features/learning/RunMeter'
+import { RunMeter } from '@/ui/RunMeter'
 
 /**
  * The dashboard is the front door, and the address bar is where you are.
@@ -181,7 +181,7 @@ describe('the pages between the dashboard and the areas', () => {
   it('opens a place that is not built by its address, as the page that says so', async () => {
     renderHook(() => usePageSync())
     // The places the bar along the bottom leads to that have nothing in them yet.
-    for (const place of ['lessons', 'progress', 'search']) {
+    for (const place of ['progress', 'search']) {
       globalThis.location.hash = `#/${place}`
       await waitFor(() => expect(usePageStore.getState().category).toBe(place))
       expect(usePageStore.getState()).toMatchObject({ page: 'category', path: [] })

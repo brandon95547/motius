@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { backdropUrl, useBackdropStore } from '@/state/backdrop-store'
+import { backdropPosterUrl, backdropUrl, useBackdropStore } from '@/state/backdrop-store'
 
 /**
  * The film behind the music.
@@ -39,7 +39,9 @@ export function StageBackdrop() {
       muted
       loop
       playsInline
-      preload="auto"
+      // Loaded only once chosen, and then played at once.
+      preload="metadata"
+      poster={backdropPosterUrl(backdrop)}
       disablePictureInPicture
       aria-hidden
       tabIndex={-1}

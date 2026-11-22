@@ -12,6 +12,7 @@ import {
 } from '@motius/shared'
 import { useLearningStore } from '@/state/learning-store'
 import { measureScore, type ScoreSource } from './score'
+import { exerciseMeasures, exerciseRests } from './exercise-bars'
 import { FlowView } from './FlowView'
 import type { Role } from './score-parts'
 
@@ -137,22 +138,27 @@ export const ScaleScore = React.memo(function ScaleScore() {
       // A crotchet at the least gap any note gets: even steps, packed as tight
       // as the ink allows, the way a scale book sets a run.
       barWidth: 160,
+      // A song in a lesson has a pickup or rests to place; a plain scale has neither.
+      ...(meter && {
+        measures: exerciseMeasures(exercise, BEAT_MS),
+        rests: exerciseRests(exercise, BEAT_MS),
+      }),
     }
     // Fingering is carried on every note but printed on none: a scale is one
     // line of single notes, and the numbers belong on the keys (Key labels ▸
     // Fingers) where the finger actually lands. On the staff they were a row of
     // digits under a row of notes, doubling the ink for what the eye has to read.
     return measureScore(source, scaleSteps(exercise), NO_FINGERING)
-  }, [exercise, fifths, beatsPerBar])
+  }, [exercise, fifths, beatsPerBar, meter])
 
   /**
    * Which step is "here" — the same one the keyboard marks.
    *
    * A demonstration's playback head stands in for the player while it runs.
-   * Explore follows nobody, so without one the whole scale is simply written
-   * out, with no playhead claiming a place in it.
+   * Listen follows nobody but the demonstration, so without one the whole
+   * scale is simply written out, with no playhead claiming a place in it.
    */
-  const here = demoStepIndex ?? (mode === 'explore' ? -1 : stepIndex)
+  const here = demoStepIndex ?? (mode === 'listen' ? -1 : stepIndex)
 
   /**
    * Where somebody is actually known to be, which is not the same question.

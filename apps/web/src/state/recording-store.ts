@@ -53,17 +53,33 @@ interface RecordingState {
   discard: () => void
 }
 
-let events: PerformanceEvent[] = []
-let pedalEvents: PedalEvent[] = []
-let startedAt = 0
-let countTimer: number | undefined
-let tickTimer: number | undefined
+/**
+ * The take while it is being played: every note and pedal change as it comes,
+ * and the clocks. Kept beside the store rather than in it, in one place, on
+ * purpose: a note is written here from the keyboard's hot path, and putting
+ * each one through the store would re-render whatever watches it, note by
+ * note. What the screen shows — the status, the count, the length, the
+ * finished take — is the store's.
+ */
+const live = {
+  events: [] as PerformanceEvent[],
+  pedal: [] as PedalEvent[],
+  startedAt: 0,
+  countTimer: undefined as number | undefined,
+  tickTimer: undefined as number | undefined,
+}
 
 const clearTimers = () => {
-  window.clearInterval(countTimer)
-  window.clearInterval(tickTimer)
-  countTimer = undefined
-  tickTimer = undefined
+  window.clearInterval(live.countTimer)
+  window.clearInterval(live.tickTimer)
+  live.countTimer = undefined
+  live.tickTimer = undefined
+}
+
+/** Nothing captured: before a count-in, after a stop, and on discarding. */
+const forget = () => {
+  live.events = []
+  live.pedal = []
 }
 
 export const useRecordingStore = create<RecordingState>((set, get) => ({
@@ -75,23 +91,25 @@ export const useRecordingStore = create<RecordingState>((set, get) => ({
 
   arm: () => {
     clearTimers()
-    events = []
-    pedalEvents = []
+    forget()
     set({ status: 'counting', count: COUNT_FROM, elapsedMs: 0, take: [], pedal: [] })
 
-    countTimer = window.setInterval(() => {
+    live.countTimer = window.setInterval(() => {
       const next = get().count - 1
       if (next > 0) {
         set({ count: next })
         return
       }
-      window.clearInterval(countTimer)
-      countTimer = undefined
-      startedAt = performance.now()
+      window.clearInterval(live.countTimer)
+      live.countTimer = undefined
+      live.startedAt = performance.now()
       set({ status: 'recording', count: 0 })
       // A running clock, once a second: enough to show the length without
       // putting a timer on the same path as the notes.
-      tickTimer = window.setInterval(() => set({ elapsedMs: performance.now() - startedAt }), 250)
+      live.tickTimer = window.setInterval(
+        () => set({ elapsedMs: performance.now() - live.startedAt }),
+        250,
+      )
     }, 1000)
   },
 
@@ -102,11 +120,10 @@ export const useRecordingStore = create<RecordingState>((set, get) => ({
       set({ status: 'idle', count: COUNT_FROM, elapsedMs: 0 })
       return
     }
-    const endMs = performance.now() - startedAt
-    const take = notesFromEvents(events, endMs)
-    const pedal = pedalFromEvents(pedalEvents, endMs)
-    events = []
-    pedalEvents = []
+    const endMs = performance.now() - live.startedAt
+    const take = notesFromEvents(live.events, endMs)
+    const pedal = pedalFromEvents(live.pedal, endMs)
+    forget()
     // A take with nothing in it is not worth a dialog asking what to do with it.
     // Pedal without notes is not a take either — it is a foot resting on it.
     set(
@@ -125,8 +142,7 @@ export const useRecordingStore = create<RecordingState>((set, get) => ({
 
   discard: () => {
     clearTimers()
-    events = []
-    pedalEvents = []
+    forget()
     set({ status: 'idle', count: COUNT_FROM, elapsedMs: 0, take: [], pedal: [] })
   },
 }))
@@ -140,7 +156,7 @@ export const useRecordingStore = create<RecordingState>((set, get) => ({
 export const recordingActions = {
   capture: (note: number, velocity: number, on: boolean) => {
     if (useRecordingStore.getState().status !== 'recording') return
-    events.push({ note, velocity, on, at: performance.now() - startedAt })
+    live.events.push({ note, velocity, on, at: performance.now() - live.startedAt })
   },
 
   /**
@@ -152,6 +168,6 @@ export const recordingActions = {
    */
   capturePedal: (down: boolean) => {
     if (useRecordingStore.getState().status !== 'recording') return
-    pedalEvents.push({ down, at: performance.now() - startedAt })
+    live.pedal.push({ down, at: performance.now() - live.startedAt })
   },
 }

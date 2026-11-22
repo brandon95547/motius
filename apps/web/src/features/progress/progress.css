@@ -1,0 +1,510 @@
+/* Progress: the records of what has been played. The dashboard's room and
+   cards; a row per run or per piece, which opens it. On a phone a row is its
+   name over its score; from a tablet up, side by side. */
+.progress {
+  gap: 28px;
+}
+.progress__totals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.progress__total {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
+  padding: 16px;
+  border: 1px solid var(--c-dash-card-edge);
+  border-radius: var(--radius-lg);
+  background-color: var(--c-dash-card);
+}
+.progress__total dt {
+  font-size: var(--text-label);
+  color: var(--c-dash-body);
+}
+.progress__total dd {
+  font-size: var(--text-h2);
+  font-weight: 600;
+  color: var(--c-dash-ink);
+}
+.progress__group,
+.progress__empty {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.progress__empty {
+  padding: 24px;
+  border: 1px solid var(--c-dash-card-edge);
+  border-radius: var(--radius-xl);
+  background-color: var(--c-dash-card);
+}
+/* Starting over: two choices, each a card with a radio, the danger one marked. */
+.reset-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.reset-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+}
+.reset-choice:hover {
+  background-color: var(--ds-layer-hover);
+}
+.reset-choice:has(input:checked) {
+  border-color: var(--ds-accent);
+  background-color: var(--ds-layer-selected);
+}
+.reset-choice[data-danger='true']:has(input:checked) {
+  border-color: var(--ds-danger-border);
+  background-color: var(--ds-danger-subtle);
+}
+.reset-choice input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  accent-color: var(--ds-accent);
+}
+.reset-choice__text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.reset-choice__title {
+  font-weight: 600;
+}
+.reset-choice__about {
+  color: var(--ds-fg-secondary);
+}
+.progress__title {
+  font-size: var(--text-h4);
+  font-weight: 600;
+  color: var(--c-dash-ink);
+}
+.progress__line {
+  font-size: var(--text-body);
+  color: var(--c-dash-body);
+}
+.progress__list {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--c-dash-card-edge);
+  border-radius: var(--radius-lg);
+  background-color: var(--c-dash-card);
+}
+.progress__list > li + li {
+  border-top: 1px solid var(--c-dash-card-edge);
+}
+.progress__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 16px;
+  text-align: left;
+  color: var(--c-dash-ink);
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+.progress__row:hover {
+  background-color: var(--c-dash-tile);
+}
+.progress__row:focus-visible {
+  outline: 2px solid var(--ds-focus-ring);
+  outline-offset: -2px;
+}
+.progress__what {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+.progress__name {
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+.progress__about,
+.progress__score {
+  font-size: var(--text-body-sm);
+  color: var(--c-dash-body);
+}
+.progress__score {
+  grid-column: 1;
+}
+.progress__open {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  color: var(--c-dash-quiet);
+}
+@media (min-width: 40rem) {
+  .progress__row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+  .progress__score {
+    grid-column: 2;
+    text-align: right;
+  }
+  .progress__open {
+    grid-column: 3;
+    grid-row: 1;
+  }
+}
+
+/* ---- Where the player stands, and what they are aiming for ------------------
+   The title and the course, the streak and the weekly goal, then every badge:
+   cards on the dashboard's surface, the lessons' violet for what is earned. */
+.standing,
+.habit,
+.journey,
+.badges {
+  border: 1px solid var(--c-dash-card-edge);
+  border-radius: var(--radius-xl);
+  background-color: var(--c-dash-card);
+}
+.standing {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px 20px;
+  padding: 20px;
+}
+.standing__body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.standing__eyebrow {
+  font-size: var(--text-label);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-dash-body);
+}
+.standing__title {
+  font-family: var(--font-display);
+  font-size: var(--text-h1);
+  line-height: 1.1;
+  color: var(--c-dash-ink);
+}
+.standing__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.standing__level {
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  background-color: var(--c-badge-locked);
+  font-size: var(--text-label);
+  font-weight: 600;
+  color: var(--c-lessons);
+}
+.standing__meter,
+.habit__meter {
+  --fill: 0%;
+  position: relative;
+  flex: 1 1 8rem;
+  height: 8px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background-color: var(--c-badge-locked);
+}
+.standing__fill,
+.habit__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--fill);
+  border-radius: inherit;
+  background-color: var(--c-lessons);
+}
+.standing__count {
+  font-size: var(--text-label);
+  color: var(--c-dash-body);
+}
+.standing__next {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 14px;
+  border-top: 1px solid var(--c-dash-card-edge);
+  font-size: var(--text-body-sm);
+  color: var(--c-dash-body);
+}
+.standing__next-label {
+  font-weight: 600;
+  color: var(--c-dash-ink);
+}
+@media (min-width: 48rem) {
+  .standing {
+    grid-template-columns: auto minmax(0, 1fr) minmax(0, 16rem);
+  }
+  .standing__next {
+    grid-column: auto;
+    padding: 0 0 0 20px;
+    border-top: 0;
+    border-left: 1px solid var(--c-dash-card-edge);
+  }
+}
+
+/* The streak and the weekly goal, side by side from a tablet up. */
+.habits {
+  display: grid;
+  gap: 12px;
+}
+@media (min-width: 48rem) {
+  .habits {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.habit {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 20px;
+}
+.habit__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-h4);
+  font-weight: 600;
+  color: var(--c-dash-ink);
+}
+.habit__icon {
+  color: var(--c-lessons);
+}
+.habit__count {
+  margin-left: auto;
+  color: var(--c-lessons);
+}
+.habit__big {
+  font-family: var(--font-display);
+  font-size: var(--text-h1);
+  line-height: 1;
+  color: var(--c-lessons);
+}
+.habit__line {
+  font-size: var(--text-body-sm);
+  color: var(--c-dash-body);
+}
+.habit__week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+.habit__day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-label);
+  color: var(--c-dash-quiet);
+}
+.habit__dot {
+  width: 24px;
+  height: 24px;
+  border: 1.5px solid var(--c-badge-locked-edge);
+  border-radius: var(--radius-pill);
+}
+.habit__day[data-played='true'] .habit__dot {
+  border-color: var(--c-lessons);
+  background-color: var(--c-lessons);
+}
+.habit__day[data-today='true'] {
+  font-weight: 600;
+  color: var(--c-dash-ink);
+}
+.habit__goal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--text-label);
+  color: var(--c-dash-body);
+}
+
+/* The course in order: a row per category, its mark the way along. */
+.journey {
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+}
+@media (min-width: 48rem) {
+  .journey {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.journey__open {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 2px 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: var(--radius-lg);
+  text-align: left;
+}
+.journey__open:hover {
+  background-color: var(--c-bar-hover);
+}
+.journey__open:focus-visible {
+  outline: 2px solid var(--ds-focus-ring);
+  outline-offset: 2px;
+}
+.journey__mark {
+  grid-row: 1 / span 2;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1.5px solid var(--c-badge-locked-edge);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-label);
+  font-weight: 600;
+  color: var(--c-dash-quiet);
+}
+.journey__stage[data-state='complete'] .journey__mark {
+  border-color: var(--c-lessons);
+  background-color: var(--c-lessons);
+  color: var(--c-badge-earned-ink);
+}
+.journey__stage[data-state='in-progress'] .journey__mark,
+.journey__stage[data-state='next'] .journey__mark {
+  border-color: var(--c-lessons);
+  color: var(--c-lessons);
+}
+.journey__name {
+  font-size: var(--text-body-sm);
+  font-weight: 600;
+  color: var(--c-dash-ink);
+}
+.journey__state {
+  font-size: var(--text-label);
+  color: var(--c-dash-quiet);
+}
+.journey__stage[data-state='in-progress'] .journey__state,
+.journey__stage[data-state='next'] .journey__state {
+  color: var(--c-lessons);
+}
+
+/* Every badge: lit when earned, locked with what it takes until then. */
+.badges__count {
+  margin-left: 6px;
+  font-size: var(--text-label);
+  font-weight: 500;
+  color: var(--c-dash-quiet);
+}
+.badges {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 8px;
+  padding: 12px;
+}
+.badge-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+.badge-card__name {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-body-sm);
+  font-weight: 600;
+  color: var(--c-dash-ink);
+}
+.badge-card[data-earned='false'] .badge-card__name {
+  color: var(--c-dash-body);
+}
+.badge-card__new {
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  background-color: var(--c-lessons);
+  font-size: var(--text-label);
+  color: var(--c-badge-earned-ink);
+}
+.badge-card__takes {
+  font-size: var(--text-label);
+  line-height: 1.35;
+  color: var(--c-dash-quiet);
+}
+.badge-card__state {
+  font-size: var(--text-label);
+  font-weight: 600;
+  color: var(--c-dash-quiet);
+}
+.badge-card[data-earned='true'] .badge-card__state {
+  color: var(--c-lessons);
+}
+.badge-card[data-gold='true'] .badge-card__state {
+  color: var(--c-badge-gold);
+}
+
+/* On the bar, where it has room: the next badge, its name and how far along,
+   in a ring of how much is done. A phone shows the ring alone. */
+.goal-chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  margin-right: 8px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  color: var(--c-bar-fg);
+}
+.goal-chip:hover {
+  background-color: var(--c-bar-hover);
+}
+.goal-chip:focus-visible {
+  outline: 2px solid var(--ds-focus-ring);
+  outline-offset: 2px;
+}
+.goal-chip__ring {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-pill);
+  background:
+    radial-gradient(closest-side, var(--c-bar) 78%, transparent 80%),
+    conic-gradient(var(--c-lessons) var(--done), var(--c-badge-locked-edge) 0);
+}
+.goal-chip__text {
+  display: none;
+}
+@media (min-width: 48rem) {
+  .goal-chip {
+    padding-right: 14px;
+  }
+  .goal-chip__text {
+    display: flex;
+    flex-direction: column;
+    font-size: var(--text-label);
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: left;
+  }
+}
+.goal-chip__count {
+  font-weight: 500;
+  color: var(--c-bar-fg-muted);
+}

@@ -14,7 +14,7 @@ import { cn } from '@/lib/cn'
    In Motius that button is "Connect a keyboard" until a keyboard is connected.
    ======================================================================== */
 
-export type ButtonVariant = 'filled' | 'tonal' | 'outlined' | 'text' | 'danger-outline'
+export type ButtonVariant = 'filled' | 'tonal' | 'outlined' | 'text' | 'danger-outline' | 'inverse'
 export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg'
 
 const base = [
@@ -54,6 +54,14 @@ const variants: Record<ButtonVariant, string> = {
   'danger-outline': [
     'border border-[var(--ds-danger-border)] bg-transparent text-[var(--ds-danger-text)]',
     'hover:bg-[var(--ds-danger-subtle)]',
+  ].join(' '),
+  // The page's own text colour as the fill, and the page's colour as the text:
+  // white with dark text on a dark page. For a button that should stand out
+  // without being the accent's primary action.
+  inverse: [
+    'bg-[var(--ds-fg)] text-[var(--ds-fg-inverse)] shadow-e1',
+    'hover:opacity-90 hover:shadow-e2',
+    'active:opacity-80 active:shadow-e0',
   ].join(' '),
 }
 

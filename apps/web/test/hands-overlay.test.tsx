@@ -1,11 +1,12 @@
 import { act, cleanup, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { buildSong, type SongNote } from '@motius/shared'
-import { HandsOverlay } from '@/features/hands/HandsOverlay'
-import { buildLayout, keyCenterPercent } from '@/features/keyboard/keyboard-layout'
+import { HandsOverlay } from '@/features/keyboard/hands/HandsOverlay'
+import { buildLayout, keyCenterPercent } from '@/lib/keyboard-layout'
 import { useKeyboardStore } from '@/state/keyboard-store'
 import { useLearningStore } from '@/state/learning-store'
 import { useSongStore } from '@/state/song-store'
+import { useViewStore } from '@/state/view-store'
 import { sizeEverything } from './layout-size'
 
 /**
@@ -64,7 +65,9 @@ const fingered = [
 const open = (
   notes: SongNote[],
   settings: Partial<ReturnType<typeof useSongStore.getState>> = {},
+  hands = true,
 ) => {
+  useViewStore.setState({ hands })
   const song = buildSong({
     id: 'hands',
     title: 'Hands',
@@ -82,7 +85,6 @@ const open = (
     positionMs: 0,
     stepIndex: 0,
     playing: false,
-    hands: true,
     ...settings,
   })
   return render(<HandsOverlay layout={layout} />)
@@ -152,7 +154,7 @@ describe('the hands over the keys', () => {
   })
 
   it('follows the playhead when the song is being played to you', () => {
-    const { container } = open(fingered, { mode: 'explore' })
+    const { container } = open(fingered, { mode: 'listen' })
     expect(finger(container, 'left', 5).x).toBeCloseTo(keyX(48), 3)
 
     act(() => useSongStore.getState().seek(1500))
@@ -167,7 +169,7 @@ describe('the hands over the keys', () => {
   })
 
   it('is not there with the switch off, or for a song nobody fingered', () => {
-    expect(open(fingered, { hands: false }).container.querySelector('.hands')).toBeNull()
+    expect(open(fingered, {}, false).container.querySelector('.hands')).toBeNull()
     cleanup()
     const bare = fingered.map(({ finger: _finger, ...rest }) => rest)
     expect(open(bare).container.querySelector('.hands')).toBeNull()
@@ -176,5 +178,43 @@ describe('the hands over the keys', () => {
   it('takes no pointer and says nothing to a screen reader: the keys under it are still the keys', () => {
     const { container } = open(fingered)
     expect(container.querySelector('.hands')!.getAttribute('aria-hidden')).toBe('true')
+  })
+})
+
+describe('the hands over an exercise', () => {
+  const learning = () => useLearningStore.getState()
+  /** The step's notes, each with the hand and finger the exercise gives it. */
+  const fingersOf = (step: number) => {
+    const { notes, fingers } = learning().exercise!.steps[step]!
+    return notes.map((key, index) => ({ key, ...fingers[index]! }))
+  }
+
+  beforeEach(() => {
+    useViewStore.setState({ hands: true })
+    act(() => {
+      learning().setLesson('two-black-key-groups')
+      learning().setTopic('lesson')
+      learning().setMode('learn')
+    })
+  })
+  afterEach(() => act(() => learning().reset()))
+
+  it('shows where to begin before a run: each finger of the first step on its key', () => {
+    const { container } = render(<HandsOverlay layout={layout} />)
+    for (const { key, hand: which, finger: number } of fingersOf(0))
+      expect(finger(container, which, number).x).toBeCloseTo(keyX(key), 3)
+  })
+
+  it('moves on with the step being played', () => {
+    const { container } = render(<HandsOverlay layout={layout} />)
+    act(() => learning().start())
+    for (const { key } of fingersOf(0)) act(() => learning().noteOn(key))
+    for (const { key, hand: which, finger: number } of fingersOf(1))
+      expect(finger(container, which, number).x).toBeCloseTo(keyX(key), 3)
+  })
+
+  it('is not there with the switch off', () => {
+    useViewStore.setState({ hands: false })
+    expect(render(<HandsOverlay layout={layout} />).container.querySelector('.hands')).toBeNull()
   })
 })

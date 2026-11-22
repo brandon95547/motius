@@ -6,7 +6,7 @@ import { create } from 'zustand'
  * One value rather than a flag per panel, because the panels are exclusive by
  * nature: each is a modal sheet that owns focus, and two open at once means two
  * focus traps fighting over the Tab key. Opening one from inside another — the
- * theory from the Progress panel, MIDI setup from Settings — simply replaces it.
+ * theory from the This run panel, MIDI setup from Settings — simply replaces it.
  *
  * The area's options are the one panel that is not a modal — they sit over the
  * workspace with the staff still live beside them — and they are in the same

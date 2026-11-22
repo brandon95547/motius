@@ -1,6 +1,7 @@
 import { barIndexAt, playDuration, scoreMsAt } from '@motius/shared'
 import { useCurrentSong, useSongStore } from '@/state/song-store'
-import { RunMeter } from '@/features/learning/RunMeter'
+import { RunMeter } from '@/ui/RunMeter'
+import { Slider } from '@/ui/Controls'
 
 /**
  * Where you are in the piece, above the staff.
@@ -9,7 +10,7 @@ import { RunMeter } from '@/features/learning/RunMeter'
  * almost always to go back to the bit that went wrong. Bars rather than
  * seconds under it: that is the number on the page in front of you.
  *
- * In Learn it is the run meter instead: nothing is playing, the only progress
+ * In Learn and Practice it is the run meter instead: nothing is playing, the only progress
  * there is is yours, and it cannot be dragged.
  */
 export function SongProgress() {
@@ -18,6 +19,10 @@ export function SongProgress() {
   const mode = useSongStore((state) => state.mode)
   const stepIndex = useSongStore((state) => state.stepIndex)
   const stepCount = useSongStore((state) => state.stepCount)
+  const judged = useSongStore((state) => state.practice.step)
+  const missed = useSongStore(
+    (state) => state.practice.results.filter((result) => result === 'missed').length,
+  )
 
   // The slider runs over the performance, repeats and all, so it only ever
   // moves forward. The bar is the one on the page: the number printed over the
@@ -52,25 +57,30 @@ export function SongProgress() {
       <RunMeter done={stepIndex} total={stepCount} label="the song" className="run-meter--wide" />
     )
   }
+  // Nor can Practice: a run is the song from the top, judged as it goes.
+  if (mode === 'practice') {
+    return (
+      <RunMeter
+        done={judged}
+        total={stepCount}
+        mistakes={missed}
+        label="the song"
+        className="run-meter--wide"
+      />
+    )
+  }
 
   return (
     <div className="song-progress">
-      <input
-        type="range"
-        className="motius-slider song-progress__range"
+      <Slider
+        bare
+        className="song-progress__range"
+        label="Position in the song"
         min={0}
         max={1000}
-        step={1}
         value={thousandths}
-        aria-label="Position in the song"
-        aria-valuetext={`Bar ${bar}`}
-        onChange={(event) => seek((Number(event.target.value) / 1000) * total)}
-        style={
-          {
-            '--slider-from': '0%',
-            '--slider-to': `${thousandths / 10}%`,
-          } as React.CSSProperties
-        }
+        valueText={() => `Bar ${bar}`}
+        onChange={(value) => seek((value / 1000) * total)}
       />
       <span className="song-progress__label" data-tabular>
         Bar {bar} / {lastBar}

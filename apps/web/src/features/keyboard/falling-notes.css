@@ -1,0 +1,164 @@
+/* ---- Falling notes ---------------------------------------------------------
+   The stage as a field of lanes over the keys: every note a bar in its key's
+   column, falling to the top of the keys on its beat. The track moves as one
+   (a transform, written by the component), and nothing in it takes a click. */
+/* Over falling notes, a song's progress keeps to the top of the stage, above
+   the field, rather than floating in the middle of the music. */
+.stage[data-falling='true'] {
+  justify-content: flex-start;
+}
+.stage[data-falling='true'] > .song-progress {
+  position: relative;
+  z-index: 1;
+}
+.falling {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  /* Tapped to pause, dragged through the music: the field owns its gestures. */
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+.falling:active {
+  cursor: grabbing;
+}
+.falling__lane {
+  position: absolute;
+  inset-block: 0;
+  width: 1px;
+  background-color: var(--c-fall-lane);
+}
+.falling__lane[data-octave='true'] {
+  background-color: var(--c-fall-rule);
+}
+.falling__track {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+.falling__note {
+  --hand: var(--c-fall-right);
+  position: absolute;
+  bottom: calc(var(--start) * var(--beat));
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: max(8px, calc(var(--length) * var(--beat) - 3px));
+  padding-bottom: 5px;
+  border-radius: var(--radius-sm);
+  background-color: var(--hand);
+  box-shadow: inset 0 0 0 1px var(--c-fall-edge);
+  color: var(--c-fall-ink);
+  font-weight: 700;
+  line-height: 1;
+  /* What does not fit is cut off at the top. */
+  overflow: hidden;
+  /* Fades as slowly as the hit flash, so the flash is seen at full strength. */
+  transition: opacity var(--duration-slow) var(--ease-standard);
+}
+/* At the bar's foot, what the key labels say — the finger, the name or the
+   degree — large enough to read as it falls. */
+.falling__label {
+  font-size: var(--text-h2);
+}
+.falling__label:empty {
+  display: none;
+}
+.falling__note[data-hand='left'],
+.falling__glow[data-hand='left'] {
+  --hand: var(--c-fall-left);
+}
+.falling__note[data-now='true'] {
+  background-color: var(--c-now);
+}
+.falling__note[data-done='true'] {
+  opacity: 0.35;
+}
+/* Played: a flash of light over the bar as it goes down, at the keys. */
+.falling__note[data-done='true']::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: var(--c-fall-flash);
+  opacity: 0;
+  content: '';
+}
+@media (prefers-reduced-motion: no-preference) {
+  .falling__note[data-done='true']::after {
+    animation: fall-hit var(--duration-slow) var(--ease-standard);
+  }
+}
+@keyframes fall-hit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+/* Gone by unplayed: faded, and ringed in the color of a mistake. */
+.falling__note[data-missed='true'] {
+  opacity: 0.35;
+  box-shadow: inset 0 0 0 2px var(--ds-danger);
+}
+/* Pressed when it was due, and still held: lit, whatever else it is, until
+   the key comes up. */
+.falling__note[data-lit='true'] {
+  opacity: 1;
+  box-shadow:
+    inset 0 0 0 2px var(--c-fall-flash),
+    0 0 18px 2px var(--hand);
+}
+.falling__line {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 2px;
+  background-color: var(--c-fall-line);
+}
+/* Light where a note meets its key, on the keyboard's top edge, while a key
+   played right is held: white at the edge, in the hand's color above it,
+   fading out a little way up. */
+.falling__glow {
+  --hand: var(--c-fall-right);
+  position: absolute;
+  bottom: 0;
+  height: 56px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background-image: linear-gradient(
+    to top,
+    var(--c-fall-flash),
+    color-mix(in srgb, var(--hand) 60%, transparent) 30%,
+    transparent
+  );
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .falling__glow {
+    animation: fade-in var(--duration-fast) var(--ease-standard);
+  }
+}
+/* Free play: every key held glows, in no hand's color. */
+.falling__glow[data-free='true'] {
+  --hand: var(--c-fall-flash);
+}
+.falling-controls {
+  position: absolute;
+  top: 12px;
+  left: clamp(12px, 2.5vw, 36px);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: default;
+}
+/* How a step went in Practice, ringed in its own color. */
+.falling__note[data-timing='on-time'] {
+  box-shadow: inset 0 0 0 2px var(--ds-success);
+}
+.falling__note[data-timing='early'],
+.falling__note[data-timing='late'] {
+  box-shadow: inset 0 0 0 2px var(--ds-warning);
+}

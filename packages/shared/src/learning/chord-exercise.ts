@@ -1,11 +1,9 @@
-import { z } from 'zod'
-import type { NoteRange } from '../domain/device.js'
+import type { NoteRange } from '../domain/device-schemas.js'
 import {
   CHORD_KINDS,
   chordLadder,
   chordPositionName,
   KEY_MODE_LABELS,
-  KEY_MODES,
   keyChord,
   keyTriads,
   type ChordKind,
@@ -17,14 +15,13 @@ import { normalisePitchClass } from '../music/pitch.js'
 import { keySignatureOf } from '../music/scales.js'
 import type { Exercise, ExerciseFingering, ExerciseStep, StepFinger } from './exercise.js'
 import {
-  DEFAULT_PLAYABLE_RANGE,
   HAND_LABELS,
   movementCue,
   SCALE_DIRECTION_LABELS,
-  SCALE_DIRECTIONS,
-  SCALE_HANDS,
   type ScaleHands,
 } from './scale-exercise.js'
+import { DEFAULT_PLAYABLE_RANGE } from './practice-defaults.js'
+import type { ChordSpec, ArpeggioSpec } from './practice-specs.js'
 
 /**
  * Chords and arpeggios, as exercises.
@@ -74,53 +71,8 @@ export const CHORD_STYLE_LABELS: Record<ChordStyle, string> = {
   'broken-alternate': 'Broken, Alternate',
 }
 
-const keyFields = {
-  rootPitchClass: z.number().int().min(0).max(11),
-  /** Which of the key's names it is written under. See `ScaleSpec.tonic`. */
-  tonic: z.string().optional(),
-  mode: z.enum(KEY_MODES),
-  hand: z.enum(SCALE_HANDS),
-}
-
-export const chordSpecSchema = z.object({
-  kind: z.literal('chord'),
-  ...keyFields,
-  chord: z.enum(CHORD_FORMS),
-  style: z.enum(CHORD_STYLES),
-})
-export type ChordSpec = z.infer<typeof chordSpecSchema>
-
-export const DEFAULT_CHORD_SPEC: ChordSpec = {
-  kind: 'chord',
-  rootPitchClass: 0,
-  mode: 'major',
-  hand: 'right',
-  chord: 'triad',
-  style: 'solid',
-}
-
 export const ARPEGGIO_CHORDS = ['triad', 'seventh'] as const
 export type ArpeggioChord = (typeof ARPEGGIO_CHORDS)[number]
-
-export const arpeggioSpecSchema = z.object({
-  kind: z.literal('arpeggio'),
-  ...keyFields,
-  chord: z.enum(ARPEGGIO_CHORDS),
-  /** 0 is root position; each one after starts on the next chord note up. */
-  position: z.number().int().min(0).max(3),
-  direction: z.enum(SCALE_DIRECTIONS),
-})
-export type ArpeggioSpec = z.infer<typeof arpeggioSpecSchema>
-
-export const DEFAULT_ARPEGGIO_SPEC: ArpeggioSpec = {
-  kind: 'arpeggio',
-  rootPitchClass: 0,
-  mode: 'major',
-  hand: 'right',
-  chord: 'triad',
-  position: 0,
-  direction: 'up-down',
-}
 
 export interface ChordExerciseOptions {
   readonly fingering?: FingeringSystemId

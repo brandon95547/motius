@@ -5,6 +5,7 @@ import { useKeyboardStore } from '@/state/keyboard-store'
 import { useLearningStore } from '@/state/learning-store'
 import { AUTO_SPAN, useViewStore } from '@/state/view-store'
 import { useCoarsePointer, useElementWidth } from '@/lib/hooks'
+import { useKeyAnnotations } from './key-annotations'
 import { PianoKeyboard } from './PianoKeyboard'
 import {
   chooseSpan,
@@ -12,7 +13,7 @@ import {
   KEYBOARD_SPANS,
   windowForSpan,
   windowIncluding,
-} from './keyboard-layout'
+} from '@/lib/keyboard-layout'
 
 /**
  * The instrument, pinned along the bottom of the screen.
@@ -124,16 +125,16 @@ export function KeyboardDock() {
  * reader, which had no way at all to tell what to play next. This is the same
  * instruction in the one form that does.
  *
- * Only in Learn: Explore lights a whole scale and Practice deliberately lights
+ * Only in Learn: Listen lights a whole scale and Practice deliberately lights
  * nothing, and neither has a single next note to name. Polite, because it must
  * never cut across the note the player has just been told about, and one
  * sentence, because it is read at the pace of playing.
  */
 function TargetAnnouncement() {
-  const message = useLearningStore((state) => {
-    if (state.mode !== 'learn') return ''
-    const annotations = state.topic === 'songs' ? state.songAnnotations : state.annotations
-
+  const learn = useLearningStore((state) => state.mode === 'learn')
+  const annotations = useKeyAnnotations()
+  const message = (() => {
+    if (!learn) return ''
     const targets = Object.entries(annotations)
       .filter(([, annotation]) => annotation.role === 'target')
       .map(([note, annotation]) => ({ note: Number(note), ...annotation }))
@@ -148,7 +149,7 @@ function TargetAnnouncement() {
     })
     const cue = targets.find((target) => target.cue)?.cue
     return `Play ${named.join(', ')}.${cue ? ` ${cue}.` : ''}`
-  })
+  })()
 
   return (
     <p className="sr-only-ds" role="status" aria-live="polite">

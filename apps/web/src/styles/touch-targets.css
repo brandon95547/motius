@@ -1,0 +1,45 @@
+/* ============================================================================
+   TOUCH TARGETS — UI Bible
+   ----------------------------------------------------------------------------
+   A 44x44 hit area on coarse pointers, delivered by an ::after overlay so the
+   button's own box stays at its designed size. Growing the box instead
+   flattens the whole size ladder: xs, sm and md all become 44px the moment a
+   touch device is in play, and the density the sizes exist for is gone.
+
+   Three things this has to keep doing. The first two have been shipped broken
+   in a sibling product, so they are asserted here rather than assumed:
+
+     1. NO `pointer-events: none`. That removes the pseudo-element from hit
+        testing altogether and the promised 44px is not real. Probe it with
+        `document.elementFromPoint(x, boxTop - 4)` — it must return the button.
+     2. Icon buttons need the horizontal half too. `inset-inline: 0` alone
+        gives a 44px-tall, 28px-wide target on an xs icon button.
+     3. Adjacent icon buttons need clear space, because the overlay overhangs
+        by (44 - height) / 2 — 8px at xs, 6px at sm, 4px at md. Give a row of
+        icon buttons `coarse:gap-3` or the later sibling wins the tap.
+
+   A labelled button's overlay is `inset-inline: 0` and so only grows
+   vertically, which is what keeps rule 3 an icon-button problem only.
+   ========================================================================= */
+
+@custom-variant coarse (@media (pointer: coarse));
+
+@media (pointer: coarse) {
+  .touch-target {
+    position: relative;
+  }
+  .touch-target::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: 50%;
+    height: 44px;
+    transform: translateY(-50%);
+  }
+  .touch-target--icon::after {
+    inset-inline: auto;
+    left: 50%;
+    width: 44px;
+    transform: translate(-50%, -50%);
+  }
+}

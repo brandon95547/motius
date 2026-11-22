@@ -1,4 +1,6 @@
+import * as React from 'react'
 import { ArrowLeft, ArrowRight, Hammer } from 'lucide-react'
+import { loadLessons } from '@motius/shared'
 import { cn } from '@/lib/cn'
 import { pageActions, usePageStore } from '@/state/page-store'
 import {
@@ -6,10 +8,11 @@ import {
   COMING_SOON,
   findCategory,
   isBuilt,
+  lessonsOf,
   type Accent,
   type Category,
   type Section,
-} from './areas'
+} from '@/lib/outline/outline'
 
 /**
  * The pages that lead to the areas: the dashboard, with its nine categories;
@@ -34,6 +37,7 @@ export function Dashboard() {
   const page = usePageStore((state) => state.page)
   const categoryId = usePageStore((state) => state.category)
   const category = findCategory(categoryId)
+  usePrefetchLessons(page === 'category' ? category : null)
   if (page !== 'category' || !category) return <Categories />
   if (!isBuilt(category)) return <ComingSoon place={category} />
   return (
@@ -43,6 +47,24 @@ export function Dashboard() {
       onOpen={(section) => pageActions.openSection(category, [section])}
     />
   )
+}
+
+/**
+ * A unit open on its sections is the moment before one of its lessons: their
+ * content starts loading now, a section at a time, so a lesson opened from here
+ * is on the keys at once. Not where the player has asked to save data.
+ */
+function usePrefetchLessons(category: Category | null) {
+  React.useEffect(() => {
+    if (!category || (navigator as { connection?: { saveData?: boolean } }).connection?.saveData)
+      return
+    for (const section of category.sections)
+      for (const { lesson } of lessonsOf(section))
+        if (lesson.exercise)
+          // Ahead of time only: opening the lesson loads it again, and says so
+          // if it cannot, so a prefetch that fails has nothing to report.
+          loadLessons(lesson.exercise).catch(() => {})
+  }, [category])
 }
 
 /**

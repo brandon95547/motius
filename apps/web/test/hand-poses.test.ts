@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildSong, type SongNote } from '@motius/shared'
-import { frameAt, handPose, handTimeline, shapeAt } from '@/features/hands/hand-poses'
-import { buildLayout, keyCenterPercent } from '@/features/keyboard/keyboard-layout'
+import { frameAt, handPose, handTimeline, shapeAt } from '@/features/keyboard/hands/hand-poses'
+import { buildLayout, keyCenterPercent } from '@/lib/keyboard-layout'
 
 /**
  * Where a hand is over the keys, from a song's fingering.

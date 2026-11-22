@@ -29,8 +29,14 @@
  * free, and started the second API this script exists to prevent. The ports
  * have to be read while the stack is at rest, so the build comes after.
  */
+import { existsSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { spawn, spawnSync } from 'node:child_process'
+
+// The project's one .env, at the root: the ports checked here are the ports the
+// API and the web app will use. What the environment sets already wins.
+const ENV_FILE = new URL('../.env', import.meta.url)
+if (existsSync(ENV_FILE)) process.loadEnvFile(ENV_FILE)
 
 const API_PORT = Number(process.env.PORT ?? 5175)
 const WEB_PORT = Number(process.env.WEB_PORT ?? 5174)

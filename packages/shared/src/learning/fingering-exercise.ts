@@ -1,6 +1,5 @@
-import { z } from 'zod'
-import type { NoteRange } from '../domain/device.js'
-import { KEY_MODE_LABELS, KEY_MODES, type KeyMode } from '../music/chords.js'
+import type { NoteRange } from '../domain/device-schemas.js'
+import { KEY_MODE_LABELS, type KeyMode } from '../music/chords.js'
 import { scaleFingering, type Hand } from '../music/fingering.js'
 import { fingeringSystem, type FingeringSystemId } from '../music/fingering-system.js'
 import {
@@ -12,12 +11,9 @@ import {
 } from '../music/scales.js'
 import type { Exercise, ExerciseFingering, ExerciseMeter } from './exercise.js'
 import { stepsFrom, type Moment, type Played } from './routine-exercise.js'
-import {
-  DEFAULT_PLAYABLE_RANGE,
-  HAND_LABELS,
-  SCALE_HANDS,
-  type ScaleHands,
-} from './scale-exercise.js'
+import { HAND_LABELS, SCALE_HANDS, type ScaleHands } from './scale-exercise.js'
+import { DEFAULT_PLAYABLE_RANGE } from './practice-defaults.js'
+import type { FingeringDrillSpec } from './practice-specs.js'
 
 /**
  * The fingering exercises: the few movements all fingering is made of, each
@@ -89,25 +85,6 @@ const ONE_HAND: readonly ScaleHands[] = ['right', 'left']
  */
 export function fingeringDrillHands(drill: FingeringDrill): readonly ScaleHands[] {
   return drill === 'thumb-under' || drill === 'arpeggio-crossing' ? ONE_HAND : SCALE_HANDS
-}
-
-export const fingeringDrillSpecSchema = z.object({
-  kind: z.literal('fingering'),
-  rootPitchClass: z.number().int().min(0).max(11),
-  /** Which of the key's names it is written under. See `ScaleSpec.tonic`. */
-  tonic: z.string().optional(),
-  mode: z.enum(KEY_MODES),
-  hand: z.enum(SCALE_HANDS),
-  drill: z.enum(FINGERING_DRILLS),
-})
-export type FingeringDrillSpec = z.infer<typeof fingeringDrillSpecSchema>
-
-export const DEFAULT_FINGERING_DRILL_SPEC: FingeringDrillSpec = {
-  kind: 'fingering',
-  rootPitchClass: 0,
-  mode: 'major',
-  hand: 'right',
-  drill: 'five-finger',
 }
 
 export interface FingeringExerciseOptions {

@@ -113,7 +113,7 @@ describe('the scale on the staff', () => {
   })
 
   it('in Explore, writes the whole scale plainly and claims no place in it', () => {
-    act(() => store().setMode('explore'))
+    act(() => store().setMode('listen'))
     const { container } = render(<ScaleScore />)
     expect(new Set(rolesOf(container))).toEqual(new Set(['ahead']))
     expect(container.querySelector('.staff__playhead')).toBeNull()

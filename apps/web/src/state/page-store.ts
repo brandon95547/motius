@@ -6,11 +6,13 @@ import {
   lessonAt,
   lessonsOf,
   pagesUnder,
+  writtenLessons,
   type Category,
   type CategoryId,
   type Section,
-} from '@/features/areas/areas'
+} from '@/lib/outline/outline'
 import { AVAILABLE_TOPICS, useLearningStore, type LearningTopic } from './learning-store'
+import { bestOf, scoredRuns, useHistoryStore } from './history-store'
 import { panelActions, usePanelStore } from './panel-store'
 import { useSongStore } from './song-store'
 
@@ -41,7 +43,7 @@ import { useSongStore } from './song-store'
  * Which area is open is still the learning store's `topic`, and which type its
  * `progressionType`; this only says whether we are in it.
  */
-export type Page = 'dashboard' | 'category' | 'lesson' | 'area'
+export type Page = 'dashboard' | 'category' | 'lesson' | 'area' | 'admin'
 
 interface PageState {
   page: Page
@@ -66,11 +68,20 @@ interface IndexPlace {
   readonly path: readonly string[]
 }
 
-type Place = AreaPlace | IndexPlace
+/** The admin's page: how each lesson opens. Only an admin is shown it. */
+interface AdminPlace {
+  readonly kind: 'admin'
+}
+
+type Place = AreaPlace | IndexPlace | AdminPlace
+
+/** The admin's page's address. */
+export const ADMIN_ADDRESS = '#/admin'
 
 /** The place a hash names, if it names one. */
 function placeIn(hash: string): Place | null {
   const [name, ...rest] = hash.replace(/^#\/?/, '').split('/')
+  if (name === 'admin' && rest.length === 0) return { kind: 'admin' }
   // An area first: Songs is an area and a place in the bar, and its address is the area's.
   const area = AVAILABLE_TOPICS.find((topic) => topic === name)
   if (area) {
@@ -130,8 +141,8 @@ if (initialPlace?.kind === 'lesson') enterLesson(initialPlace)
 const stateFor = (place: Place | null): PageState =>
   !place
     ? { page: 'dashboard', category: null, path: [] }
-    : place.kind === 'area'
-      ? { page: 'area', category: null, path: [] }
+    : place.kind === 'area' || place.kind === 'admin'
+      ? { page: place.kind, category: null, path: [] }
       : { page: place.kind, category: place.category, path: place.path }
 
 export const usePageStore = create<PageState>(() => stateFor(initialPlace))
@@ -176,12 +187,27 @@ function open(place: Category | Section, address: string) {
   const { opens } = place
   if (!opens) go(address)
   else if (opens.kind === 'panel') panelActions.open(opens.panel)
+  else if (opens.kind === 'next-lesson') openNextLesson()
   else if (opens.progression) openProgression(opens.progression)
   else openArea(opens.topic)
 }
 
+/**
+ * Where the player left off: the first written lesson, in the course's order,
+ * with no scored run — or the first lesson of all, once every one is done.
+ */
+function openNextLesson() {
+  const { runs, lessonsResetAt } = useHistoryStore.getState()
+  const scored = scoredRuns(runs, lessonsResetAt)
+  const lessons = writtenLessons()
+  const next = lessons.find((lesson) => !bestOf(scored, lesson.key)) ?? lessons[0]
+  if (next) go(`#/${next.key}`)
+}
+
 export const pageActions = {
   openDashboard: () => go('#/'),
+  /** The admin's page: how each lesson opens. */
+  openAdmin: () => go(ADMIN_ADDRESS),
   /** A category: its page — of sections, or saying it is to come — or, Songs, the area it is. */
   openCategory: (category: Category) => open(category, addressOf(category)),
   /**

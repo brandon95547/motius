@@ -1,0 +1,81 @@
+/* ============================================================================
+   RANGE INPUT
+   A native <input type="range"> restyled rather than replaced. The native
+   control already has the keyboard behaviour, the assistive-tech role and the
+   touch handling; a div-based slider has to rebuild all three and usually
+   ships without the first.
+   ========================================================================= */
+
+.motius-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 20px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.motius-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: var(--radius-pill);
+  /* Two boundaries rather than one, so a bipolar control (transpose, pan) can
+     fill outward from its centre. A left-anchored fill on a -12..+12 slider
+     reads as "half on" when the value is zero. */
+  background: linear-gradient(
+    to right,
+    var(--ds-field) var(--slider-from, 0%),
+    var(--ds-accent) var(--slider-from, 0%),
+    var(--ds-accent) var(--slider-to, 0%),
+    var(--ds-field) var(--slider-to, 0%)
+  );
+}
+.motius-slider::-moz-range-track {
+  height: 4px;
+  border-radius: var(--radius-pill);
+  /* Two boundaries rather than one, so a bipolar control (transpose, pan) can
+     fill outward from its centre. A left-anchored fill on a -12..+12 slider
+     reads as "half on" when the value is zero. */
+  background: linear-gradient(
+    to right,
+    var(--ds-field) var(--slider-from, 0%),
+    var(--ds-accent) var(--slider-from, 0%),
+    var(--ds-accent) var(--slider-to, 0%),
+    var(--ds-field) var(--slider-to, 0%)
+  );
+}
+
+.motius-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 16px;
+  width: 16px;
+  margin-top: -6px;
+  border-radius: var(--radius-pill);
+  background: var(--ds-fg);
+  border: 2px solid var(--ds-canvas);
+  box-shadow: var(--ds-shadow-1);
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+.motius-slider::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border-radius: var(--radius-pill);
+  background: var(--ds-fg);
+  border: 2px solid var(--ds-canvas);
+  box-shadow: var(--ds-shadow-1);
+}
+
+.motius-slider:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+.motius-slider:focus-visible {
+  outline: none;
+}
+.motius-slider:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--ds-focus-ring);
+  outline-offset: 2px;
+}
+.motius-slider:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--ds-focus-ring);
+  outline-offset: 2px;
+}

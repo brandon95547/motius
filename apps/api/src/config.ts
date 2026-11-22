@@ -21,6 +21,35 @@ const envSchema = z.object({
   DATABASE_PATH: z.string().min(1).default('./data/motius.sqlite'),
   CORS_ORIGINS: z.string().default('http://localhost:5174,http://127.0.0.1:5174'),
   LOG_LEVEL: z.enum(['silent', 'fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+  GOOGLE_CLIENT_ID: z.string().default(''),
+  ADMIN_EMAILS: z.string().default(''),
+  SESSION_DAYS: z.coerce.number().int().min(1).max(365).default(30),
+  /** The largest request body, in bytes. Nothing this API takes is large. */
+  BODY_LIMIT_BYTES: z.coerce
+    .number()
+    .int()
+    .min(1024)
+    .max(16 * 1024 * 1024)
+    .default(64 * 1024),
+  /** The largest body of POST /runs: a device's runs from before sign-in, at once. */
+  RUNS_BODY_LIMIT_BYTES: z.coerce
+    .number()
+    .int()
+    .min(1024)
+    .max(64 * 1024 * 1024)
+    .default(4 * 1024 * 1024),
+  /** How long fetching Google's sign-in keys may take before sign-in gives up. */
+  GOOGLE_TIMEOUT_MS: z.coerce.number().int().min(100).max(60_000).default(5_000),
+  /**
+   * How long a graceful shutdown gets before the process leaves anyway. A close
+   * that never resolves keeps the port, so the next start dies with EADDRINUSE
+   * and looks like "the API will not come back up". Five seconds lets any
+   * request this API serves finish and stays under a typical orchestrator's
+   * kill grace period.
+   */
+  SHUTDOWN_TIMEOUT_MS: z.coerce.number().int().min(100).max(120_000).default(5_000),
+  /** Set by npm when the API is started through it; the version the docs and health name. */
+  npm_package_version: z.string().min(1).default('0.1.0'),
 })
 
 export type Config = {
@@ -32,6 +61,15 @@ export type Config = {
   corsOrigins: string[]
   logLevel: z.infer<typeof envSchema>['LOG_LEVEL']
   version: string
+  /** The OAuth client the sign-in button is for. Empty: nobody can sign in. */
+  googleClientId: string
+  /** The addresses that are admins, lower-cased. */
+  adminEmails: ReadonlySet<string>
+  sessionDays: number
+  bodyLimitBytes: number
+  runsBodyLimitBytes: number
+  googleTimeoutMs: number
+  shutdownTimeoutMs: number
 }
 
 export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
@@ -53,6 +91,17 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
       .map((o) => o.trim())
       .filter(Boolean),
     logLevel: env.LOG_LEVEL,
-    version: process.env.npm_package_version ?? '0.1.0',
+    version: env.npm_package_version,
+    googleClientId: env.GOOGLE_CLIENT_ID.trim(),
+    adminEmails: new Set(
+      env.ADMIN_EMAILS.split(',')
+        .map((email) => email.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+    sessionDays: env.SESSION_DAYS,
+    bodyLimitBytes: env.BODY_LIMIT_BYTES,
+    runsBodyLimitBytes: env.RUNS_BODY_LIMIT_BYTES,
+    googleTimeoutMs: env.GOOGLE_TIMEOUT_MS,
+    shutdownTimeoutMs: env.SHUTDOWN_TIMEOUT_MS,
   }
 }

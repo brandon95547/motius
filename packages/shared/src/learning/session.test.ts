@@ -1,16 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { buildScaleExercise, DEFAULT_SCALE_SPEC } from './scale-exercise.js'
+import { buildScaleExercise } from './scale-exercise.js'
 import {
   accuracy,
   currentStep,
   IDLE_SESSION,
   progress,
+  runSummary,
   sessionReducer,
   tempo,
   upcomingSteps,
   type SessionEvent,
   type SessionState,
 } from './session.js'
+import { DEFAULT_SCALE_SPEC } from './practice-defaults.js'
 
 const exercise = buildScaleExercise({ ...DEFAULT_SCALE_SPEC, octaves: 1 })
 
@@ -132,6 +134,27 @@ describe('the session engine', () => {
     expect(restarted.mistakes).toBe(0)
     expect(restarted.completedSteps).toBe(0)
     expect(restarted.startedAt).toBe(5000)
+  })
+})
+
+describe('runSummary', () => {
+  it('says a clean run is clean', () => {
+    const clean = { ...IDLE_SESSION, status: 'complete' as const }
+    expect(runSummary(exercise, clean)).toBe(
+      `${exercise.steps.length} notes · 100% accuracy · clean`,
+    )
+  })
+
+  it('counts the mistakes and the steps missed', () => {
+    const state = {
+      ...IDLE_SESSION,
+      completedSteps: 4,
+      mistakes: 1,
+      missedSteps: [2],
+    }
+    expect(runSummary(exercise, state)).toBe(
+      `${exercise.steps.length} notes · 60% accuracy · 1 mistake · 1 missed`,
+    )
   })
 })
 

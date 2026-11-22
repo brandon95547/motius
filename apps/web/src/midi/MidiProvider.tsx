@@ -153,7 +153,7 @@ export function MidiProvider({ children }: { children: React.ReactNode }) {
         // octave shift, which is the note that actually sounded — so a player
         // transposing to reach a scale is judged on what they played, not on
         // what their controller sent.
-        learningActions.noteOn(note)
+        learningActions.noteOn(note, velocity)
         return
       }
       case 'noteOff': {
@@ -161,6 +161,7 @@ export function MidiProvider({ children }: { children: React.ReactNode }) {
         if (note === null) return
         keyboardActions.noteOff(note)
         audioRef.current.noteOff(note)
+        learningActions.noteOff(note)
         return
       }
       case 'controlChange': {
@@ -250,6 +251,28 @@ export function MidiProvider({ children }: { children: React.ReactNode }) {
       }
     })()
   }, [access.state, syncPorts])
+
+  // A player who has let this site use MIDI before is connected as the page
+  // opens, without a click: the browser will not ask again, so there is
+  // nothing to ask. Where permissions cannot be queried (some browsers do not
+  // know the name), the keyboard button connects instead.
+  const connectRef = React.useRef(connect)
+  connectRef.current = connect
+  React.useEffect(() => {
+    if (!detectMidiSupport().supported) return
+    let cancelled = false
+    globalThis.navigator?.permissions
+      ?.query({ name: 'midi' as PermissionName })
+      .then((status) => {
+        if (!cancelled && status.state === 'granted') connectRef.current()
+      })
+      .catch(() => {
+        // Not queryable here: nothing to do until the player connects.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   React.useEffect(
     () => () => {

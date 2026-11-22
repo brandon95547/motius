@@ -1,5 +1,4 @@
 import type { FingeringSystemId, Song, SongGenre, SongMood } from '@motius/shared'
-import { readSongBytes } from './read-song'
 
 /**
  * The songs that come with Motius: the same for everyone, and there before
@@ -806,6 +805,8 @@ export async function loadCatalogSong(
   const name = `${entry.id}.mxl`
   const response = await fetch(`${import.meta.env.BASE_URL}songs/${name}`, { signal })
   if (!response.ok) throw new Error(`${name} answered ${response.status}`)
+  // The readers (MIDI, MusicXML, MuseScore and their unzipping) load with the first song opened.
+  const { readSongBytes } = await import('./read-song')
   const result = readSongBytes(new Uint8Array(await response.arrayBuffer()), name, { fingering })
   if (!('song' in result)) throw new Error(`${name} could not be read: ${result.failure}`)
   return { ...result.song, id: catalogSongId(entry), title: catalogSongTitle(entry) }
