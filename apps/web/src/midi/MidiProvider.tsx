@@ -153,7 +153,7 @@ export function MidiProvider({ children }: { children: React.ReactNode }) {
         // octave shift, which is the note that actually sounded — so a player
         // transposing to reach a scale is judged on what they played, not on
         // what their controller sent.
-        learningActions.noteOn(note, velocity)
+        learningActions.noteOn(note)
         return
       }
       case 'noteOff': {
@@ -161,7 +161,6 @@ export function MidiProvider({ children }: { children: React.ReactNode }) {
         if (note === null) return
         keyboardActions.noteOff(note)
         audioRef.current.noteOff(note)
-        learningActions.noteOff(note)
         return
       }
       case 'controlChange': {

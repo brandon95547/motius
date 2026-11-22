@@ -87,19 +87,7 @@ export interface ExerciseStep {
    * melody note and outlasts it.
    */
   readonly holds?: readonly number[]
-  /**
-   * How hard the step asks to be played, where it asks: soft or loud. The right
-   * key at the wrong loudness is not the step (`session.ts`, `STEP_DYNAMICS`).
-   */
-  readonly dynamic?: StepDynamic
-  /**
-   * Held for the whole of its length before it counts, as a long note is: let
-   * go early and it is played again.
-   */
-  readonly hold?: boolean
 }
-
-export type StepDynamic = 'soft' | 'loud'
 
 /** How long a step lasts, in beats. */
 export const stepBeats = (step: ExerciseStep): number => step.beats ?? 1

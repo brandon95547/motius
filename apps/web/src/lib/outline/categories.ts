@@ -227,19 +227,11 @@ export const CATEGORIES: readonly Category[] = [
         id: 'playing-your-first-notes',
         icon: Music2,
         accent: 'rose',
-        description:
-          'Soft and loud, short and long, high and low, which way notes move, and simple melodies.',
+        description: 'High and low, which way notes move, and simple melodies.',
         // Pitch is learned here, by playing it, in the order beginner methods
         // teach it: high and low, then up and down, then step, skip and
         // repeat (Faber's Primer words, before 2nds and 3rds), then melodies.
         under: [
-          {
-            label: 'Single notes: Whisper and Shout',
-            id: 'playing-individual-notes',
-            exercise: 'whisper-and-shout',
-          },
-          { label: 'Single notes: Hold It', exercise: 'hold-it' },
-          { label: 'Single notes: Ode to Joy, Loud and Soft', exercise: 'ode-to-joy-echo' },
           { label: 'High and low notes', id: 'high-and-low-notes' },
           { label: 'Up and down', id: 'playing-ascending-and-descending-sequences' },
           { label: 'Repeated notes', id: 'playing-repeated-notes' },

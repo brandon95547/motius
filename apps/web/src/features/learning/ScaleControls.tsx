@@ -201,21 +201,8 @@ export function ScaleEngine() {
     previous.current = status
   }, [status, lesson])
 
-  // A long note being held counts once it has been held long enough: time is
-  // told to the run only while one is (`holdTick`).
-  const holding = useLearningStore((state) => state.session.holding !== null)
-  const holdTick = useLearningStore((state) => state.holdTick)
-  React.useEffect(() => {
-    if (!holding) return
-    const timer = globalThis.setInterval(holdTick, HOLD_TICK_MS)
-    return () => globalThis.clearInterval(timer)
-  }, [holding, holdTick])
-
   return null
 }
-
-/** How often a held long note is checked: often enough that it moves on as the bar ends. */
-const HOLD_TICK_MS = 50
 
 /**
  * Everything about the scale that is practised, for the options panel: which

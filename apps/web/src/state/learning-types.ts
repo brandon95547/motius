@@ -205,12 +205,7 @@ export interface LearningState {
   setTargetBpm: (bpm: number) => void
   setAutoTempo: (enabled: boolean) => void
   setMetronome: (enabled: boolean) => void
-  /** A key played, and how hard (MIDI velocity), for a step that asks soft or loud. */
-  noteOn: (note: number, velocity?: number) => void
-  /** A key let go: a long note let go too soon is played again. */
-  noteOff: (note: number) => void
-  /** Time passing while a long note is held: it counts once held long enough. */
-  holdTick: () => void
+  noteOn: (note: number) => void
   /** The step being waited on went by unplayed: the run moves on without it. */
   missStep: () => void
   /** Go to a step, the score starting again from there: the music was moved. */

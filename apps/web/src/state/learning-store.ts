@@ -303,7 +303,7 @@ export const useLearningStore = create<LearningState>((set, get) => {
     setAutoTempo: (autoTempo) => set({ autoTempo }),
     setMetronome: (metronome) => set({ metronome }),
 
-    noteOn: (note, velocity) => {
+    noteOn: (note) => {
       const state = get()
       if (state.session.status !== 'running') return
       const step = state.exercise?.steps[state.session.stepIndex]
@@ -322,7 +322,7 @@ export const useLearningStore = create<LearningState>((set, get) => {
       }
       const session = sessionReducer(
         state.session,
-        { type: 'noteOn', note, at: Date.now(), velocity },
+        { type: 'noteOn', note, at: Date.now() },
         state.exercise,
       )
       if (session === state.session && hits === state.hits) return
@@ -358,10 +358,6 @@ export const useLearningStore = create<LearningState>((set, get) => {
 
     missStep: () => dispatch({ type: 'miss', at: Date.now() }),
 
-    noteOff: (note) => dispatch({ type: 'noteOff', note, at: Date.now() }),
-
-    holdTick: () => dispatch({ type: 'tick', at: Date.now(), beatMs: 60_000 / get().targetBpm }),
-
     expireWrongNotes: () => {
       const state = get()
       if (Object.keys(state.session.wrongNotes).length === 0) return
@@ -381,8 +377,7 @@ export const useLearningStore = create<LearningState>((set, get) => {
 
 /** For hot paths and event handlers — no subscription, no re-render. */
 export const learningActions = {
-  noteOn: (note: number, velocity?: number) => useLearningStore.getState().noteOn(note, velocity),
-  noteOff: (note: number) => useLearningStore.getState().noteOff(note),
+  noteOn: (note: number) => useLearningStore.getState().noteOn(note),
   setDemoStep: (index: number | null) => useLearningStore.getState().setDemoStep(index),
   syncPulse: () => useLearningStore.setState((state) => ({ pulseEpoch: state.pulseEpoch + 1 })),
 }

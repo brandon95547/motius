@@ -18,9 +18,7 @@ function key(name: string): number {
 
 /**
  * A phrase of a song in one hand: its notes as `E4:1.5` (a key and its beats,
- * one beat when left out; then `p` or `f` where it is to be soft or loud, and
- * `~` where it is to be held its whole length: `C4:4p~`), and a rest after a
- * note as `-1` (its beats).
+ * one beat when left out), and a rest after a note as `-1` (its beats).
  */
 export interface Phrase {
   /**
@@ -62,24 +60,19 @@ function stepsOf(song: Song, range: NoteRange): ExerciseStep[] {
         steps.push({ ...last, beats: beats + Number(token.slice(1)), holds: [beats] })
         continue
       }
-      const [, name, length, mark, held] = /^([A-G]\d)(?::([\d.]+))?([pf])?(~)?$/.exec(token)!
+      const [, name, length] = /^([A-G]\d)(?::([\d.]+))?$/.exec(token)!
       const note = key(name!)
-      const dynamic = mark === 'p' ? 'soft' : mark === 'f' ? 'loud' : undefined
       if (note < range.low || note > range.high) continue
       const hand: Hand = playing === 'by-pitch' ? (note < MIDDLE_C ? 'left' : 'right') : playing
       const finger = positionFinger(note, song.thumbs[hand]!)
       const label = song.naming === 'finger' ? String(finger) : LETTER_OF[note % 12]!
-      // What the key says while it is the one to play: how, where it is asked.
-      const how = [dynamic, held && 'hold'].filter(Boolean).join(', ')
       steps.push({
         id: `${part}-${steps.length}-${note}`,
         notes: [note],
-        fingers: [{ finger, hand, ...(how && { cue: how }) }],
+        fingers: [{ finger, hand }],
         label,
         noteLabels: [label],
         ...(length && { beats: Number(length) }),
-        ...(dynamic && { dynamic }),
-        ...(held && { hold: true }),
         ...(first && cue && { cue }),
       })
       first = false

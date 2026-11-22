@@ -286,9 +286,6 @@ const FOUNDATIONS = {
     ],
   },
   'First Notes': [
-    'Single notes: Whisper and Shout',
-    'Single notes: Hold It',
-    'Single notes: Ode to Joy, Loud and Soft',
     'High and low notes',
     'Up and down',
     'Repeated notes',
@@ -1070,7 +1067,7 @@ describe('Piano Foundations', () => {
     await open('#/piano-foundations/playing-your-first-notes')
     expect(lessons()).toEqual(FOUNDATIONS['First Notes'])
     expect(chapterTitles()).toEqual([])
-    expect(lessonUp()).toBe('Single notes: Whisper and Shout')
+    expect(lessonUp()).toBe('High and low notes')
   })
 
   it('opens a topic’s address on its first lesson', async () => {
@@ -1310,7 +1307,7 @@ describe('Piano Foundations', () => {
     expect(document.querySelector('.lesson-list')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'First Notes lessons' }))
     const sheet = screen.getByRole('dialog', { name: 'First Notes' })
-    expect(sheet.textContent).toContain('11 lessons')
+    expect(sheet.textContent).toContain('8 lessons')
     // One not written yet, so that nothing opens in the sheet's place.
     fireEvent.click(within(sheet).getByRole('button', { name: 'Repeated notes' }))
     await at('#/piano-foundations/playing-your-first-notes/playing-repeated-notes')
@@ -1382,7 +1379,7 @@ describe('the categories outlined after it', () => {
   })
 
   it.each([
-    ['piano-foundations', 33],
+    ['piano-foundations', 30],
     ['music-notation-and-reading', 51],
     ['rhythm-and-timing', 53],
     ['scales-intervals-and-keys', 77],

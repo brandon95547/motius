@@ -73,8 +73,6 @@ function soundingOf(step: ExerciseStep): [note: number, beats: number][] {
 
 /** An even mezzo-forte. A demonstration should not also be an interpretation. */
 const DEMO_VELOCITY = 80
-/** A step that asks soft or loud is demonstrated so, well inside each (`STEP_DYNAMICS`). */
-const DYNAMIC_VELOCITY = { soft: 48, loud: 108 } as const
 
 export type DemoStatus = 'idle' | 'playing' | 'paused'
 
@@ -176,9 +174,8 @@ export function useScaleDemo(): ScaleDemo {
     for (const [note, beats] of soundingOf(step)) {
       // A note still held from an earlier step is struck again, not left ringing.
       release(note)
-      const velocity = step.dynamic ? DYNAMIC_VELOCITY[step.dynamic] : DEMO_VELOCITY
-      keyboardActions.noteOn(note, velocity, 'pointer')
-      audioRef.current.noteOn(note, velocity)
+      keyboardActions.noteOn(note, DEMO_VELOCITY, 'pointer')
+      audioRef.current.noteOn(note, DEMO_VELOCITY)
       soundingRef.current.set(
         note,
         window.setTimeout(() => release(note), beats * beat * holdRef.current),

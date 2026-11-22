@@ -124,13 +124,12 @@ export function PianoKeyboard({ window: keyWindow, className }: PianoKeyboardPro
     // The learning session is told directly rather than by watching the
     // keyboard store, so a chord played in one frame arrives as three notes
     // instead of as whichever one happened to land last.
-    learningActions.noteOn(note, velocity)
+    learningActions.noteOn(note)
   }, [])
 
   const release = React.useCallback((note: number) => {
     keyboardActions.noteOff(note)
     audioRef.current.noteOff(note)
-    learningActions.noteOff(note)
   }, [])
 
   const velocityFor = React.useCallback((event: React.PointerEvent<HTMLButtonElement>) => {

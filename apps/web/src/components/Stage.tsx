@@ -113,24 +113,12 @@ function RunStatus() {
   )
 }
 
-/** What the run says to a right key played otherwise (`session.feedback`). */
-const FEEDBACK_WORDS = {
-  softer: 'Softer',
-  louder: 'Louder',
-  longer: 'Hold it longer',
-} as const
-
 /**
- * A word for the player, one at a time: while a long note is held, to keep
- * holding; after a right key played too loud, too soft or let go too soon,
- * which way to go — said until the step is played; and for a wrong key of a
- * kind the lesson expects (`Exercise.wrongHints`), a group of three in a
- * lesson on the twos is "That's three. Look for a pair."
+ * A word for a wrong key of a kind the lesson expects (`Exercise.wrongHints`):
+ * a group of three in a lesson on the twos is "That's three. Look for a pair."
  */
 function WrongHint() {
   const text = useLearningStore((state) => {
-    if (state.session.holding) return 'Keep holding'
-    if (state.session.feedback) return FEEDBACK_WORDS[state.session.feedback.kind]
     const hints = state.exercise?.wrongHints
     const wrong = Object.entries(state.session.wrongNotes)
     if (!hints || wrong.length === 0) return null
