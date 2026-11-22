@@ -1,4 +1,4 @@
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
@@ -6,9 +6,28 @@ import path from 'node:path'
 /** The project's one `.env` is at the root of the repository, for the API and this app alike. */
 const ENV_DIR = path.resolve(import.meta.dirname, '../..')
 
-export default defineConfig(({ mode }) => ({
+/**
+ * The root .env is the API's too, and says NODE_ENV=development for it. Read
+ * into a build, that ships React's development build, about 58 KB more on every
+ * page. A build is always production (the `build` script says so), and this
+ * refuses one that is not, once Vite has read the .env.
+ */
+const productionBuildsOnly: Plugin = {
+  name: 'motius:production-builds-only',
+  apply: 'build',
+  configResolved(resolved) {
+    if (!resolved.isProduction)
+      throw new Error(
+        "This build would ship React's development build (NODE_ENV from .env). Run npm run build.",
+      )
+  },
+}
+
+export default defineConfig(({ mode }) => config(mode))
+
+const config = (mode: string) => ({
   envDir: ENV_DIR,
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), productionBuildsOnly],
   resolve: { alias: { '@': path.resolve(import.meta.dirname, './src') } },
   server: {
     port: 5174,
@@ -40,4 +59,4 @@ export default defineConfig(({ mode }) => ({
       },
     },
   },
-}))
+})
