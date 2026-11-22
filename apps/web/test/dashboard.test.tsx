@@ -954,15 +954,16 @@ describe('Piano Foundations', () => {
 
     // One not written yet has no introduction, only a tag that says so, and
     // leaves the keys clear to play.
+    const unwritten = '#/music-notation-and-reading/musical-staff/staff-lines-and-spaces'
     act(() => {
-      globalThis.location.hash = '#/piano-foundations/playing-your-first-notes/high-and-low-notes'
+      globalThis.location.hash = unwritten
     })
-    await at('#/piano-foundations/playing-your-first-notes/high-and-low-notes')
-    expect(lessonUp()).toBe('Which way notes go')
+    await at(unwritten)
+    expect(lessonUp()).toBe('Staff lines and spaces')
     expect(document.querySelector('.lesson-soon')!.textContent).toBe('Coming soon')
     expect(useLearningStore.getState()).toMatchObject({ lesson: null, exercise: null })
     expect(screen.queryByRole('radiogroup', { name: 'Mode' })).toBeNull()
-    expect(trail()).toEqual(['Piano Foundations', 'First Notes', 'Which way notes go'])
+    expect(trail()).toEqual(['Music Notation & Reading', 'Musical Staff', 'Staff lines and spaces'])
   })
 
   it('has Black-key pattern written: the twos and threes, a hand each', async () => {
@@ -1299,10 +1300,15 @@ describe('Piano Foundations', () => {
     fireEvent.click(screen.getByRole('button', { name: 'First Notes lessons' }))
     const sheet = screen.getByRole('dialog', { name: 'First Notes' })
     expect(sheet.textContent).toContain('5 lessons')
-    // One not written yet, so that nothing opens in the sheet's place.
-    fireEvent.click(within(sheet).getByRole('button', { name: 'Repeated notes' }))
-    await at('#/piano-foundations/playing-your-first-notes/playing-repeated-notes')
+    // Its introduction hidden, so that nothing opens in the sheet's place.
+    globalThis.localStorage.setItem(
+      'motius.lesson-intros-hidden',
+      JSON.stringify(['piano-foundations/playing-your-first-notes/skips']),
+    )
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Skips' }))
+    await at('#/piano-foundations/playing-your-first-notes/skips')
     expect(screen.queryByRole('dialog')).toBeNull()
+    globalThis.localStorage.removeItem('motius.lesson-intros-hidden')
   })
 
   it('makes every step of the way down a way back to it', async () => {

@@ -46,6 +46,7 @@ export const LESSON_SECTIONS = {
     'middle-c-train',
     'middle-c-yankee-doodle',
   ],
+  'first-notes': ['which-way-notes-go', 'repeated-notes', 'steps', 'skips', 'simple-melodies'],
 } as const
 
 type LessonSection = keyof typeof LESSON_SECTIONS
@@ -87,6 +88,11 @@ const SECTION_MODULES: Record<LessonSection, () => Promise<SectionContent>> = {
     import('./hand-position-lessons.js').then((loaded) => ({
       builders: loaded.HAND_POSITION_LESSONS,
       abouts: loaded.HAND_POSITION_ABOUT,
+    })),
+  'first-notes': () =>
+    import('./first-notes-lessons.js').then((loaded) => ({
+      builders: loaded.FIRST_NOTES_LESSONS,
+      abouts: loaded.FIRST_NOTES_ABOUT,
     })),
 }
 

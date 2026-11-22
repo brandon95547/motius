@@ -123,7 +123,9 @@ describe('Lesson settings, the admin’s page', () => {
     render(<LessonSettingsPage />)
     expect(screen.getByRole('heading', { name: 'Lesson settings' })).toBeDefined()
     // Only written lessons: one not written yet has nothing to set.
-    expect(screen.queryByRole('combobox', { name: 'Key labels for Repeated notes' })).toBeNull()
+    expect(
+      screen.queryByRole('combobox', { name: 'Key labels for Staff lines and spaces' }),
+    ).toBeNull()
 
     fireEvent.change(screen.getByRole('combobox', { name: 'Key labels for Two black keys' }), {
       target: { value: 'fingers' },

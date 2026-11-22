@@ -5,6 +5,9 @@
 
 export const MIDDLE_C = 60
 
+/** The C below middle C: the left hand's C position puts finger 5 on it. */
+export const LOW_C = MIDDLE_C - 12
+
 /** A white key's letter, by its pitch class. */
 export const LETTER_OF: Readonly<Record<number, string>> = {
   0: 'C',

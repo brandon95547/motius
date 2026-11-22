@@ -9,7 +9,11 @@ import { LESSON_SECTIONS, type LessonExerciseId } from './lesson-exercise.js'
  * Level 1 pp. 9, 14, 18, 74). What is pinned: the tune, its fingers, and that
  * its bars add up.
  */
-const IDS: LessonExerciseId[] = [...LESSON_SECTIONS['hand-positions']]
+/** Every song lesson: Fingers & Hands', and First Notes', which keep to one position too. */
+const IDS: LessonExerciseId[] = [
+  ...LESSON_SECTIONS['hand-positions'],
+  ...LESSON_SECTIONS['first-notes'],
+]
 
 /** Each key as its name (or finger), hand and finger: `Er3`. */
 const played = (id: LessonExerciseId) =>
@@ -17,7 +21,7 @@ const played = (id: LessonExerciseId) =>
     .steps.map((step) => `${step.label}${step.fingers[0]!.hand[0]}${step.fingers[0]!.finger}`)
     .join(' ')
 
-describe('every song in Fingers & Hands', () => {
+describe('every song lesson', () => {
   it.each(IDS)('%s fills whole bars after its pickup', (id) => {
     const exercise = buildLessonExercise(id)
     const beats = exercise.steps.reduce((sum, step) => sum + stepBeats(step), 0)

@@ -235,11 +235,15 @@ export const CATEGORIES: readonly Category[] = [
         // of them. Each hand alone and both together are Fingers & Hands';
         // rhythm comes with the staff.
         under: [
-          { label: 'Which way notes go', id: 'high-and-low-notes' },
-          { label: 'Repeated notes', id: 'playing-repeated-notes' },
-          { label: 'Steps', id: 'steps-and-skips' },
-          'Skips',
-          { label: 'Simple melodies', id: 'playing-simple-melodies' },
+          { label: 'Which way notes go', id: 'high-and-low-notes', exercise: 'which-way-notes-go' },
+          { label: 'Repeated notes', id: 'playing-repeated-notes', exercise: 'repeated-notes' },
+          { label: 'Steps', id: 'steps-and-skips', exercise: 'steps' },
+          { label: 'Skips', exercise: 'skips' },
+          {
+            label: 'Simple melodies',
+            id: 'playing-simple-melodies',
+            exercise: 'simple-melodies',
+          },
         ],
       },
     ]),

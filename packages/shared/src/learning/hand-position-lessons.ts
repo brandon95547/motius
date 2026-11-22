@@ -1,6 +1,6 @@
 import type { NoteRange } from '../domain/device-schemas.js'
 import type { LessonAbout, LessonBuilder } from './lesson-exercise.js'
-import { MIDDLE_C } from './lesson-keys.js'
+import { LOW_C, MIDDLE_C } from './lesson-keys.js'
 import { songLesson, type Song } from './song-lessons.js'
 
 /*
@@ -24,9 +24,6 @@ import { songLesson, type Song } from './song-lessons.js'
  * among them. Every finger here is the position's: the key's place counted from
  * the thumb.
  */
-
-/** The C below middle C: the left hand's C position puts finger 5 on it. */
-const LOW_C = MIDDLE_C - 12
 
 /**
  * The right hand's finger numbers, in Goin' Home: the Largo theme of Dvořák's
