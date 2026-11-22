@@ -227,18 +227,18 @@ export const CATEGORIES: readonly Category[] = [
         id: 'playing-your-first-notes',
         icon: Music2,
         accent: 'rose',
-        description: 'High and low, which way notes move, and simple melodies.',
-        // Pitch is learned here, by playing it, in the order beginner methods
-        // teach it: high and low, then up and down, then step, skip and
-        // repeat (Faber's Primer words, before 2nds and 3rds), then melodies.
+        description: 'Which way notes go, repeats, steps and skips, then simple melodies.',
+        // The patterns a tune is made of, played on the keys before they are
+        // read on the staff: which way the notes go, then repeat, step and skip
+        // (Faber's Primer words, before 2nds and 3rds; Hoffman Academy plays
+        // steps and skips on the keys before reading them), then melodies made
+        // of them. Each hand alone and both together are Fingers & Hands';
+        // rhythm comes with the staff.
         under: [
-          { label: 'High and low notes', id: 'high-and-low-notes' },
-          { label: 'Up and down', id: 'playing-ascending-and-descending-sequences' },
+          { label: 'Which way notes go', id: 'high-and-low-notes' },
           { label: 'Repeated notes', id: 'playing-repeated-notes' },
-          'Steps and skips',
-          { label: 'Right hand', id: 'playing-with-the-right-hand' },
-          { label: 'Left hand', id: 'playing-with-the-left-hand' },
-          { label: 'Both hands', id: 'playing-with-both-hands' },
+          { label: 'Steps', id: 'steps-and-skips' },
+          'Skips',
           { label: 'Simple melodies', id: 'playing-simple-melodies' },
         ],
       },

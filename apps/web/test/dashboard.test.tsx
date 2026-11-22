@@ -285,16 +285,7 @@ const FOUNDATIONS = {
       'Middle C: Yankee Doodle',
     ],
   },
-  'First Notes': [
-    'High and low notes',
-    'Up and down',
-    'Repeated notes',
-    'Steps and skips',
-    'Right hand',
-    'Left hand',
-    'Both hands',
-    'Simple melodies',
-  ],
+  'First Notes': ['Which way notes go', 'Repeated notes', 'Steps', 'Skips', 'Simple melodies'],
 }
 
 /** Music Notation & Reading, as outlined the same day. A name with `[]` under it is a lesson among topics. */
@@ -967,11 +958,11 @@ describe('Piano Foundations', () => {
       globalThis.location.hash = '#/piano-foundations/playing-your-first-notes/high-and-low-notes'
     })
     await at('#/piano-foundations/playing-your-first-notes/high-and-low-notes')
-    expect(lessonUp()).toBe('High and low notes')
+    expect(lessonUp()).toBe('Which way notes go')
     expect(document.querySelector('.lesson-soon')!.textContent).toBe('Coming soon')
     expect(useLearningStore.getState()).toMatchObject({ lesson: null, exercise: null })
     expect(screen.queryByRole('radiogroup', { name: 'Mode' })).toBeNull()
-    expect(trail()).toEqual(['Piano Foundations', 'First Notes', 'High and low notes'])
+    expect(trail()).toEqual(['Piano Foundations', 'First Notes', 'Which way notes go'])
   })
 
   it('has Black-key pattern written: the twos and threes, a hand each', async () => {
@@ -1067,7 +1058,7 @@ describe('Piano Foundations', () => {
     await open('#/piano-foundations/playing-your-first-notes')
     expect(lessons()).toEqual(FOUNDATIONS['First Notes'])
     expect(chapterTitles()).toEqual([])
-    expect(lessonUp()).toBe('High and low notes')
+    expect(lessonUp()).toBe('Which way notes go')
   })
 
   it('opens a topic’s address on its first lesson', async () => {
@@ -1307,7 +1298,7 @@ describe('Piano Foundations', () => {
     expect(document.querySelector('.lesson-list')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'First Notes lessons' }))
     const sheet = screen.getByRole('dialog', { name: 'First Notes' })
-    expect(sheet.textContent).toContain('8 lessons')
+    expect(sheet.textContent).toContain('5 lessons')
     // One not written yet, so that nothing opens in the sheet's place.
     fireEvent.click(within(sheet).getByRole('button', { name: 'Repeated notes' }))
     await at('#/piano-foundations/playing-your-first-notes/playing-repeated-notes')
@@ -1379,7 +1370,7 @@ describe('the categories outlined after it', () => {
   })
 
   it.each([
-    ['piano-foundations', 30],
+    ['piano-foundations', 27],
     ['music-notation-and-reading', 51],
     ['rhythm-and-timing', 53],
     ['scales-intervals-and-keys', 77],
