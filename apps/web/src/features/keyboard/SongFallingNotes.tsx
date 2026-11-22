@@ -1,9 +1,8 @@
 import * as React from 'react'
-import { pitchName, songTimeline, type TimedNote } from '@motius/shared'
+import { songTimeline, type TimedNote } from '@motius/shared'
 import { useElementSize } from '@/lib/hooks'
 import { fallingClock } from '@/state/falling-store'
 import { useKeyboardStore } from '@/state/keyboard-store'
-import { useLearningStore } from '@/state/learning-store'
 import { useCurrentSong, useSongStore } from '@/state/song-store'
 import { BEATS_SHOWN, FallingField, type Glow, type NoteState } from './FallingField'
 import { useSongFallingClock } from './use-song-falling-clock'
@@ -31,7 +30,6 @@ export function SongFallingNotes() {
   const results = useSongStore((state) =>
     state.mode === 'practice' ? state.practice.results : null,
   )
-  const keyLabels = useLearningStore((state) => state.keyLabels)
   const held = useKeyboardStore((state) => state.active)
   const [fieldRef, size] = useElementSize<HTMLDivElement>()
   const trackRef = React.useRef<HTMLDivElement>(null)
@@ -41,8 +39,6 @@ export function SongFallingNotes() {
   const beatMs = 60_000 / Math.max(1, song?.bpm ?? 120)
   useSongFallingClock(trackRef, timeline, beatPx, beatMs)
 
-  const labelOf = (note: TimedNote) =>
-    keyLabels === 'notes' ? pitchName(note.note) : keyLabels === 'fingers' ? note.finger : undefined
   // The beat at the keys, read when the keys change: which is when a bar can
   // light or go out.
   const at = fallingClock.now
@@ -79,7 +75,6 @@ export function SongFallingNotes() {
       paused={false}
       notes={timeline?.notes ?? []}
       stateOf={stateOf}
-      labelOf={labelOf}
       glowing={glowing}
     />
   )

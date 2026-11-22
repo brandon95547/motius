@@ -4,7 +4,7 @@ import { Button } from '@/ui/Button'
 import { Popover } from '@/ui/Menu'
 import { lazyExport, OnDemand } from '@/ui/OnDemand'
 
-const FingerChart = lazyExport(() => import('./FingerChart'), 'FingerChart')
+const FingerChart = lazyExport(() => import('@/ui/FingerChart'), 'FingerChart')
 
 /**
  * What the finger numbers are, for a player who does not know them yet: both

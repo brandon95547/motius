@@ -27,9 +27,9 @@
 @import '../components/stage.css';
 @import '../ui/run-meter.css';
 @import '../ui/achievement-badge.css';
+@import '../ui/finger-chart.css';
 @import '../features/areas/lessons.css';
 @import '../features/keyboard/falling-notes.css';
-@import '../features/keyboard/hands-reminder.css';
 @import '../features/keyboard/keyboard-dock.css';
 @import '../features/account/sign-in.css';
 @import '../features/areas/lesson-settings.css';

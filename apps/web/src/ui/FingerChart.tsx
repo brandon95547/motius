@@ -1,7 +1,11 @@
+import type * as React from 'react'
+
 /**
- * The chart behind Finger numbers: both hands as they rest on the keys, seen
- * from above, each fingertip numbered, and the numbers' names beneath. Loaded
- * the first time the button opens it.
+ * Both hands as they rest on the keys, seen from above, each fingertip
+ * numbered in its hand's color — blue the left, green the right, as the
+ * falling notes color them — and the numbers' names beneath. Shown by a
+ * lesson's Finger numbers, and by the reminder of which hand is which before
+ * the notes fall, each with its own sentence under it.
  */
 
 const FINGERS = [
@@ -12,22 +16,36 @@ const FINGERS = [
   { number: 5, name: 'little finger' },
 ] as const
 
-export function FingerChart() {
+export function FingerChart({
+  note = 'The same numbers on both hands: the thumbs are 1.',
+  compact = false,
+}: {
+  /** What it is shown for, in a sentence under the chart. */
+  note?: React.ReactNode
+  /**
+   * For a notice, where the numbers and colors are the point and the room is
+   * a card's: no names under the hands, and no captions on them (the sentence
+   * says which color is which hand).
+   */
+  compact?: boolean
+}) {
   return (
-    <>
-      <div className="finger-numbers__hands">
-        <HandDrawing side="left" />
-        <HandDrawing side="right" />
+    <div className="finger-chart" data-compact={compact}>
+      <div className="finger-chart__hands">
+        <HandDrawing side="left" caption={!compact} />
+        <HandDrawing side="right" caption={!compact} />
       </div>
-      <p className="finger-numbers__key">
-        {FINGERS.map(({ number, name }) => (
-          <span key={number}>
-            <strong>{number}</strong> {name}
-          </span>
-        ))}
-      </p>
-      <p className="finger-numbers__note">The same numbers on both hands: the thumbs are 1.</p>
-    </>
+      {!compact && (
+        <p className="finger-chart__key">
+          {FINGERS.map(({ number, name }) => (
+            <span key={number}>
+              <strong>{number}</strong> {name}
+            </span>
+          ))}
+        </p>
+      )}
+      <p className="finger-chart__note">{note}</p>
+    </div>
   )
 }
 
@@ -46,15 +64,15 @@ const LEFT_HAND = [
   { number: 1, x: 97, top: 56, lean: 30 },
 ] as const
 
-function HandDrawing({ side }: { side: 'left' | 'right' }) {
+function HandDrawing({ side, caption }: { side: 'left' | 'right'; caption: boolean }) {
   const across = (x: number) => (side === 'left' ? x : WIDTH - x)
   const lean = (degrees: number) => (side === 'left' ? degrees : -degrees)
   return (
-    <figure className="finger-numbers__hand">
+    <figure className="finger-chart__hand" data-hand={side}>
       <svg viewBox={`0 0 ${WIDTH} 112`} aria-hidden>
         {/* The palm: 16 to 96 across on the left hand, the same turned over. */}
         <rect
-          className="finger-numbers__palm"
+          className="finger-chart__palm"
           x={side === 'left' ? 16 : WIDTH - 96}
           y={60}
           width={80}
@@ -73,7 +91,7 @@ function HandDrawing({ side }: { side: 'left' | 'right' }) {
           return (
             <g key={finger.number}>
               <rect
-                className="finger-numbers__finger"
+                className="finger-chart__finger"
                 x={x - 8}
                 y={finger.top}
                 width={16}
@@ -81,16 +99,16 @@ function HandDrawing({ side }: { side: 'left' | 'right' }) {
                 rx={8}
                 transform={`rotate(${angle} ${x} ${pivotY})`}
               />
-              <circle className="finger-numbers__tip" cx={tipX} cy={tipY} r={8} />
+              <circle className="finger-chart__tip" cx={tipX} cy={tipY} r={8} />
               {/* 11 of the drawing's units: about 15px as the chart draws it. */}
-              <text className="finger-numbers__number" x={tipX} y={tipY} fontSize={11}>
+              <text className="finger-chart__number" x={tipX} y={tipY} fontSize={11}>
                 {finger.number}
               </text>
             </g>
           )
         })}
       </svg>
-      <figcaption>{side === 'left' ? 'Left hand' : 'Right hand'}</figcaption>
+      {caption && <figcaption>{side === 'left' ? 'Left hand' : 'Right hand'}</figcaption>}
     </figure>
   )
 }

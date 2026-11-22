@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { pitchClass, timelineOf, timingOf, type TimedNote, type Timing } from '@motius/shared'
+import { timelineOf, timingOf, type TimedNote, type Timing } from '@motius/shared'
 import { useElementSize } from '@/lib/hooks'
 import { useFallingStore } from '@/state/falling-store'
 import { useKeyboardStore } from '@/state/keyboard-store'
@@ -39,8 +39,6 @@ export function FallingNotes() {
   // The step the demonstration is playing, in Listen or wherever Play is pressed.
   const demoStep = useLearningStore((state) => state.demoStepIndex)
   const bpm = useLearningStore((state) => state.targetBpm)
-  // What a bar says is what the keys say: one setting, Key labels, for both.
-  const keyLabels = useLearningStore((state) => state.keyLabels)
   const held = useKeyboardStore((state) => state.active)
   const paused = useFallingStore((state) => state.paused)
   const playedAt = useFallingStore((state) => state.playedAt)
@@ -89,14 +87,6 @@ export function FallingNotes() {
   // field stays up all the same: the player chose falling notes, and the lanes
   // and the line at the keys still answer every key played.
   const notes = timeline?.notes ?? []
-  const labelOf = (note: TimedNote) =>
-    keyLabels === 'notes'
-      ? exercise?.pitchNames[pitchClass(note.note)]
-      : keyLabels === 'degrees'
-        ? exercise?.pitchDegrees?.[pitchClass(note.note)]
-        : keyLabels === 'fingers'
-          ? note.finger
-          : undefined
 
   const missed = new Set(session.missedSteps)
   // How each step played in Practice went, against its beat.
@@ -148,7 +138,6 @@ export function FallingNotes() {
       paused={paused}
       notes={notes}
       stateOf={stateOf}
-      labelOf={labelOf}
       glowing={glowing}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}

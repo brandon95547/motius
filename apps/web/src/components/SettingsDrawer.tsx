@@ -21,6 +21,7 @@ import { useLearningStore, type KeyLabels } from '@/state/learning-store'
 import { AUTO_SPAN, useViewStore } from '@/state/view-store'
 import { useCurrentSong, useSongStore, type FingeringDensity } from '@/state/song-store'
 import { panelActions, usePanelStore } from '@/state/panel-store'
+import { useHandsReminder } from '@/state/hands-reminder'
 import { useMidi } from '@/midi/MidiProvider'
 import { PanelTempo } from '@/components/PlayControls'
 
@@ -169,6 +170,8 @@ function KeyboardSection() {
   const autoSpanLabel = useViewStore((state) => state.autoSpanLabel)
   const follow = useViewStore((state) => state.follow)
   const setFollow = useViewStore((state) => state.setFollow)
+  const handsReminder = useHandsReminder((state) => state.show)
+  const setHandsReminder = useHandsReminder((state) => state.setShow)
   const window = useViewStore((state) => state.window)
   const shiftOctave = useViewStore((state) => state.shiftOctave)
   const keyLabels = useLearningStore((state) => state.keyLabels)
@@ -236,6 +239,12 @@ function KeyboardSection() {
           ]}
         />
       </Field>
+      <Switch
+        label="Hands reminder"
+        description="Show which hand is which color before the notes fall."
+        checked={handsReminder}
+        onChange={setHandsReminder}
+      />
       <Switch
         label="Structure"
         description={

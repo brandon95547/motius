@@ -9,6 +9,7 @@ import { MidiProvider } from '@/midi/MidiProvider'
 import { buildLayout } from '@/lib/keyboard-layout'
 import { fallingClock, useFallingStore } from '@/state/falling-store'
 import { useKeyboardStore } from '@/state/keyboard-store'
+import { useHandsReminder } from '@/state/hands-reminder'
 import { useLearningStore } from '@/state/learning-store'
 import { useViewStore } from '@/state/view-store'
 import { sizeEverything } from './layout-size'
@@ -75,7 +76,7 @@ const timing = (beat: number) =>
 
 beforeEach(() => {
   // Which hand is which is its own test's (`hands-reminder.test.tsx`): here Start starts.
-  globalThis.localStorage.setItem('motius.hands-reminder-hidden', 'true')
+  useHandsReminder.setState({ show: false })
   act(() => {
     learning().setLesson('two-black-key-groups')
     learning().setTopic('lesson')
@@ -112,11 +113,14 @@ describe('falling notes', () => {
     expect(lanes.filter((lane) => lane.dataset.octave === 'true')).toHaveLength(
       whites.slice(1).filter((key) => key.note % 12 === 0).length,
     )
-    // Labeled as the keys are: the note's name by default, its finger if asked.
+    // Each bar says its finger, whatever the keys are labeled with: the
+    // keyboard names the key, the bar says how to play it.
     const label = (note: HTMLElement) => note.querySelector('.falling__label')!.textContent
-    expect(label(first)).toBe('C♯')
-    act(() => learning().setKeyLabels('fingers'))
-    expect(label(notes()[0]!)).toBe('4')
+    expect(label(first)).toBe('4')
+    for (const keyLabels of ['notes', 'degrees', 'off'] as const) {
+      act(() => learning().setKeyLabels(keyLabels))
+      expect(label(notes()[0]!)).toBe('4')
+    }
     act(() => learning().setKeyLabels('notes'))
     // A beat apart, each a beat long.
     expect(notes().map((note) => note.style.getPropertyValue('--start'))).toEqual([
@@ -155,9 +159,10 @@ describe('falling notes', () => {
     expect(partway).toBeLessThan(100)
     await waitFor(() => expect(track().style.transform).toBe('translateY(100px)'))
     const now = notes().filter((note) => note.dataset.now === 'true')
+    // The two keys of the next group, each with its finger.
     expect(now.map((note) => note.querySelector('.falling__label')!.textContent)).toEqual([
-      'C♯',
-      'D♯',
+      '4',
+      '3',
     ])
     // The keys they fall to are asked for in the hand's color.
     expect(learning().annotations[49]).toMatchObject({ role: 'target', hand: 'left' })

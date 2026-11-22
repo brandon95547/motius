@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { buildSong } from '@motius/shared'
 import { AudioProvider } from '@/audio/AudioProvider'
@@ -8,6 +8,7 @@ import { SettingsDrawer } from '@/components/SettingsDrawer'
 import { TopBar } from '@/components/TopBar'
 import { pageActions, usePageSync } from '@/state/page-store'
 import { panelActions } from '@/state/panel-store'
+import { useHandsReminder } from '@/state/hands-reminder'
 import { useSongStore } from '@/state/song-store'
 
 /**
@@ -65,6 +66,16 @@ describe('Settings', () => {
     useSongStore.setState({ library: [song], currentId: song.id })
     const settings = await open('songs')
     expect(within(settings).getByLabelText('Fingering system')).toBeDefined()
+  })
+
+  it('turns the hands reminder back on, and off, from its switch', async () => {
+    act(() => useHandsReminder.getState().setShow(false))
+    const settings = await open('scales')
+    const reminder = within(settings).getByRole('switch', { name: /Hands reminder/ })
+    expect(reminder.getAttribute('aria-checked')).toBe('false')
+    fireEvent.click(reminder)
+    expect(useHandsReminder.getState().show).toBe(true)
+    expect(reminder.getAttribute('aria-checked')).toBe('true')
   })
 
   it('has the fingering system with an exercise', async () => {

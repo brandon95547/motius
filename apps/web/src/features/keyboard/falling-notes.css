@@ -57,8 +57,7 @@
   /* Fades as slowly as the hit flash, so the flash is seen at full strength. */
   transition: opacity var(--duration-slow) var(--ease-standard);
 }
-/* At the bar's foot, what the key labels say — the finger, the name or the
-   degree — large enough to read as it falls. */
+/* At the bar's foot, its finger, large enough to read as it falls. */
 .falling__label {
   font-size: var(--text-h2);
 }

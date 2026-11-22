@@ -91,55 +91,6 @@
   width: min(22rem, calc(100vw - 2rem));
   padding: 16px;
 }
-.finger-numbers__hands {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-.finger-numbers__hand {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  font-size: var(--text-ui);
-  font-weight: 600;
-  color: var(--ds-fg);
-}
-.finger-numbers__hand svg {
-  width: 100%;
-  height: auto;
-  overflow: visible;
-}
-.finger-numbers__palm,
-.finger-numbers__finger {
-  fill: var(--ds-layer-active);
-  stroke: var(--ds-border-strong);
-  stroke-width: 1.5;
-}
-.finger-numbers__tip {
-  fill: var(--ds-accent);
-}
-.finger-numbers__number {
-  fill: var(--ds-accent-fg);
-  font-weight: 700;
-  text-anchor: middle;
-  dominant-baseline: central;
-}
-.finger-numbers__key {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 4px 12px;
-  margin-top: 12px;
-  font-size: var(--text-ui);
-  color: var(--ds-fg);
-}
-.finger-numbers__note {
-  margin-top: 6px;
-  text-align: center;
-  font-size: var(--text-ui);
-  color: var(--ds-fg-secondary);
-}
 /* A lesson's results: where the player is in the section, the run's score as
    a ring beside what it was made of, stacked on a phone. */
 .lesson-results {

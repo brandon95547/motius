@@ -38,7 +38,6 @@ export function FallingField({
   paused,
   notes,
   stateOf,
-  labelOf,
   glowing,
   children,
   ...handlers
@@ -49,7 +48,6 @@ export function FallingField({
   paused: boolean
   notes: readonly TimedNote[]
   stateOf: (note: TimedNote) => NoteState
-  labelOf: (note: TimedNote) => React.ReactNode
   glowing: readonly Glow[]
   children?: React.ReactNode
 } & Pick<
@@ -109,8 +107,9 @@ export function FallingField({
                 } as React.CSSProperties
               }
             >
-              {/* What the key labels say: its finger, name or degree. The hand is its color. */}
-              <span className="falling__label">{labelOf(note)}</span>
+              {/* Its finger, whatever the keys say: the keyboard names the key,
+                  the bar says how to play it. The hand is its color. */}
+              <span className="falling__label">{note.finger}</span>
             </span>
           )
         })}

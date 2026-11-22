@@ -1,15 +1,15 @@
 import * as React from 'react'
-import { Hand } from 'lucide-react'
 import { closeHandsReminder, useHandsReminder } from '@/state/hands-reminder'
 import { Button } from '@/ui/Button'
 import { Checkbox } from '@/ui/Controls'
 import { Dialog } from '@/ui/Dialog'
+import { FingerChart } from '@/ui/FingerChart'
 
 /**
  * Which hand is which, in the middle of the screen, as the notes are about to
- * fall (`hands-reminder.ts` says when): no words, only each hand's color over
- * a faint hand, blue on the left and green on the right, as the hands are. Closing it, any way, starts what was
- * pressed.
+ * fall (`hands-reminder.ts` says when): the finger chart a lesson's Finger
+ * numbers shows, its fingertips in the hands' colors, and a sentence that
+ * ties both to the bars. Closing it, any way, starts what was pressed.
  */
 export function HandsReminder() {
   const open = useHandsReminder((state) => state.waiting !== null)
@@ -31,19 +31,10 @@ export function HandsReminder() {
         </div>
       }
     >
-      {/* Seen, not read: each hand's color over a faint hand, left on the left.
-          The words are for a screen reader. */}
-      <div className="hands-reminder">
-        {(['left', 'right'] as const).map((hand) => (
-          <div key={hand} className="hands-reminder__hand" data-hand={hand}>
-            <Hand className="hands-reminder__picture" strokeWidth={1.25} aria-hidden />
-            <span className="hands-reminder__swatch" aria-hidden />
-            <span className="sr-only">
-              {hand === 'left' ? 'Blue is your left hand.' : 'Green is your right hand.'}
-            </span>
-          </div>
-        ))}
-      </div>
+      <FingerChart
+        compact
+        note="Blue is your left hand, green your right. The number on each bar is the finger that plays it."
+      />
     </Dialog>
   )
 }
