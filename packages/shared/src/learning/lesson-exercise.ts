@@ -46,7 +46,7 @@ export const LESSON_SECTIONS = {
     'middle-c-train',
     'middle-c-yankee-doodle',
   ],
-  'first-notes': ['which-way-notes-go', 'repeated-notes', 'steps', 'skips', 'simple-melodies'],
+  'first-notes': ['which-way-notes-go', 'repeated-notes', 'steps', 'skips', 'combining-patterns'],
 } as const
 
 type LessonSection = keyof typeof LESSON_SECTIONS

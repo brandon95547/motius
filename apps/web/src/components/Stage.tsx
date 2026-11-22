@@ -49,7 +49,7 @@ export function Stage({ children }: { children?: React.ReactNode }) {
       <div className="stage__notices">
         <EngineNotice />
         {topic !== 'songs' && <RunStatus />}
-        {topic !== 'songs' && <WrongHint />}
+        {topic !== 'songs' && <StageHint />}
       </div>
 
       {falling && (scoreOpen ? <SongFallingNotes /> : <FallingNotes />)}
@@ -114,16 +114,24 @@ function RunStatus() {
 }
 
 /**
- * A word for a wrong key of a kind the lesson expects (`Exercise.wrongHints`):
- * a group of three in a lesson on the twos is "That's three. Look for a pair."
+ * A word for the player, one at a time, over the music. For a wrong key of a
+ * kind the lesson expects (`Exercise.wrongHints`), what it was: a group of
+ * three in a lesson on the twos is "That's three. Look for a pair." Otherwise,
+ * in a lesson, what the part being played is about: the cue its phrase starts
+ * with ("Steps up: D, then E"), until the next phrase brings its own.
  */
-function WrongHint() {
+function StageHint() {
   const text = useLearningStore((state) => {
     const hints = state.exercise?.wrongHints
     const wrong = Object.entries(state.session.wrongNotes)
-    if (!hints || wrong.length === 0) return null
-    const [note] = wrong.reduce((latest, each) => (each[1] > latest[1] ? each : latest))
-    return hints.find((hint) => hint.pitchClasses.includes(Number(note) % 12))?.text ?? null
+    if (hints && wrong.length > 0) {
+      const [note] = wrong.reduce((latest, each) => (each[1] > latest[1] ? each : latest))
+      const hint = hints.find((each) => each.pitchClasses.includes(Number(note) % 12))
+      if (hint) return hint.text
+    }
+    if (state.topic !== 'lesson' || state.session.status === 'complete') return null
+    const steps = state.exercise?.steps.slice(0, state.session.stepIndex + 1) ?? []
+    return steps.findLast((step) => step.cue)?.cue ?? null
   })
   if (!text) return null
   return (

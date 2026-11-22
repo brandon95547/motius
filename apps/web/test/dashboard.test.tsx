@@ -285,7 +285,7 @@ const FOUNDATIONS = {
       'Middle C: Yankee Doodle',
     ],
   },
-  'First Notes': ['Which way notes go', 'Repeated notes', 'Steps', 'Skips', 'Simple melodies'],
+  'First Notes': ['Which way notes go', 'Repeated notes', 'Steps', 'Skips', 'Combining patterns'],
 }
 
 /** Music Notation & Reading, as outlined the same day. A name with `[]` under it is a lesson among topics. */

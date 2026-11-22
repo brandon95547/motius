@@ -9,7 +9,7 @@ import { songLesson, type Song } from './song-lessons.js'
  *
  * The patterns a tune is made of, played on the keys before they are read on
  * the staff: which way the notes go, then a repeated note, a step and a skip
- * (Faber's Primer words), then melodies made of them. Alfred Level 1 reads a
+ * (Faber's Primer words), then the three together in a tune. Alfred Level 1 reads a
  * melody as a starting key and a chain of directions and intervals (pp. 26,
  * 35); Hoffman Academy plays steps and skips on the keys before reading them.
  * How long a note lasts, and how loud, are not judged here: timing comes with
@@ -106,26 +106,32 @@ const SKIPS: Song = {
 }
 
 /**
- * Simple melodies: Au clair de la lune, its first two lines, which has every
- * pattern in it — repeats, steps, a skip — in the right hand, then the left.
+ * Combining patterns: Au clair de la lune, its first two lines, which has every
+ * pattern in it. The first time, each bit says which pattern it is; the second
+ * time, the tune whole, the patterns found by the player; then the left hand.
  */
-const MELODIES: Song = {
-  id: 'simple-melodies',
-  title: 'Simple melodies',
-  subtitle: 'Au clair de la lune · each hand',
+const COMBINING: Song = {
+  id: 'combining-patterns',
+  title: 'Combining patterns',
+  subtitle: 'Au clair de la lune · repeats, steps and a skip',
   ...PATTERN,
   thumbs: BOTH,
   phrases: [
+    { hand: 'right', notes: 'C4 C4 C4', cue: 'Au clair de la lune. Repeats: C, C, C' },
+    { hand: 'right', notes: 'D4 E4:2', cue: 'Steps up: D, then E' },
+    { hand: 'right', notes: 'D4:2 C4', cue: 'Steps down: D, then C' },
+    { hand: 'right', notes: 'E4', cue: 'A skip up to E' },
+    { hand: 'right', notes: 'D4 D4', cue: 'A step down, and a repeat' },
+    { hand: 'right', notes: 'C4:4', cue: 'A step down, home to C' },
     {
       hand: 'right',
       notes: 'C4 C4 C4 D4 E4:2 D4:2 C4 E4 D4 D4 C4:4',
-      cue: 'Au clair de la lune: repeats, steps and a skip',
+      cue: 'Again, the whole line: find the patterns yourself',
     },
-    { hand: 'right', notes: 'C4 C4 C4 D4 E4:2 D4:2 C4 E4 D4 D4 C4:4', cue: 'Again, as it is sung' },
     {
       hand: 'left',
       notes: 'C3 C3 C3 D3 E3:2 D3:2 C3 E3 D3 D3 C3:4',
-      cue: 'Now the left hand: the same tune, lower',
+      cue: 'Now the left hand: the same patterns, lower',
     },
   ],
 }
@@ -135,7 +141,7 @@ export const FIRST_NOTES_LESSONS = {
   'repeated-notes': (range: NoteRange) => songLesson(REPEATED, range),
   steps: (range: NoteRange) => songLesson(STEPS, range),
   skips: (range: NoteRange) => songLesson(SKIPS, range),
-  'simple-melodies': (range: NoteRange) => songLesson(MELODIES, range),
+  'combining-patterns': (range: NoteRange) => songLesson(COMBINING, range),
 } as const satisfies Record<string, LessonBuilder>
 
 const RIGHT_HAND = {
@@ -169,10 +175,10 @@ export const FIRST_NOTES_ABOUT = {
     how: [RIGHT_HAND],
     remember: 'A skip misses out one key, and one finger.',
   },
-  'simple-melodies': {
+  'combining-patterns': {
     objective:
-      'Play Au clair de la lune, a French song of repeats, steps and a skip, in each hand.',
+      'Find the repeats, steps and skip in Au clair de la lune, a French song, as you play it in each hand.',
     how: [RIGHT_HAND, LEFT_HAND],
-    remember: 'Look for the patterns: the same key, the next key, or one over.',
+    remember: 'Each move is one of three: the same key, the next key, or one over.',
   },
 } as const satisfies Record<keyof typeof FIRST_NOTES_LESSONS, LessonAbout>

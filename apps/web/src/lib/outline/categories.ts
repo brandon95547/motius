@@ -227,12 +227,12 @@ export const CATEGORIES: readonly Category[] = [
         id: 'playing-your-first-notes',
         icon: Music2,
         accent: 'rose',
-        description: 'Which way notes go, repeats, steps and skips, then simple melodies.',
+        description: 'Which way notes go, repeats, steps and skips, then all three in a tune.',
         // The patterns a tune is made of, played on the keys before they are
         // read on the staff: which way the notes go, then repeat, step and skip
         // (Faber's Primer words, before 2nds and 3rds; Hoffman Academy plays
-        // steps and skips on the keys before reading them), then melodies made
-        // of them. Each hand alone and both together are Fingers & Hands';
+        // steps and skips on the keys before reading them), then all three
+        // together in a tune. Each hand alone and both together are Fingers & Hands';
         // rhythm comes with the staff.
         under: [
           { label: 'Which way notes go', id: 'high-and-low-notes', exercise: 'which-way-notes-go' },
@@ -240,9 +240,9 @@ export const CATEGORIES: readonly Category[] = [
           { label: 'Steps', id: 'steps-and-skips', exercise: 'steps' },
           { label: 'Skips', exercise: 'skips' },
           {
-            label: 'Simple melodies',
+            label: 'Combining patterns',
             id: 'playing-simple-melodies',
-            exercise: 'simple-melodies',
+            exercise: 'combining-patterns',
           },
         ],
       },

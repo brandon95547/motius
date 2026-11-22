@@ -116,6 +116,8 @@ describe('a lesson opens as an admin set it', () => {
 })
 
 describe('Lesson settings, the admin’s page', () => {
+  // Its controls are found by label: by role, every one of a row of four for
+  // each written lesson has its name worked out, and the page grows with the course.
   it('lists the written lessons and saves a change as it is made', async () => {
     const save = vi
       .spyOn(api, 'setLessonSettings')
@@ -123,17 +125,15 @@ describe('Lesson settings, the admin’s page', () => {
     render(<LessonSettingsPage />)
     expect(screen.getByRole('heading', { name: 'Lesson settings' })).toBeDefined()
     // Only written lessons: one not written yet has nothing to set.
-    expect(
-      screen.queryByRole('combobox', { name: 'Key labels for Staff lines and spaces' }),
-    ).toBeNull()
+    expect(screen.queryByLabelText('Key labels for Staff lines and spaces')).toBeNull()
 
-    fireEvent.change(screen.getByRole('combobox', { name: 'Key labels for Two black keys' }), {
+    fireEvent.change(screen.getByLabelText('Key labels for Two black keys'), {
       target: { value: 'fingers' },
     })
     await waitFor(() => expect(save).toHaveBeenCalledWith(settings({ keyLabels: 'fingers' })))
     await screen.findByText('Saved')
 
-    fireEvent.change(screen.getByRole('combobox', { name: 'Tempo for Two black keys' }), {
+    fireEvent.change(screen.getByLabelText('Tempo for Two black keys'), {
       target: { value: '50' },
     })
     await waitFor(() =>
@@ -145,7 +145,7 @@ describe('Lesson settings, the admin’s page', () => {
     vi.spyOn(api, 'setLessonSettings').mockRejectedValue(new Error('offline'))
     vi.spyOn(console, 'error').mockImplementation(() => {})
     render(<LessonSettingsPage />)
-    fireEvent.change(screen.getByRole('combobox', { name: 'View for Two black keys' }), {
+    fireEvent.change(screen.getByLabelText('View for Two black keys'), {
       target: { value: 'falling' },
     })
     await screen.findByText('Not saved. Try again.')

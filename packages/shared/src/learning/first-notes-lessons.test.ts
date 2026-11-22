@@ -54,10 +54,18 @@ describe('First Notes', () => {
     expect(letters('skips').endsWith('CDECCDECEFGEFG')).toBe(true)
   })
 
-  it('plays Au clair de la lune twice in the right hand, then once in the left', () => {
+  it('plays Au clair de la lune twice in the right hand, the first time a pattern at a time, then once in the left', () => {
     const tune = 'CCCDEDCEDDC'
-    expect(letters('simple-melodies')).toBe(tune.repeat(3))
-    const hands = buildLessonExercise('simple-melodies').steps.map((step) => step.fingers[0]!.hand)
+    expect(letters('combining-patterns')).toBe(tune.repeat(3))
+    const hands = buildLessonExercise('combining-patterns').steps.map(
+      (step) => step.fingers[0]!.hand,
+    )
     expect(hands.lastIndexOf('right')).toBe(tune.length * 2 - 1)
+    // The first time through, each bit names its pattern.
+    const cues = buildLessonExercise('combining-patterns')
+      .steps.slice(0, tune.length)
+      .flatMap((step) => (step.cue ? [step.cue] : []))
+    expect(cues).toHaveLength(6)
+    expect(cues.join(' ')).toMatch(/Repeats.*Steps up.*Steps down.*A skip/)
   })
 })
