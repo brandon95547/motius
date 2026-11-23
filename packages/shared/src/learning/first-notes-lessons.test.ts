@@ -1,71 +1,56 @@
 import { describe, expect, it } from 'vitest'
 import { buildLessonExercise } from './lesson-builders.js'
-import type { LessonExerciseId } from './lesson-exercise.js'
 
 /**
- * First Notes: the patterns a tune is made of, each shown on the keys, then
- * a tune known for it (bars and positions are checked with every song lesson,
- * `hand-position-lessons.test.ts`). What is pinned: the tunes, and that each
- * lesson's exercises are its pattern.
+ * First Notes, as it starts: the hands on C, the right thumb on middle C and
+ * the left pinky on the C below, each playing the five keys under it, one at
+ * a time (bars and positions are checked with every song lesson,
+ * `hand-position-lessons.test.ts`).
  */
-const letters = (id: LessonExerciseId) =>
-  buildLessonExercise(id)
-    .steps.map((step) => step.label)
-    .join('')
-
-/**
- * The moves from key to key, in semitones, inside each of the first `count`
- * phrases: a phrase starts where the last left off, so the move between two is
- * not either one's pattern. A phrase begins at the step that carries its cue.
- */
-const moves = (id: LessonExerciseId, count: number) => {
-  const phrases: number[][] = []
-  for (const step of buildLessonExercise(id).steps) {
-    if (step.cue) phrases.push([])
-    phrases.at(-1)!.push(step.notes[0]!)
-  }
-  return phrases
-    .slice(0, count)
-    .flatMap((notes) => notes.slice(1).map((note, index) => note - notes[index]!))
-}
-
 describe('First Notes', () => {
-  it('goes up and down in each hand, the left an octave below', () => {
-    const exercise = buildLessonExercise('which-way-notes-go')
-    expect(letters('which-way-notes-go').slice(0, 10)).toBe('CDEFGGFEDC')
-    const left = exercise.steps.filter((step) => step.fingers[0]!.hand === 'left')
-    expect(left.map((step) => step.notes[0])).toEqual([48, 50, 52, 53, 55, 55, 53, 52, 50, 48])
-    expect(left[0]!.fingers[0]!.finger).toBe(5)
-  })
-
-  it('plays Hot Cross Buns after its repeats', () => {
-    expect(letters('repeated-notes').endsWith('EDCEDCCCCCDDDDEDC')).toBe(true)
-  })
-
-  it('steps by the next key only, before Mary Had a Little Lamb', () => {
-    // The exercises: C D C D, E F E F G F E, C up to G and back.
-    for (const move of moves('steps', 3)) expect(Math.abs(move)).toBeLessThanOrEqual(2)
-    expect(letters('steps').endsWith('EDCDEEEDDDEGGEDCDEEEEDDEDC')).toBe(true)
-  })
-
-  it('skips over one key, before Frère Jacques', () => {
-    // The exercises: C E C E, D F D F, E G E G, C E G E C.
-    for (const move of moves('skips', 4)) expect([3, 4]).toContain(Math.abs(move))
-    expect(letters('skips').endsWith('CDECCDECEFGEFG')).toBe(true)
-  })
-
-  it('plays Au clair de la lune twice in the right hand, the first time a pattern at a time, then once in the left', () => {
-    const tune = 'CCCDEDCEDDC'
-    expect(letters('combining-patterns')).toBe(tune.repeat(3))
-    const hands = buildLessonExercise('combining-patterns').steps.map(
-      (step) => step.fingers[0]!.hand,
+  it('plays C to G in the right hand from middle C, then in the left from the C below', () => {
+    const steps = buildLessonExercise('hands-on-c').steps
+    expect(
+      steps.map((step) => `${step.fingers[0]!.hand[0]}${step.label}${step.fingers[0]!.finger}`),
+    ).toEqual(['rC1', 'rD2', 'rE3', 'rF4', 'rG5', 'lC5', 'lD4', 'lE3', 'lF2', 'lG1'])
+    expect(steps.map((step) => step.notes)).toEqual(
+      [60, 62, 64, 65, 67, 48, 50, 52, 53, 55].map((note) => [note]),
     )
-    expect(hands.lastIndexOf('right')).toBe(tune.length * 2 - 1)
-    // The first time through, each bit names its pattern.
-    const cues = buildLessonExercise('combining-patterns')
-      .steps.slice(0, tune.length)
-      .flatMap((step) => (step.cue ? [step.cue] : []))
-    expect(cues).toHaveLength(6)
-    expect(cues.join(' ')).toMatch(/Repeats.*Steps up.*Steps down.*A skip/)
+  })
+
+  it('plays the first song: left C, left G, right C, right E, one key at a time, four times', () => {
+    const steps = buildLessonExercise('pattern-1').steps
+    const round = ['lC5', 'lG1', 'rC1', 'rE3']
+    expect(
+      steps.map((step) => `${step.fingers[0]!.hand[0]}${step.label}${step.fingers[0]!.finger}`),
+    ).toEqual([...round, ...round, ...round, ...round])
+    expect(steps.every((step) => step.notes.length === 1)).toBe(true)
+  })
+
+  it.each([
+    ['pattern-2', 'rD2'],
+    ['pattern-4', 'rF4'],
+  ] as const)('plays %s as pattern 1 with a different last key, %s', (id, last) => {
+    const steps = buildLessonExercise(id).steps
+    const round = ['lC5', 'lG1', 'rC1', last]
+    expect(
+      steps.map((step) => `${step.fingers[0]!.hand[0]}${step.label}${step.fingers[0]!.finger}`),
+    ).toEqual([...round, ...round, ...round, ...round])
+  })
+
+  it('plays pattern 1 four times, then pattern 2 four times', () => {
+    const steps = buildLessonExercise('patterns-1-and-2').steps
+    const one = ['lC5', 'lG1', 'rC1', 'rE3']
+    const two = ['lC5', 'lG1', 'rC1', 'rD2']
+    expect(
+      steps.map((step) => `${step.fingers[0]!.hand[0]}${step.label}${step.fingers[0]!.finger}`),
+    ).toEqual([...one, ...one, ...one, ...one, ...two, ...two, ...two, ...two])
+  })
+
+  it('plays the whole melody: patterns 1, 2, 1 and 4, four times each', () => {
+    const lasts = buildLessonExercise('whole-melody')
+      .steps.filter((_, index) => index % 4 === 3)
+      .map((step) => step.label)
+    expect(lasts).toEqual([...'EEEE', ...'DDDD', ...'EEEE', ...'FFFF'])
   })
 })

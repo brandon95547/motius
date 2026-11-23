@@ -285,7 +285,14 @@ const FOUNDATIONS = {
       'Middle C: Yankee Doodle',
     ],
   },
-  'First Notes': ['Which way notes go', 'Repeated notes', 'Steps', 'Skips', 'Combining patterns'],
+  'First Notes': [
+    'Play in the Key of C',
+    'Pattern 1: Key of C',
+    'Pattern 2: Key of C',
+    'Patterns 1 and 2: Key of C',
+    'Pattern 4: Key of C',
+    'Patterns 1, 2, 1 and 4: Key of C',
+  ],
 }
 
 /** Music Notation & Reading, as outlined the same day. A name with `[]` under it is a lesson among topics. */
@@ -1059,7 +1066,7 @@ describe('Piano Foundations', () => {
     await open('#/piano-foundations/playing-your-first-notes')
     expect(lessons()).toEqual(FOUNDATIONS['First Notes'])
     expect(chapterTitles()).toEqual([])
-    expect(lessonUp()).toBe('Which way notes go')
+    expect(lessonUp()).toBe('Play in the Key of C')
   })
 
   it('opens a topic’s address on its first lesson', async () => {
@@ -1295,18 +1302,17 @@ describe('Piano Foundations', () => {
   })
 
   it('opens the list from the bar, as a sheet from the right, and puts it away when one is picked', async () => {
-    await open('#/piano-foundations/playing-your-first-notes')
+    await open('#/piano-foundations/fingers-and-hand-positions')
     expect(document.querySelector('.lesson-list')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'First Notes lessons' }))
-    const sheet = screen.getByRole('dialog', { name: 'First Notes' })
-    expect(sheet.textContent).toContain('5 lessons')
+    fireEvent.click(screen.getByRole('button', { name: 'Fingers & Hands lessons' }))
+    const sheet = screen.getByRole('dialog', { name: 'Fingers & Hands' })
+    expect(sheet.textContent).toContain('12 lessons')
     // Its introduction hidden, so that nothing opens in the sheet's place.
-    globalThis.localStorage.setItem(
-      'motius.lesson-intros-hidden',
-      JSON.stringify(['piano-foundations/playing-your-first-notes/skips']),
-    )
-    fireEvent.click(within(sheet).getByRole('button', { name: 'Skips' }))
-    await at('#/piano-foundations/playing-your-first-notes/skips')
+    const lightlyRow =
+      'piano-foundations/fingers-and-hand-positions/finger-numbering/left-hand-lightly-row'
+    globalThis.localStorage.setItem('motius.lesson-intros-hidden', JSON.stringify([lightlyRow]))
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Left hand: Lightly Row' }))
+    await at(`#/${lightlyRow}`)
     expect(screen.queryByRole('dialog')).toBeNull()
     globalThis.localStorage.removeItem('motius.lesson-intros-hidden')
   })
@@ -1376,7 +1382,7 @@ describe('the categories outlined after it', () => {
   })
 
   it.each([
-    ['piano-foundations', 27],
+    ['piano-foundations', 28],
     ['music-notation-and-reading', 51],
     ['rhythm-and-timing', 53],
     ['scales-intervals-and-keys', 77],

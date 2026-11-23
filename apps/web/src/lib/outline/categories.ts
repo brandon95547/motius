@@ -227,23 +227,16 @@ export const CATEGORIES: readonly Category[] = [
         id: 'playing-your-first-notes',
         icon: Music2,
         accent: 'rose',
-        description: 'Which way notes go, repeats, steps and skips, then all three in a tune.',
-        // The patterns a tune is made of, played on the keys before they are
-        // read on the staff: which way the notes go, then repeat, step and skip
-        // (Faber's Primer words, before 2nds and 3rds; Hoffman Academy plays
-        // steps and skips on the keys before reading them), then all three
-        // together in a tune. Each hand alone and both together are Fingers & Hands';
-        // rhythm comes with the staff.
+        description: 'A first melody in C, one pattern at a time, both hands.',
+        // A first melody, built pattern by pattern: both hands on C and the
+        // five keys under each, then the first song (the lessons' module says how).
         under: [
-          { label: 'Which way notes go', id: 'high-and-low-notes', exercise: 'which-way-notes-go' },
-          { label: 'Repeated notes', id: 'playing-repeated-notes', exercise: 'repeated-notes' },
-          { label: 'Steps', id: 'steps-and-skips', exercise: 'steps' },
-          { label: 'Skips', exercise: 'skips' },
-          {
-            label: 'Combining patterns',
-            id: 'playing-simple-melodies',
-            exercise: 'combining-patterns',
-          },
+          { label: 'Play in the Key of C', exercise: 'hands-on-c' },
+          { label: 'Pattern 1: Key of C', exercise: 'pattern-1' },
+          { label: 'Pattern 2: Key of C', exercise: 'pattern-2' },
+          { label: 'Patterns 1 and 2: Key of C', exercise: 'patterns-1-and-2' },
+          { label: 'Pattern 4: Key of C', exercise: 'pattern-4' },
+          { label: 'Patterns 1, 2, 1 and 4: Key of C', exercise: 'whole-melody' },
         ],
       },
     ]),
