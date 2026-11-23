@@ -49,7 +49,7 @@ export function Stage({ children }: { children?: React.ReactNode }) {
       <div className="stage__notices">
         <EngineNotice />
         {topic !== 'songs' && <RunStatus />}
-        {topic !== 'songs' && <StageHint />}
+        {topic !== 'songs' && <WrongHint />}
       </div>
 
       {falling && (scoreOpen ? <SongFallingNotes /> : <FallingNotes />)}
@@ -108,30 +108,24 @@ function RunStatus() {
       total={total}
       mistakes={session.mistakes}
       label={lesson ? 'the lesson' : `the ${what}`}
-      title={lesson ? 'Lesson progress' : undefined}
+      title={lesson ? 'Progress' : undefined}
     />
   )
 }
 
 /**
- * A word for the player, one at a time, over the music. For a wrong key of a
- * kind the lesson expects (`Exercise.wrongHints`), what it was: a group of
- * three in a lesson on the twos is "That's three. Look for a pair." Otherwise,
- * in a lesson, what the part being played is about: the cue its phrase starts
- * with ("Steps up: D, then E"), until the next phrase brings its own.
+ * A word for a wrong key of a kind the lesson expects (`Exercise.wrongHints`):
+ * a group of three in a lesson on the twos is "That's three. Look for a pair."
+ * Nothing else is said over the music: what a lesson has to explain, it says
+ * in a dialog (its introduction, a crossing's tip).
  */
-function StageHint() {
+function WrongHint() {
   const text = useLearningStore((state) => {
     const hints = state.exercise?.wrongHints
     const wrong = Object.entries(state.session.wrongNotes)
-    if (hints && wrong.length > 0) {
-      const [note] = wrong.reduce((latest, each) => (each[1] > latest[1] ? each : latest))
-      const hint = hints.find((each) => each.pitchClasses.includes(Number(note) % 12))
-      if (hint) return hint.text
-    }
-    if (state.topic !== 'lesson' || state.session.status === 'complete') return null
-    const steps = state.exercise?.steps.slice(0, state.session.stepIndex + 1) ?? []
-    return steps.findLast((step) => step.cue)?.cue ?? null
+    if (!hints || wrong.length === 0) return null
+    const [note] = wrong.reduce((latest, each) => (each[1] > latest[1] ? each : latest))
+    return hints.find((hint) => hint.pitchClasses.includes(Number(note) % 12))?.text ?? null
   })
   if (!text) return null
   return (

@@ -69,9 +69,9 @@
   background-color: var(--ds-danger);
 }
 /* With its name before the bar: wider, so the bar keeps its length. */
+/* With its one word before the bar, as wide as any other: the word is short. */
 .run-meter--titled {
-  width: clamp(18rem, 36vw, 32rem);
-  padding-inline: 18px 16px;
+  padding-inline: 16px 14px;
 }
 .run-meter__title {
   flex: none;

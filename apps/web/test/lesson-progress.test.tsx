@@ -67,23 +67,3 @@ describe('two-black-key groups, played as a lesson', () => {
     expect(roles()[0]).toBe('scale')
   })
 })
-
-describe('a lesson’s phrases, said over the music', () => {
-  it('names the pattern being played, and moves on with the tune', () => {
-    act(() => learning().setLesson('combining-patterns'))
-    render(
-      <AudioProvider>
-        <Stage />
-      </AudioProvider>,
-    )
-    expect(screen.getByText('Au clair de la lune. Repeats: C, C, C')).toBeDefined()
-    act(() => {
-      learning().start()
-      for (const note of [60, 60, 60]) learning().noteOn(note)
-    })
-    expect(screen.getByText('Steps up: D, then E')).toBeDefined()
-    // Still that phrase's word one key into it.
-    act(() => learning().noteOn(62))
-    expect(screen.getByText('Steps up: D, then E')).toBeDefined()
-  })
-})

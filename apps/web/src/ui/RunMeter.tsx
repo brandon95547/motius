@@ -29,7 +29,7 @@ export function RunMeter({
   mistakes?: number
   /** What the progress is through — "the scale", "the song". */
   label: string
-  /** Said before the bar, where the stage has room for it: "Lesson progress". */
+  /** Said before the bar: "Progress". */
   title?: string
   className?: string
 }) {
