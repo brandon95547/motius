@@ -2,6 +2,7 @@ import * as React from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { IconButton } from './Button'
+import { Checkbox } from './controls/Checkbox'
 import { useDismissable, useFocusTrap, useMediaQuery } from '@/lib/hooks'
 
 /* ===========================================================================
@@ -44,6 +45,7 @@ export function Dialog({
   footer,
   size = 'sm',
   flush,
+  showNext,
 }: {
   open: boolean
   onClose: () => void
@@ -56,6 +58,11 @@ export function Dialog({
   size?: DialogSize
   /** The body lays itself out and scrolls its own regions: no padding here. */
   flush?: boolean
+  /**
+   * A dialog the player can turn off for next time — an introduction, a
+   * reminder, a tip: its box, at the footer's start, with the actions at its end.
+   */
+  showNext?: { label?: string; checked: boolean; onChange: (checked: boolean) => void }
 }) {
   const panelRef = React.useRef<HTMLDivElement>(null)
   const isNarrow = useMediaQuery('(max-width: 39.999rem)')
@@ -142,8 +149,17 @@ export function Dialog({
           {children}
         </div>
 
-        {footer && (
-          <footer className="flex items-center justify-end gap-2.5 coarse:gap-3 border-t border-[var(--ds-border-subtle)] px-6 py-4">
+        {(footer || showNext) && (
+          <footer className="flex flex-wrap items-center justify-end gap-2.5 coarse:gap-3 border-t border-[var(--ds-border-subtle)] px-6 py-4">
+            {showNext && (
+              <div className="mr-auto">
+                <Checkbox
+                  label={showNext.label ?? 'Show next time'}
+                  checked={showNext.checked}
+                  onChange={showNext.onChange}
+                />
+              </div>
+            )}
             {footer}
           </footer>
         )}

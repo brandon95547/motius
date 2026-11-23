@@ -1,4 +1,5 @@
 import type { Hand } from '../music/fingering.js'
+import type { StepCrossing } from './crossings.js'
 
 /**
  * The generic exercise model.
@@ -87,6 +88,11 @@ export interface ExerciseStep {
    * melody note and outlasts it.
    */
   readonly holds?: readonly number[]
+  /**
+   * Where the hand crosses into this step — the thumb under, or a finger over
+   * the thumb — for a lesson that stops to show how before it is played.
+   */
+  readonly crossing?: StepCrossing
 }
 
 /** How long a step lasts, in beats. */

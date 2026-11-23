@@ -48,7 +48,8 @@ import { lazyExport, OnDemand } from '@/ui/OnDemand'
 const GoalChip = lazyExport(() => import('@/features/progress/GoalChip'), 'GoalChip')
 // Shown only where there is music to play, so they come with the workspace.
 const OptionsButton = lazyExport(loadWorkspace, 'OptionsButton')
-const SongSearch = lazyExport(loadWorkspace, 'SongSearch')
+// The Songs area's own: its search reads the song catalog, which no other page needs.
+const SongSearch = lazyExport(() => import('@/features/songs/SongSearch'), 'SongSearch')
 const PlayControls = lazyExport(loadWorkspace, 'PlayControls')
 
 /**

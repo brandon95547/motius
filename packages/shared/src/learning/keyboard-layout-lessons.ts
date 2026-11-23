@@ -1,4 +1,5 @@
 import type { NoteRange } from '../domain/device-schemas.js'
+import { markCrossings } from './crossings.js'
 import { scaleFingering, type Hand } from '../music/fingering.js'
 import type { FingeringSystemId } from '../music/fingering-system.js'
 import type { Exercise, ExerciseStep } from './exercise.js'
@@ -319,7 +320,9 @@ function notesAThroughG(range: NoteRange, system?: FingeringSystemId): Exercise 
     kind: 'exercise',
     title: 'Notes A to G',
     subtitle: 'The seven letters up from A and back down · left hand, then right',
-    steps,
+    // The first lesson past five keys: each crossing stops to show how (the
+    // user, 2026-11-22).
+    steps: markCrossings(steps),
     pitchClasses,
     rootPitchClass: null,
     pitchNames: Object.fromEntries(pitchClasses.map((pc, i) => [pc, ALPHABET[i]!])),

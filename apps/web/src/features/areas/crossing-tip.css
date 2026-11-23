@@ -1,0 +1,87 @@
+/* A crossing, drawn and moving (`CrossingAnimation.tsx`): the keys, the hand
+   from above in the finger chart's look, and the crossing finger going to its
+   key every few seconds — under the palm for the thumb, over it for a finger,
+   moved in script (transform and opacity only). */
+.crossing {
+  position: relative;
+  width: min(100%, 10.5rem);
+  margin-inline: auto;
+}
+.crossing__drawing {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+/* With Reduce Motion on, the movement waits for this, in the drawing's corner. */
+.crossing__play {
+  position: absolute;
+  top: 0;
+  right: -2.5rem;
+}
+.crossing__key {
+  fill: var(--c-key-white);
+  stroke: var(--c-key-white-lip);
+}
+.crossing__letter {
+  fill: var(--c-fall-ink);
+  font-weight: 600;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.crossing__palm,
+.crossing__finger {
+  fill: var(--ds-layer-active);
+  stroke: var(--ds-border-strong);
+  stroke-width: 1.5;
+}
+.crossing__palm {
+  opacity: 0.92;
+}
+.crossing__finger {
+  stroke-width: 16;
+  stroke-linecap: round;
+  stroke: var(--ds-layer-active);
+}
+.crossing__tip {
+  fill: var(--c-fall-right);
+  stroke: var(--c-fall-edge);
+}
+.crossing__drawing[data-hand='left'] .crossing__tip {
+  fill: var(--c-fall-left);
+}
+.crossing__number {
+  fill: var(--c-fall-ink);
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.crossing__path {
+  fill: none;
+  stroke: var(--ds-fg-secondary);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+}
+.crossing__arrowhead {
+  fill: var(--ds-fg-secondary);
+}
+/* Where the finger lands: a ring on its key, brightest as it arrives. */
+.crossing__landing {
+  fill: none;
+  stroke: var(--ds-fg-secondary);
+  stroke-width: 2;
+  stroke-dasharray: 3 3;
+}
+
+/* The dialog around it: the drawing, then a sentence or two. */
+.crossing-tip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+.crossing-tip__text {
+  text-align: center;
+  font-size: var(--text-body-sm);
+  color: var(--ds-fg);
+}

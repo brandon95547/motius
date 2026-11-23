@@ -22,6 +22,7 @@ import { AUTO_SPAN, useViewStore } from '@/state/view-store'
 import { useCurrentSong, useSongStore, type FingeringDensity } from '@/state/song-store'
 import { panelActions, usePanelStore } from '@/state/panel-store'
 import { useHandsReminder } from '@/state/hands-reminder'
+import { useCrossingTips } from '@/state/crossing-tips'
 import { useMidi } from '@/midi/MidiProvider'
 import { PanelTempo } from '@/components/PlayControls'
 
@@ -172,6 +173,8 @@ function KeyboardSection() {
   const setFollow = useViewStore((state) => state.setFollow)
   const handsReminder = useHandsReminder((state) => state.show)
   const setHandsReminder = useHandsReminder((state) => state.setShow)
+  const crossingTips = useCrossingTips((state) => state.show)
+  const setCrossingTips = useCrossingTips((state) => state.setShow)
   const window = useViewStore((state) => state.window)
   const shiftOctave = useViewStore((state) => state.shiftOctave)
   const keyLabels = useLearningStore((state) => state.keyLabels)
@@ -244,6 +247,12 @@ function KeyboardSection() {
         description="Show which hand is which color before the notes fall."
         checked={handsReminder}
         onChange={setHandsReminder}
+      />
+      <Switch
+        label="Crossing tips"
+        description="Show how to cross the thumb under, or a finger over, when a lesson first asks."
+        checked={crossingTips}
+        onChange={setCrossingTips}
       />
       <Switch
         label="Structure"

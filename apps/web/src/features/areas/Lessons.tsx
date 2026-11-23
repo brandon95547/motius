@@ -3,7 +3,6 @@ import { lessonAbout } from '@motius/shared'
 import { ArrowRight, Check, GraduationCap, Info, Lightbulb, Trophy } from 'lucide-react'
 import { BarButton } from '@/ui/BarButton'
 import { Button } from '@/ui/Button'
-import { Checkbox } from '@/ui/Controls'
 import { Dialog } from '@/ui/Dialog'
 import { Drawer } from '@/ui/Drawer'
 import { bestOf, percent, useScoredRuns, type Played } from '@/state/history-store'
@@ -196,36 +195,34 @@ export function LessonIntro() {
       onClose={close}
       eyebrow={chapterOf(lesson) || here.section.label}
       title={lesson.lesson.label}
+      showNext={{
+        label: 'Show lesson instructions next time',
+        checked: showNext,
+        onChange: setShowNext,
+      }}
       footer={
-        <div className="flex w-full flex-wrap items-center gap-2.5 coarse:gap-3">
-          <Checkbox
-            label="Show lesson instructions next time"
-            checked={showNext}
-            onChange={setShowNext}
-          />
-          <div className="ml-auto flex items-center gap-2.5 coarse:gap-3">
-            {finished && (
-              <Button
-                variant="outlined"
-                startIcon={<Trophy size={18} />}
-                onClick={() => {
-                  close()
-                  resultsActions.open()
-                }}
-              >
-                See results
-              </Button>
-            )}
-            {/* Read again during a run: nothing to start, only to go back to. */}
-            {running && !finished ? (
-              <Button onClick={close}>Close</Button>
-            ) : (
-              <Button endIcon={<ArrowRight size={18} />} onClick={start}>
-                Start lesson
-              </Button>
-            )}
-          </div>
-        </div>
+        <>
+          {finished && (
+            <Button
+              variant="outlined"
+              startIcon={<Trophy size={18} />}
+              onClick={() => {
+                close()
+                resultsActions.open()
+              }}
+            >
+              See results
+            </Button>
+          )}
+          {/* Read again during a run: nothing to start, only to go back to. */}
+          {running && !finished ? (
+            <Button onClick={close}>Close</Button>
+          ) : (
+            <Button endIcon={<ArrowRight size={18} />} onClick={start}>
+              Start lesson
+            </Button>
+          )}
+        </>
       }
     >
       <div className="lesson-intro">

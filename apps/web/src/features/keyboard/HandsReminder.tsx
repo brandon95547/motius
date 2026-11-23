@@ -1,7 +1,6 @@
 import * as React from 'react'
 import { closeHandsReminder, useHandsReminder } from '@/state/hands-reminder'
 import { Button } from '@/ui/Button'
-import { Checkbox } from '@/ui/Controls'
 import { Dialog } from '@/ui/Dialog'
 import { FingerChart } from '@/ui/FingerChart'
 
@@ -22,14 +21,8 @@ export function HandsReminder() {
       onClose={close}
       title="Which hand is which"
       size="notice"
-      footer={
-        <div className="flex w-full flex-wrap items-center gap-2.5 coarse:gap-3">
-          <Checkbox label="Show next time" checked={showNext} onChange={setShowNext} />
-          <div className="ml-auto">
-            <Button onClick={close}>Got it</Button>
-          </div>
-        </div>
-      }
+      showNext={{ checked: showNext, onChange: setShowNext }}
+      footer={<Button onClick={close}>Got it</Button>}
     >
       <FingerChart
         compact

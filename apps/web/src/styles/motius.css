@@ -29,6 +29,7 @@
 @import '../ui/achievement-badge.css';
 @import '../ui/finger-chart.css';
 @import '../features/areas/lessons.css';
+@import '../features/areas/crossing-tip.css';
 @import '../features/keyboard/falling-notes.css';
 @import '../features/keyboard/keyboard-dock.css';
 @import '../features/account/sign-in.css';

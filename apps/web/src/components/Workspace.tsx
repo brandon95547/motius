@@ -10,6 +10,8 @@ import { LessonComplete } from '@/features/areas/LessonResults'
 import { LessonIntro, LessonsDrawer, LessonSoon } from '@/features/areas/Lessons'
 import { Button } from '@/ui/Button'
 import { useLearningStore } from '@/state/learning-store'
+import { useCrossingDue } from '@/state/crossing-tips'
+import { lazyExport, OnDemand } from '@/ui/OnDemand'
 
 /*
  * The workspace: where the music is played, its own chunk, loaded when an area
@@ -17,10 +19,13 @@ import { useLearningStore } from '@/state/learning-store'
  * does not carry it, so what is added here weighs on this page alone.
  */
 
-// The bar's controls for the music on the stage, loaded with it (`TopBar`).
+// The bar's controls for the music on the stage, loaded with it (`TopBar`); the
+// Songs area's search is its own (`TopBar`).
 export { OptionsButton } from '@/components/OptionsDrawer'
 export { PlayControls } from '@/components/PlayControls'
-export { SongSearch } from '@/features/songs/SongSearch'
+
+// How to cross, loaded the first time a lesson's run reaches a crossing.
+const CrossingTip = lazyExport(() => import('@/features/areas/CrossingTip'), 'CrossingTip')
 
 export interface WorkspaceProps {
   page: 'area' | 'lesson'
@@ -31,6 +36,7 @@ export interface WorkspaceProps {
 
 export function Workspace({ page, catalogueError, onRetryCatalogue }: WorkspaceProps) {
   const topic = useLearningStore((state) => state.topic)
+  const crossingDue = useCrossingDue() !== null
   const ready = useLearningStore((state) => state.ready)
   // The area's builder, or the lesson's section, if this is the first time.
   React.useEffect(ready, [ready])
@@ -67,6 +73,9 @@ export function Workspace({ page, catalogueError, onRetryCatalogue }: WorkspaceP
           <LessonsDrawer />
           <LessonIntro />
           <LessonComplete />
+          <OnDemand when={crossingDue}>
+            <CrossingTip />
+          </OnDemand>
         </>
       )}
     </>

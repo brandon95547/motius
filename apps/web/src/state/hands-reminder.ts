@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { keepShow, keptShow } from './kept-choice'
 import { useViewStore } from './view-store'
 
 /**
@@ -13,23 +14,6 @@ import { useViewStore } from './view-store'
  */
 const HIDDEN_KEY = 'motius.hands-reminder-hidden'
 
-function storedShow(): boolean {
-  try {
-    return globalThis.localStorage?.getItem(HIDDEN_KEY) !== 'true'
-  } catch {
-    return true
-  }
-}
-
-function keepShow(show: boolean) {
-  try {
-    if (show) globalThis.localStorage?.removeItem(HIDDEN_KEY)
-    else globalThis.localStorage?.setItem(HIDDEN_KEY, 'true')
-  } catch {
-    // Storage off: the choice holds for this session.
-  }
-}
-
 interface HandsReminderState {
   /** What Start or Play was going to do, waiting on the reminder; null when it is not up. */
   readonly waiting: (() => void) | null
@@ -43,9 +27,9 @@ interface HandsReminderState {
 
 export const useHandsReminder = create<HandsReminderState>((set) => ({
   waiting: null,
-  show: storedShow(),
+  show: keptShow(HIDDEN_KEY),
   setShow: (show) => {
-    keepShow(show)
+    keepShow(HIDDEN_KEY, show)
     set({ show })
   },
 }))
