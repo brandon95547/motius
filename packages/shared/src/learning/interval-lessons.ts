@@ -437,7 +437,8 @@ export const INTERVAL_ABOUT = {
   },
   'counting-intervals': {
     objective:
-      'An interval is the distance from one note to another. To name it, count the letters from the first note to the second, counting both. C to E is C, D, E: three letters, a 3rd. Play each pair and count along.',
+      'An interval is the distance between two notes. Count both notes and the letters between them. For example, C to E is a third because C, D, and E are three notes. Play each pair and count the notes.',
+    narration: 'counting-intervals.mp3',
     how: [
       { who: 'Right hand', text: 'C position: thumb on middle C, a finger on each key up to G.' },
       { text: 'Middle C and each key up to G, then G and each key down to C.' },
