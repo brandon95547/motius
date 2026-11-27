@@ -271,7 +271,7 @@ describe('Whole steps', () => {
 
   it('introduces each of the three', () => {
     for (const id of ['whole-steps', 'whole-steps-lower', 'whole-steps-higher'] as const)
-      expect(INTERVAL_ABOUT[id].objective).toContain('A up to G a whole step at a time')
+      expect(INTERVAL_ABOUT[id].objective).toContain('up to G in whole steps')
   })
 })
 

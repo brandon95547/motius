@@ -399,7 +399,7 @@ export const INTERVAL_ABOUT = {
   },
   'whole-steps': {
     objective:
-      'A whole step is two half steps: skip one key, black or white. Walk from A up to G a whole step at a time, then back down, and find the two places where the key you skip is white.',
+      'A whole step means skipping one piano key, whether black or white. Start at A and move up to G in whole steps, then back down.',
     narration: 'whole-steps.mp3',
     how: [
       {
@@ -413,7 +413,7 @@ export const INTERVAL_ABOUT = {
   },
   'whole-steps-lower': {
     objective:
-      'The same whole steps, one octave lower, with your left hand. Walk from A up to G a whole step at a time, then back down, and find the two places where the key you skip is white.',
+      'The same whole steps, one octave lower, with your left hand. Start at A and move up to G in whole steps, then back down.',
     narration: 'whole-steps-lower.mp3',
     how: [
       {
@@ -425,7 +425,7 @@ export const INTERVAL_ABOUT = {
   },
   'whole-steps-higher': {
     objective:
-      'The same whole steps, one octave higher, with your right hand. Walk from A up to G a whole step at a time, then back down, and find the two places where the key you skip is white.',
+      'The same whole steps, one octave higher, with your right hand. Start at A and move up to G in whole steps, then back down.',
     narration: 'whole-steps-higher.mp3',
     how: [
       {
