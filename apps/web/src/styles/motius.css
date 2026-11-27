@@ -21,6 +21,7 @@
 @import '../components/workspace.css';
 @import '../ui/menu.css';
 @import '../features/theory/circle-of-fifths.css';
+@import '../ui/action-card.css';
 @import '../features/areas/dashboard.css';
 @import '../features/progress/progress.css';
 @import '../components/bottom-nav.css';

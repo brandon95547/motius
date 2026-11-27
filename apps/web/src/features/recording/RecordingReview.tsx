@@ -1,9 +1,8 @@
-import { Trash2 } from 'lucide-react'
+import { AudioLines, FileMusic, Trash2 } from 'lucide-react'
 import { keyFromTonic, performanceLength, writeMidiFile, writeMusicXml } from '@motius/shared'
 import { Button } from '@/ui/Button'
 import { Drawer } from '@/ui/Drawer'
-import { Divider } from '@/ui/Display'
-import { ExportOption } from '@/ui/ExportOption'
+import { ExportOption, ExportOptions } from '@/ui/ExportOption'
 import { downloadBytes, downloadText, fileSlug, MIDI_TYPE, MUSICXML_TYPE } from '@/lib/download'
 import { useLearningStore } from '@/state/learning-store'
 import { useRecordingStore } from '@/state/recording-store'
@@ -47,11 +46,13 @@ export function RecordingReview() {
         </Button>
       }
     >
-      <div className="flex flex-col gap-5">
+      <ExportOptions>
         <ExportOption
           title="MusicXML"
           extension=".musicxml"
-          detail="Notation. Opens in MuseScore, Sibelius, Finale and Dorico as a grand staff you can edit and print."
+          accent="teal"
+          icon={<FileMusic size={28} />}
+          detail="Sheet music for MuseScore, Sibelius, Finale or Dorico, on a grand staff you can edit and print."
           caveat="Timing is rounded onto a 4/4 sixteenth-note grid to be written down at all — read it as a tidy copy of the take, not the take."
           onExport={() =>
             downloadText(
@@ -61,17 +62,18 @@ export function RecordingReview() {
             )
           }
         />
-        <Divider />
         <ExportOption
           title="MIDI"
           extension=".mid"
-          detail="The performance itself. Every DAW, sequencer and notation program reads it, and it is the format to pick if you intend to keep playing with the take."
+          accent="songs"
+          icon={<AudioLines size={28} />}
+          detail="The performance itself, for any DAW or sequencer: the format to keep working with the take."
           caveat="Keeps your exact timing and how hard each key was struck — nothing is rounded."
           onExport={() =>
             downloadBytes(writeMidiFile(take, { bpm, pedal }), `${slug(title)}.mid`, MIDI_TYPE)
           }
         />
-      </div>
+      </ExportOptions>
     </Drawer>
   )
 }

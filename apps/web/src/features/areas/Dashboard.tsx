@@ -1,7 +1,8 @@
 import * as React from 'react'
-import { ArrowLeft, ArrowRight, Hammer } from 'lucide-react'
+import { ArrowLeft, Hammer } from 'lucide-react'
 import { loadLessons } from '@motius/shared'
 import { cn } from '@/lib/cn'
+import { ActionCard } from '@/ui/ActionCard'
 import { pageActions, usePageStore } from '@/state/page-store'
 import {
   CATEGORIES,
@@ -126,26 +127,15 @@ function PlaceCard({
   // Every card opens onto something: a section onto its stage, where the keys
   // are, whether or not its lessons are written yet.
   return (
-    <button
-      type="button"
-      className="area-card"
-      data-accent={place.accent}
+    <ActionCard
+      accent={place.accent}
+      number={number}
+      icon={<Icon size={28} />}
+      name={place.label}
+      {...(place.description ? { description: place.description } : {})}
       title={`Open ${place.label}`}
       onClick={onOpen}
-    >
-      {/* Its place in the order, which the name already has by where it sits. */}
-      <span className="area-card__number" aria-hidden>
-        {String(number).padStart(2, '0')}
-      </span>
-      <span className="area-card__icon" aria-hidden>
-        <Icon size={28} />
-      </span>
-      <span className="area-card__name">{place.label}</span>
-      {place.description && <span className="area-card__description">{place.description}</span>}
-      <span className="area-card__go" aria-hidden>
-        <ArrowRight size={18} />
-      </span>
-    </button>
+    />
   )
 }
 

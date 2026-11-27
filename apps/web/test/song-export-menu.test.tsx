@@ -104,8 +104,8 @@ describe('exporting the song on the stage', () => {
 
     render(<SongExport open onClose={() => {}} />)
     const dialog = screen.getByRole('dialog', { name: 'Export Test' })
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Export MusicXML' }))
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Export MIDI' }))
+    fireEvent.click(within(dialog).getByRole('button', { name: /^\.musicxml\s*MusicXML/ }))
+    fireEvent.click(within(dialog).getByRole('button', { name: /^\.mid\s*MIDI/ }))
 
     expect(saved.map((blob) => blob.type)).toEqual([
       'application/vnd.recordare.musicxml+xml',
