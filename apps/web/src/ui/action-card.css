@@ -150,20 +150,3 @@ button.area-card:hover .area-card__go {
   letter-spacing: 0.08em;
   color: var(--c-dash-quiet);
 }
-/* A second, quieter line under the first: what the card leaves out. */
-.area-card__note {
-  grid-area: note;
-  margin-top: 8px;
-  max-width: 22rem;
-  font-size: var(--text-body-sm);
-  line-height: 1.5;
-  color: var(--c-dash-quiet);
-}
-button.area-card:has(.area-card__note) {
-  grid-template:
-    'number icon' auto
-    'name name' auto
-    'text text' auto
-    'note go' 1fr
-    / minmax(0, 1fr) auto;
-}

@@ -12,8 +12,8 @@ export function ExportOptions({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * One format to export to, as a card that saves it: its name and extension,
- * what it is for, and what it leaves out.
+ * One format to export to, as a card that saves it: its name, its extension
+ * and a line on what it is.
  */
 export function ExportOption({
   title,
@@ -21,7 +21,6 @@ export function ExportOption({
   accent,
   icon,
   detail,
-  caveat,
   onExport,
 }: {
   title: string
@@ -30,7 +29,6 @@ export function ExportOption({
   accent: string
   icon: React.ReactNode
   detail: string
-  caveat: string
   onExport: () => void
 }) {
   return (
@@ -40,7 +38,6 @@ export function ExportOption({
       icon={icon}
       name={title}
       description={detail}
-      {...(caveat ? { note: caveat } : {})}
       go={<Download size={18} />}
       title={`Export ${title}`}
       onClick={onExport}

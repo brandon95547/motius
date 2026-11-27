@@ -13,7 +13,6 @@ export function ActionCard({
   icon,
   name,
   description,
-  note,
   go = <ArrowRight size={18} />,
   title,
   onClick,
@@ -27,8 +26,6 @@ export function ActionCard({
   icon: React.ReactNode
   name: string
   description?: string
-  /** A quieter second line: what the card leaves out. */
-  note?: string
   /** What sits in the corner: an arrow, or what the card does. */
   go?: React.ReactNode
   title?: string
@@ -54,7 +51,6 @@ export function ActionCard({
       </span>
       <span className="area-card__name">{name}</span>
       {description && <span className="area-card__description">{description}</span>}
-      {note && <span className="area-card__note">{note}</span>}
       <span className="area-card__go" aria-hidden>
         {go}
       </span>

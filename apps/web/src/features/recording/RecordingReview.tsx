@@ -52,8 +52,7 @@ export function RecordingReview() {
           extension=".musicxml"
           accent="teal"
           icon={<FileMusic size={28} />}
-          detail="Sheet music for MuseScore, Sibelius, Finale or Dorico, on a grand staff you can edit and print."
-          caveat="Timing is rounded onto a 4/4 sixteenth-note grid to be written down at all — read it as a tidy copy of the take, not the take."
+          detail="Sheet music of your take."
           onExport={() =>
             downloadText(
               writeMusicXml(take, { bpm, title, key, pedal }),
@@ -67,8 +66,7 @@ export function RecordingReview() {
           extension=".mid"
           accent="songs"
           icon={<AudioLines size={28} />}
-          detail="The performance itself, for any DAW or sequencer: the format to keep working with the take."
-          caveat="Keeps your exact timing and how hard each key was struck — nothing is rounded."
+          detail="Your take, exactly as played."
           onExport={() =>
             downloadBytes(writeMidiFile(take, { bpm, pedal }), `${slug(title)}.mid`, MIDI_TYPE)
           }
