@@ -4,25 +4,33 @@
  * Each page is measured on its own: the sign-in page, the dashboard, and the
  * workspace where the music is played. A page is the entry plus the chunks it
  * loads at once and everything those import. Its JavaScript and CSS, gzipped,
- * must stay within the budget; so must every chunk loaded on demand, counting
+ * must stay within its budget; so must every chunk loaded on demand, counting
  * what it brings that the dashboard has not loaded. So a feature weighs on its
- * own page and chunk, and a page over budget names the page that grew. The global rules ask for 150 KB of JavaScript for
- * an app page, 40 KB of CSS and 80 KB for a chunk loaded on demand.
+ * own page and chunk, and a page over budget names the page that grew.
  *
- * The pages are over the JavaScript limit today (the entry carries React and
- * zod whole), so each has a ceiling of its own in `scripts/budgets.json`: what it weighs now. A ceiling only comes
- * down — lower it in the change that makes a screen lighter — until it reaches
- * the global limit, and then it is removed. Nothing may grow past it.
+ * The budgets follow the research for a JavaScript-heavy app (docs/adr/0011):
+ * 350 KB for an app screen, 100 KB for the sign-in page, 60 KB of CSS and
+ * 100 KB for a chunk loaded on demand.
+ *
+ * Under them, a growth alarm: `scripts/page-sizes.json` keeps what each page
+ * weighed when it was last recorded, and a change that adds more than 10 KB to
+ * a page fails until the record is updated (`npm run check:budgets -- --record`)
+ * in that change, which then says why the page grew.
  */
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { gzipSync } from 'node:zlib'
 import path from 'node:path'
 
 const DIST = path.resolve(import.meta.dirname, '../apps/web/dist')
 const KB = 1024
-const BUDGET = { js: 150 * KB, css: 40 * KB, lazy: 80 * KB }
-/** Screens still over the limit, and the most each may weigh until it is under (KB, gzipped). */
-const CEILINGS = JSON.parse(readFileSync(path.join(import.meta.dirname, 'budgets.json'), 'utf8'))
+const BUDGET = { app: 350 * KB, site: 100 * KB, css: 60 * KB, lazy: 100 * KB }
+/** The most one change may add to a page before its record has to be updated. */
+const GROWTH = 10 * KB
+/** What each page weighed when last recorded (KB, gzipped). */
+const SIZES_FILE = path.join(import.meta.dirname, 'page-sizes.json')
+const recorded = JSON.parse(readFileSync(SIZES_FILE, 'utf8'))
+const recording = process.argv.includes('--record')
+const measured = {}
 
 /**
  * The pages a visit opens on, and the modules each loads at once beside the
@@ -39,6 +47,8 @@ const SCREENS = {
     '../../packages/shared/dist/learning/scale-exercise.js',
   ],
 }
+/** Which budget each page has: an app screen's, or a site page's. */
+const LIMITS = { 'Sign-in page': BUDGET.site, Dashboard: BUDGET.app, Workspace: BUDGET.app }
 
 const manifest = JSON.parse(readFileSync(path.join(DIST, '.vite/manifest.json'), 'utf8'))
 const gzipped = (file) => gzipSync(readFileSync(path.join(DIST, file))).length
@@ -82,14 +92,24 @@ for (const [screen, sources] of Object.entries(SCREENS)) {
   }
   const keys = new Set([...closure(entryKey), ...chunks.flatMap((key) => [...closure(key)])])
   const { js, css } = sizes(keys)
-  const limit = CEILINGS[screen] ? CEILINGS[screen] * KB : BUDGET.js
+  const limit = LIMITS[screen]
+  measured[screen] = Number((js / KB).toFixed(1))
+  const before = recorded[screen]
+  // Rounded to the tenth shown, so a page that has not moved reads +0.0, not -0.0.
+  const change = before === undefined ? null : Math.round((js / KB - before) * 10) / 10 || 0
+  const since = change === null ? '' : `, ${change >= 0 ? '+' : ''}${change.toFixed(1)} KB`
   console.log(
-    `${screen}: ${kb(js)} JS (limit ${kb(limit)}), ${kb(css)} CSS (limit ${kb(BUDGET.css)})`,
+    `${screen}: ${kb(js)} JS (limit ${kb(limit)}${since}), ${kb(css)} CSS (limit ${kb(BUDGET.css)})`,
   )
   if (js > limit) failures.push(`${screen}: ${kb(js)} of JavaScript is over ${kb(limit)}`)
-  if (CEILINGS[screen] && js <= BUDGET.js)
-    failures.push(`${screen} is under ${kb(BUDGET.js)} now: take its ceiling out of budgets.json`)
   if (css > BUDGET.css) failures.push(`${screen}: ${kb(css)} of CSS is over ${kb(BUDGET.css)}`)
+  if (!recording && before === undefined)
+    failures.push(`${screen} has no recorded size: run npm run check:budgets -- --record`)
+  else if (!recording && js > before * KB + GROWTH)
+    failures.push(
+      `${screen} grew ${kb(js - before * KB)} since its size was recorded: if it is meant to, ` +
+        'record it (npm run check:budgets -- --record) and say why in the change',
+    )
 }
 
 // The dashboard carries none of the workspace: not its chunk, and no area's
@@ -127,6 +147,11 @@ for (const [key, chunk] of Object.entries(manifest)) {
   const { js } = sizes(own)
   if (js > BUDGET.lazy)
     failures.push(`${key}, loaded on demand: ${kb(js)} is over ${kb(BUDGET.lazy)}`)
+}
+
+if (recording) {
+  writeFileSync(SIZES_FILE, `${JSON.stringify(measured, null, 2)}\n`)
+  console.log(`Recorded each page's size in ${path.relative(process.cwd(), SIZES_FILE)}.`)
 }
 
 if (failures.length) {

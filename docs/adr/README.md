@@ -14,4 +14,5 @@ One short record per significant decision: its context, the choice and why. A re
 | [0008](0008-a-chunk-per-page.md)                      | A chunk and a budget per page, a chunk per tool         | Accepted |
 | [0009](0009-responses-checked-on-the-server.md)       | The API's replies are checked on the server             | Accepted |
 | [0010](0010-budgets-measured-on-production-builds.md) | Budgets are measured on a production build              | Accepted |
+| [0011](0011-budgets-from-the-research.md)             | Budgets from the research, and a growth alarm           | Accepted |
 | [0012](0012-song-export.md)                           | Songs export as MusicXML and MIDI                       | Accepted |
