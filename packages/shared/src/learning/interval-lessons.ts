@@ -362,7 +362,7 @@ export const INTERVAL_ABOUT = {
   },
   'half-steps': {
     objective:
-      'A half step is the very next key, black or white. Walk from A up to G one key at a time, then back down, and find the two places where the next key is white.',
+      'A half step is the very next key, black or white. Walk from A up to G one key at a time, then back down.',
     narration: 'half-steps.mp3',
     how: [
       {
@@ -375,7 +375,7 @@ export const INTERVAL_ABOUT = {
   },
   'half-steps-lower': {
     objective:
-      'The same half steps, one octave lower, with your left hand. Walk from A up to G one key at a time, then back down, and find the two places where the next key is white.',
+      'The same half steps, one octave lower, with your left hand. Walk from A up to G one key at a time, then back down.',
     narration: 'half-steps-lower.mp3',
     how: [
       {
@@ -387,7 +387,7 @@ export const INTERVAL_ABOUT = {
   },
   'half-steps-higher': {
     objective:
-      'The same half steps, one octave higher, with your right hand. Walk from A up to G one key at a time, then back down, and find the two places where the next key is white.',
+      'The same half steps, one octave higher, with your right hand. Walk from A up to G one key at a time, then back down.',
     narration: 'half-steps-higher.mp3',
     how: [
       {
