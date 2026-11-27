@@ -162,14 +162,12 @@ export const INSTRUMENTS: readonly Instrument[] = [
 ]
 
 /**
- * The piano a player hears before choosing one.
- *
- * A soundfont, which is a megabyte and a half to fetch and some 170MB once it
- * is decoded. The grand that used to be here, sampled at four dynamic layers,
- * was 19MB in 227 files and about half a gigabyte in memory — more than a
- * phone should be asked for by an app that has not been told to.
+ * The piano a player hears before choosing one: the Concert Grand (the user,
+ * 2026-11-22). A soundfont like the others, a megabyte and a half to fetch and
+ * some 170MB once it is decoded. The grand once sampled here at four dynamic
+ * layers, 19MB in 227 files and about half a gigabyte in memory, is gone.
  */
-export const DEFAULT_INSTRUMENT_ID = 'bright-upright'
+export const DEFAULT_INSTRUMENT_ID = 'concert-grand'
 
 export function findInstrument(id: string): Instrument | undefined {
   return INSTRUMENTS.find((instrument) => instrument.id === id)

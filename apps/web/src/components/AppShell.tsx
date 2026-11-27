@@ -93,10 +93,19 @@ export function AppShell() {
 
   const instruments = React.useMemo(() => catalogue.data?.items ?? [], [catalogue.data])
 
-  const select = React.useCallback(
+  const play = React.useCallback(
     (instrument: Instrument) => {
       setSelectedId(instrument.id)
       audio.loadInstrument(instrument)
+    },
+    [audio],
+  )
+
+  // Only the player's own choice is remembered. The piano picked for them on
+  // arrival is not, so one who never chose hears the default as it changes.
+  const select = React.useCallback(
+    (instrument: Instrument) => {
+      play(instrument)
       try {
         globalThis.localStorage?.setItem(LAST_INSTRUMENT_KEY, instrument.id)
       } catch {
@@ -104,7 +113,7 @@ export function AppShell() {
         // a convenience, and losing it is not worth an error path.
       }
     },
-    [audio],
+    [play],
   )
 
   // Pick a piano as soon as the catalogue arrives: the one the player used
@@ -122,8 +131,8 @@ export function AppShell() {
       instruments.find((item) => item.id === remembered) ??
       instruments.find((item) => item.id === catalogue.data?.defaultInstrumentId) ??
       instruments[0]
-    if (instrument) select(instrument)
-  }, [instruments, selectedId, catalogue.data?.defaultInstrumentId, select])
+    if (instrument) play(instrument)
+  }, [instruments, selectedId, catalogue.data?.defaultInstrumentId, play])
 
   // The FIRST failure is enough to stop saying "loading". The retry carries on
   // quietly behind it — but a player should not have to wait out the whole

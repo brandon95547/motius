@@ -12,12 +12,13 @@ describe('instruments', () => {
     await app.close()
   })
 
-  it('lists the catalogue with a default selection', async () => {
+  it('lists the catalogue, with the Concert Grand as the default', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/v1/instruments' })
     expect(res.statusCode).toBe(200)
     const body = res.json()
     expect(body.items.length).toBeGreaterThan(0)
     expect(body.items.some((i: { id: string }) => i.id === body.defaultInstrumentId)).toBe(true)
+    expect(body.defaultInstrumentId).toBe('concert-grand')
   })
 
   it('serves instruments that satisfy the shared schema', async () => {
