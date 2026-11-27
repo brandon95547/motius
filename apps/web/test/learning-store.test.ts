@@ -651,3 +651,21 @@ describe('the Exercises area', () => {
     vi.useRealTimers()
   })
 })
+
+describe('a lesson’s tempo', () => {
+  const opened = (lesson: string) =>
+    vi.waitFor(() => expect(store().exercise?.id).toBe(`lesson:${lesson}`))
+
+  it('opens at the lesson’s own, and keeps the player’s until another lesson opens', async () => {
+    store().setLesson('middle-c-yankee-doodle')
+    store().setTopic('lesson')
+    await opened('middle-c-yankee-doodle')
+    expect(store().targetBpm).toBe(52)
+    store().setTargetBpm(64)
+    store().setMode('learn')
+    expect(store().targetBpm).toBe(64)
+    store().setLesson('right-hand-jingle-bells')
+    await opened('right-hand-jingle-bells')
+    expect(store().targetBpm).toBe(96)
+  })
+})

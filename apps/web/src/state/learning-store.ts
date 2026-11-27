@@ -97,6 +97,9 @@ export const useLearningStore = create<LearningState>((set, get) => {
     range: NoteRange = get().playableRange,
   ) => {
     const exercise = buildExercise(topic, specs, fingering, range)
+    // A lesson opens at its own tempo when it first comes onto the keys. A new
+    // mode or a rebuild of the same lesson keeps the tempo the player set.
+    const opened = exercise?.id.startsWith('lesson:') && exercise.id !== get().exercise?.id
     // Any rebuild is a new exercise or a new mode, and the demonstration does
     // not survive either — so the playback head resets with it.
     // A new scale is a new question; whatever was drawn on the keys was about
@@ -107,6 +110,7 @@ export const useLearningStore = create<LearningState>((set, get) => {
       hits: {},
       demoStepIndex: null,
       annotations: buildAnnotations(exercise, mode, session),
+      ...(opened && exercise && { targetBpm: exercise.defaultBpm }),
     }
   }
 
@@ -178,7 +182,9 @@ export const useLearningStore = create<LearningState>((set, get) => {
     autoTempo: false,
     metronome: false,
     demoStepIndex: null,
+    prompting: false,
     pulseEpoch: 0,
+    runs: 0,
     fingeringSystem: initialFingeringSystem,
     playableRange: DEFAULT_PLAYABLE_RANGE,
     keyLabels: 'notes',
@@ -238,6 +244,7 @@ export const useLearningStore = create<LearningState>((set, get) => {
         )
         return {
           session,
+          runs: state.runs + 1,
           hits: {},
           // Starting a run ends the demonstration: one head at a time, and from
           // here the position that matters is the player's.
@@ -253,6 +260,8 @@ export const useLearningStore = create<LearningState>((set, get) => {
         demoStepIndex: null,
         annotations: buildAnnotations(state.exercise, state.mode, IDLE_SESSION, null),
       })),
+
+    setPrompting: (prompting) => set({ prompting }),
 
     setDemoStep: (index) =>
       set((state) => ({
@@ -305,7 +314,7 @@ export const useLearningStore = create<LearningState>((set, get) => {
 
     noteOn: (note) => {
       const state = get()
-      if (state.session.status !== 'running') return
+      if (state.session.status !== 'running' || state.prompting) return
       const step = state.exercise?.steps[state.session.stepIndex]
       const index = step?.notes.indexOf(note) ?? -1
       // Right, it is marked with its step and hand; wrong, any mark the key had

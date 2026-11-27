@@ -111,8 +111,8 @@ describe('three-black-key groups', () => {
 /**
  * Black-key pattern: the guide's next step (Verbalis stage 1,
  * step 2) — every group on the keyboard in order, two then three, up and back
- * down, hand over hand: the left hand on every two with 4-3, the right hand on
- * every three with 2-3-4.
+ * down, each hand on its own side of middle C: the left with 4-3 and 4-3-2,
+ * the right with 3-4 and 2-3-4.
  */
 describe('recognizing keyboard patterns', () => {
   const exercise = buildLessonExercise('keyboard-patterns')
@@ -124,17 +124,20 @@ describe('recognizing keyboard patterns', () => {
     for (const step of exercise.steps) expect(step.notes.every(isBlackKey)).toBe(true)
   })
 
-  it('alternates twos and threes, the hands taking turns with the guide’s long fingers', () => {
+  it('alternates twos and threes, each hand on its own side with the guide’s long fingers', () => {
     const played = fingering(exercise)
-    for (const [index, step] of exercise.steps.entries())
-      expect(played[index]).toBe(step.notes.length === 2 ? 'l4 l3' : 'r2 r3 r4')
+    for (const [index, step] of exercise.steps.entries()) {
+      const left = step.notes[0]! < 60
+      const two = step.notes.length === 2
+      expect(played[index]).toBe(left ? (two ? 'l4 l3' : 'l4 l3 l2') : two ? 'r3 r4' : 'r2 r3 r4')
+    }
     // Never two groups of one kind side by side: that is the pattern.
     for (let index = 1; index < exercise.steps.length; index++)
       expect(exercise.steps[index]!.notes.length).not.toBe(exercise.steps[index - 1]!.notes.length)
   })
 
   it('says how to begin, and where to turn', () => {
-    expect(exercise.steps[0]!.cue).toMatch(/^Hand over hand, going up/)
+    expect(exercise.steps[0]!.cue).toMatch(/^Going up: left hand below middle C/)
     expect(exercise.steps[10]!.cue).toBe('Now back down, the same way')
     expect(exercise.steps.filter((step) => step.cue)).toHaveLength(2)
   })
@@ -151,7 +154,8 @@ describe('recognizing keyboard patterns', () => {
 
 /**
  * Notes A to G: the seven letters on the white keys, up from an A, one key
- * at a time and named, then back down to A — the left hand and then the right,
+ * at a time and named, and on to the next A, where they start again — the
+ * left hand and then the right,
  * A found between the top two keys of a group of three (Alfred p. 11). No line names a finger
  * ("where is this note?" before "which finger?", Verbalis stages 2 and 4); the
  * keys carry A minor's fingering for a player who looks.
@@ -159,27 +163,24 @@ describe('recognizing keyboard patterns', () => {
 describe('notes A through G', () => {
   const exercise = buildLessonExercise('notes-a-through-g')
 
-  it('names the white keys A to G and back down, from the A below middle C, the left hand an octave lower first', () => {
-    expect(exercise.steps.map((step) => step.label).join('')).toBe('ABCDEFGFEDCBA'.repeat(2))
-    const up = (a: number) => [0, 2, 3, 5, 7, 8, 10].map((above) => a + above)
-    const walk = (a: number) => [...up(a), ...up(a).reverse().slice(1)]
-    expect(exercise.steps.map((step) => step.notes[0])).toEqual([...walk(45), ...walk(57)])
+  it('names the white keys A to G and then A again, from the A below middle C, the left hand an octave lower first', () => {
+    expect(exercise.steps.map((step) => step.label).join('')).toBe('ABCDEFGA'.repeat(2))
+    const octave = (a: number) => [0, 2, 3, 5, 7, 8, 10, 12].map((above) => a + above)
+    expect(exercise.steps.map((step) => step.notes[0])).toEqual([...octave(45), ...octave(57)])
     for (const step of exercise.steps) expect(isBlackKey(step.notes[0]!)).toBe(false)
   })
 
   it('fingers the keys as A minor, thumb under and 3 over, and names no finger', () => {
-    // Coming down, each key keeps its finger: the right hand's 3 crosses over
-    // the thumb, and the left thumb passes under.
     expect(fingering(exercise)).toEqual([
-      ...['l5', 'l4', 'l3', 'l2', 'l1', 'l3', 'l2', 'l3', 'l1', 'l2', 'l3', 'l4', 'l5'],
-      ...['r1', 'r2', 'r3', 'r1', 'r2', 'r3', 'r4', 'r3', 'r2', 'r1', 'r3', 'r2', 'r1'],
+      ...['l5', 'l4', 'l3', 'l2', 'l1', 'l3', 'l2', 'l1'],
+      ...['r1', 'r2', 'r3', 'r1', 'r2', 'r3', 'r4', 'r5'],
     ])
     const cues = exercise.steps.filter((step) => step.cue).map((step) => step.cue)
     expect(cues).toEqual([
       expect.stringMatching(/^Left hand: find A between the top two keys/),
-      'Now back down to A, saying each name',
+      'After G, the letters start again: A',
       expect.stringMatching(/^Right hand: find A/),
-      'Now back down to A, saying each name',
+      'After G, the letters start again: A',
     ])
     expect(`${exercise.subtitle} ${cues.join(' ')}`).not.toMatch(/finger/i)
   })
@@ -196,51 +197,26 @@ describe('notes A through G', () => {
     expect(short.steps[0]!.cue).toBe('Left hand: up from C, saying each name')
     // The left hand's C is still A minor's third key: finger 3.
     expect(short.steps[0]!.fingers[0]!.finger).toBe(3)
-    expect(short.steps.filter((step) => step.fingers[0]!.hand === 'right')).toHaveLength(13)
+    expect(short.steps.filter((step) => step.fingers[0]!.hand === 'right')).toHaveLength(8)
   })
 })
 
 /**
- * Repeating note names: the alphabet up the whole keyboard from its lowest A,
- * A to G and then A again, the left hand to middle C and the right hand on to
- * the top (Dummies p. 76, Alfred p. 11), the keys fingered as an A minor and a
- * C major run.
+ * A to G Repeated: Notes A to G the next octave up, so the letters come round
+ * again on the next As.
  */
-describe('repeating note names', () => {
+describe('A to G repeated', () => {
   const exercise = buildLessonExercise('repeating-note-names')
-  const letters = exercise.steps.map((step) => step.label).join('')
+  const first = buildLessonExercise('notes-a-through-g')
 
-  it('names every white key from the lowest A to the top, the letters starting again after G', () => {
-    expect(exercise.steps[0]!.notes).toEqual([45])
-    expect(exercise.steps.at(-1)!.notes).toEqual([96])
-    expect(letters).toBe('ABCDEFG'.repeat(4) + 'ABC')
-    for (const step of exercise.steps) expect(isBlackKey(step.notes[0]!)).toBe(false)
-  })
-
-  it('says where the names start again, and where the right hand takes over', () => {
-    const cues = exercise.steps.flatMap((step) => (step.cue ? [[step.notes[0], step.cue]] : []))
-    expect(cues).toEqual([
-      [45, 'Left hand: from the lowest A, up, saying each name'],
-      [57, 'After G, A again'],
-      [60, 'Right hand, from the middle: keep going'],
-      [69, 'After G, A again'],
-      [81, 'After G, A again'],
-      [93, 'After G, A again'],
-    ])
-  })
-
-  it('fingers the left hand as A minor up to middle C, and the right as C major from it', () => {
-    const played = fingering(exercise)
-    expect(played.slice(0, 9)).toEqual(['l5', 'l4', 'l3', 'l2', 'l1', 'l3', 'l2', 'l1', 'l4'])
-    expect(played.slice(9, 17)).toEqual(['r1', 'r2', 'r3', 'r1', 'r2', 'r3', 'r4', 'r1'])
-    expect(played.at(-1)).toBe('r5')
-  })
-
-  it('runs from A0 to the top C on 88 keys, as Alfred says a piano does', () => {
-    const grand = buildLessonExercise('repeating-note-names', { range: { low: 21, high: 108 } })
-    expect(grand.steps[0]!.label).toBe('A')
-    expect(grand.steps.at(-1)!.label).toBe('C')
-    expect(grand.steps).toHaveLength(52)
+  it('is Notes A to G an octave higher, named and fingered the same', () => {
+    expect(exercise.title).toBe('A to G Repeated')
+    expect(exercise.steps.map((step) => step.label).join('')).toBe('ABCDEFGA'.repeat(2))
+    expect(exercise.steps.map((step) => step.notes[0])).toEqual(
+      first.steps.map((step) => step.notes[0]! + 12),
+    )
+    expect(fingering(exercise)).toEqual(fingering(first))
+    expect(exercise.steps.map((step) => step.cue)).toEqual(first.steps.map((step) => step.cue))
   })
 })
 
@@ -318,7 +294,7 @@ describe('finding middle C', () => {
 })
 
 /**
- * Finding any note: the landmark hunt goes on — every D and
+ * Finding any white key: the landmark hunt goes on — every D and
  * G, then every E, A and B — each found from its black-key group (the notes'
  * keyboard table; Alfred p. 11; Dummies p. 77), finger 3.
  */
@@ -432,5 +408,24 @@ describe('recognizing octaves', () => {
       60, 53, 60, 72, 48,
     ])
     expect(exercise.steps[0]!.cue).toMatch(/Eight names, C to C: an octave$/)
+  })
+})
+
+describe('the black-key song', () => {
+  it('plays Hot Cross Buns on the three black keys, the right hand 4-3-2, then the left', () => {
+    const steps = buildLessonExercise('black-key-song').steps
+    const tune = (hand: string, f: [number, number, number]) => [
+      ...[`${hand}A♯${f[2]}`, `${hand}G♯${f[1]}`, `${hand}F♯${f[0]}`],
+      ...[`${hand}A♯${f[2]}`, `${hand}G♯${f[1]}`, `${hand}F♯${f[0]}`],
+      ...Array<string>(4).fill(`${hand}F♯${f[0]}`),
+      ...Array<string>(4).fill(`${hand}G♯${f[1]}`),
+      ...[`${hand}A♯${f[2]}`, `${hand}G♯${f[1]}`, `${hand}F♯${f[0]}`],
+    ]
+    expect(
+      steps.map((step) => `${step.fingers[0]!.hand[0]}${step.label}${step.fingers[0]!.finger}`),
+    ).toEqual([...tune('r', [2, 3, 4]), ...tune('l', [4, 3, 2])])
+    // Four bars of 4/4 in each hand.
+    expect(steps.reduce((sum, step) => sum + (step.beats ?? 1), 0)).toBe(32)
+    expect(steps[0]!.notes).toEqual([70])
   })
 })

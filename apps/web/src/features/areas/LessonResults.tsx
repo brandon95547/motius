@@ -1,6 +1,6 @@
 import * as React from 'react'
-import { ArrowRight, Check, LibraryBig, RotateCcw, Target, Trophy, X } from 'lucide-react'
-import { accuracy, stepsCalled } from '@motius/shared'
+import { ArrowRight, Check, Gauge, LibraryBig, RotateCcw, Target, Trophy, X } from 'lucide-react'
+import { accuracy, lessonAbout, stepsCalled } from '@motius/shared'
 import { Button } from '@/ui/Button'
 import { Dialog } from '@/ui/Dialog'
 import { lazyExport, OnDemand } from '@/ui/OnDemand'
@@ -126,6 +126,10 @@ export function LessonComplete() {
             <LessonBadges />
           </OnDemand>
 
+          {lesson.lesson.exercise && (
+            <TempoChallenge bpm={lessonAbout(lesson.lesson.exercise)?.tempoChallenge} />
+          )}
+
           {!after && (
             <p className="lesson-results__note">
               That was the last lesson in {here.section.label}.
@@ -134,6 +138,30 @@ export function LessonComplete() {
         </div>
       </Dialog>
     </>
+  )
+}
+
+/**
+ * Where a lesson asks for it, a faster tempo to try next: turned on the bar's
+ * Tempo, the one place it is set, then played again with Try again. Met once
+ * the run was played at it or faster.
+ */
+function TempoChallenge({ bpm }: { bpm: number | undefined }) {
+  const tempo = useLearningStore((state) => state.targetBpm)
+  if (!bpm) return null
+  const met = tempo >= bpm
+  return (
+    <div className="badge-news" data-challenge={!met} data-earned={met}>
+      <Gauge size={32} aria-hidden className="shrink-0" />
+      <p className="badge-news__text">
+        <span className="badge-news__title">
+          {met ? `Challenge met: ${bpm} BPM` : `Challenge: ${bpm} BPM`}
+        </span>
+        <span>
+          {met ? `You played it at ${tempo} BPM.` : `Turn the tempo up to ${bpm} and try it again.`}
+        </span>
+      </p>
+    </div>
   )
 }
 

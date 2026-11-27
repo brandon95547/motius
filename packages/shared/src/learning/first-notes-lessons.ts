@@ -1,7 +1,8 @@
 import type { NoteRange } from '../domain/device-schemas.js'
 import type { LessonAbout, LessonBuilder } from './lesson-exercise.js'
 import { LOW_C, MIDDLE_C } from './lesson-keys.js'
-import { songLesson, type Phrase, type Song } from './song-lessons.js'
+import { HANDS_REMINDER } from './lesson-reminders.js'
+import { noteOf, songLesson, type Phrase, type Song } from './song-lessons.js'
 
 /*
  * First Notes' lessons, in their own module, loaded the first time one of them
@@ -29,7 +30,7 @@ const IN_C = {
 /** The hands on C, and the five keys under each, one at a time. */
 const HANDS_ON_C: Song = {
   id: 'hands-on-c',
-  title: 'Play in the Key of C',
+  title: 'Both Hands on C',
   subtitle: 'Both hands on C · the five keys, C to G',
   ...IN_C,
   phrases: [
@@ -38,16 +39,95 @@ const HANDS_ON_C: Song = {
   ],
 }
 
+/**
+ * Steps and skips, in the same five keys: a step to the next key, a skip over
+ * one. C, E and G in skips is the sound of the key of C, and pattern 1's C to
+ * E is one (the user, 2026-11-25, from the books' reading by interval).
+ */
+const STEPS_AND_SKIPS: Song = {
+  id: 'steps-and-skips',
+  title: 'Steps and Skips: Key of C',
+  subtitle: 'Steps C, D, E · skips C, E, G',
+  ...IN_C,
+  phrases: [
+    { hand: 'right', notes: 'C4 D4 E4 D4 C4:4', cue: 'Right hand steps: C, D, E and back' },
+    { hand: 'right', notes: 'C4 E4 G4 E4 C4:4', cue: 'Right hand skips: C, E, G and back' },
+    { hand: 'left', notes: 'C3 E3 G3 E3 C3:4', cue: 'Left hand skips: C, E, G and back' },
+  ],
+}
+
+/**
+ * Steps and skips mixed: all five keys one at a time, as the hands on C
+ * played them, and the skips back, then the other way round (the user,
+ * 2026-11-25).
+ */
+const MIXING_STEPS_AND_SKIPS: Song = {
+  id: 'mixing-steps-and-skips',
+  title: 'Mixing Steps and Skips: Key of C',
+  subtitle: 'Up in steps, down in skips, then the opposite',
+  ...IN_C,
+  phrases: [
+    {
+      hand: 'right',
+      notes: 'C4 D4 E4 F4 G4 E4 C4:2',
+      cue: 'Right hand: up in steps, down in skips',
+    },
+    {
+      hand: 'right',
+      notes: 'C4 E4 G4 F4 E4 D4 C4:2',
+      cue: 'Right hand: up in skips, down in steps',
+    },
+    { hand: 'left', notes: 'C3 D3 E3 F3 G3 E3 C3:2', cue: 'Left hand: up in steps, down in skips' },
+    { hand: 'left', notes: 'C3 E3 G3 F3 E3 D3 C3:2', cue: 'Left hand: up in skips, down in steps' },
+  ],
+}
+
+const WHITE = ['C', 'D', 'E', 'F', 'G', 'A', 'B'] as const
+
+/** The white key `by` letters from `at` (`C4` and 2 make `E4`; -2, `A3`). */
+const whiteKey = (at: string, by: number) => {
+  const index = WHITE.indexOf(at[0] as (typeof WHITE)[number]) + Number(at.slice(1)) * 7 + by
+  return `${WHITE[((index % 7) + 7) % 7]}${Math.floor(index / 7)}`
+}
+
+/**
+ * The skips pattern, fingers 1 3 5 3 1, moved one white key at a time, the
+ * thumb on the key each starts from: the right hand from middle C up to G,
+ * then the left from its C position's G down to C (the user, 2026-11-25, from
+ * Faber's Primer Technique & Artistry, where a pattern moves this way).
+ */
+const moved = (hand: 'right' | 'left', from: string): Phrase[] => {
+  const way = hand === 'right' ? 1 : -1
+  return [0, 1, 2, 3, 4].map((moves) => {
+    const one = whiteKey(from, moves * way)
+    const [three, five] = [whiteKey(one, 2 * way), whiteKey(one, 4 * way)]
+    return {
+      hand,
+      thumb: noteOf(one),
+      notes: `${one} ${three} ${five} ${three} ${one}:2 -2`,
+      cue: `${hand === 'right' ? 'Right' : 'Left'} hand: thumb on ${one[0]}`,
+    }
+  })
+}
+
+const MOVING_THE_PATTERN: Song = {
+  id: 'moving-the-pattern',
+  title: 'Same Pattern, Any Key',
+  subtitle: 'The skips pattern, a key higher each time, then lower',
+  ...IN_C,
+  phrases: [...moved('right', 'C4'), ...moved('left', 'G3')],
+}
+
 /** The right hand's last key in each pattern; the rest never changes. */
 type LastKey = 'D' | 'E' | 'F'
 
 /**
  * A pattern played: left C, left G, right C, then the right hand's last key,
- * one key at a time, four times round.
+ * one key at a time, four times round unless told otherwise.
  */
-const played = (number: number, last: LastKey): Phrase => ({
+const played = (number: number, last: LastKey, rounds = 4): Phrase => ({
   hand: 'by-pitch',
-  notes: Array<string>(4).fill(`C3 G3 C4 ${last}4`).join(' '),
+  notes: Array<string>(rounds).fill(`C3 G3 C4 ${last}4`).join(' '),
   cue: `Pattern ${number}: left hand C, G, then right hand C, ${last}`,
 })
 
@@ -75,17 +155,23 @@ const PATTERNS_1_AND_2: Song = {
   phrases: [played(1, 'E'), played(2, 'D')],
 }
 
-/** All four together, four times each: patterns 1, 2, 1 and 4, the whole melody. */
+/**
+ * All four together, the whole melody, mixed up: each pattern twice, so 1 and
+ * 2 make four rounds, then 1 and 4 another four (the user, 2026-11-22).
+ */
 const WHOLE_MELODY: Song = {
   id: 'whole-melody',
-  title: 'Patterns 1, 2, 1 and 4: Key of C',
-  subtitle: 'The whole melody, each pattern four times',
+  title: 'Your First Melody: Key of C',
+  subtitle: 'The whole melody, each pattern twice',
   ...IN_C,
-  phrases: [played(1, 'E'), played(2, 'D'), played(1, 'E'), played(4, 'F')],
+  phrases: [played(1, 'E', 2), played(2, 'D', 2), played(1, 'E', 2), played(4, 'F', 2)],
 }
 
 export const FIRST_NOTES_LESSONS = {
   'hands-on-c': (range: NoteRange) => songLesson(HANDS_ON_C, range),
+  'steps-and-skips': (range: NoteRange) => songLesson(STEPS_AND_SKIPS, range),
+  'mixing-steps-and-skips': (range: NoteRange) => songLesson(MIXING_STEPS_AND_SKIPS, range),
+  'moving-the-pattern': (range: NoteRange) => songLesson(MOVING_THE_PATTERN, range),
   'pattern-1': (range: NoteRange) => songLesson(PATTERN_1, range),
   'pattern-2': (range: NoteRange) => songLesson(PATTERN_2, range),
   'patterns-1-and-2': (range: NoteRange) => songLesson(PATTERNS_1_AND_2, range),
@@ -100,6 +186,7 @@ const LEFT_HAND = { who: 'Left hand', text: 'Pinky on C, thumb on G. Play C, the
 export const FIRST_NOTES_ABOUT = {
   'hands-on-c': {
     objective: 'Put both hands on C, then play the five keys under each hand.',
+    narration: 'put-both-hands-on-c.mp3',
     how: [
       { who: 'Right hand', text: 'Put your thumb on middle C. Then play C, D, E, F, G.' },
       {
@@ -107,26 +194,76 @@ export const FIRST_NOTES_ABOUT = {
         text: 'Put your pinky on the C below middle C. Then play C, D, E, F, G.',
       },
     ],
-    remember: 'One finger for each key, one key at a time.',
+    remember: HANDS_REMINDER,
+  },
+  'steps-and-skips': {
+    objective:
+      'A step moves to the next key, and a skip jumps over one. Play C, D, E in steps, then C, E, G in skips: the sound of the key of C.',
+    narration: 'steps-and-skips.mp3',
+    how: [
+      {
+        who: 'Right hand',
+        text: 'Thumb on middle C. Step C, D, E and back, then skip C, E, G and back.',
+      },
+      { who: 'Left hand', text: 'Pinky on the C below middle C. Skip C, E, G and back.' },
+    ],
+    remember: HANDS_REMINDER,
+  },
+  'mixing-steps-and-skips': {
+    objective: 'Play up to G one key at a time, then skip back down to C. Then do the opposite.',
+    narration: 'mixing-steps-and-skips.mp3',
+    how: [
+      {
+        who: 'Right hand',
+        text: 'Thumb on middle C. Step up to G and skip back down, then skip up and step back down.',
+      },
+      {
+        who: 'Left hand',
+        text: 'Pinky on the C below middle C. The same, up in steps and down in skips, then the opposite.',
+      },
+    ],
+    remember: HANDS_REMINDER,
+  },
+  'moving-the-pattern': {
+    objective:
+      'A pattern can start on any key. Play C, E, G and back, then play the same pattern from D, E, F and G.',
+    narration: 'same-pattern-any-key.mp3',
+    how: [
+      {
+        who: 'Right hand',
+        text: 'Thumb on middle C. Skip C, E, G and back, then start again one key higher, up to G.',
+      },
+      {
+        who: 'Left hand',
+        text: 'Thumb on G. Skip G, E, C and back, then start again one key lower, down to C.',
+      },
+    ],
+    remember: HANDS_REMINDER,
   },
   'pattern-1': {
-    objective: 'Play your first song: C and G with your left hand, then C and E with your right.',
+    objective:
+      'Play C and G with your left hand, then the same C one octave higher and E with your right. That’s pattern 1 in the key of C.',
+    narration: 'pattern-1.mp3',
     how: [
       LEFT_HAND,
       { who: 'Right hand', text: 'Thumb on middle C, middle finger on E. Play C, then E.' },
     ],
-    remember: 'One key at a time: left C, left G, right C, right E.',
+    remember: HANDS_REMINDER,
   },
   'pattern-2': {
-    objective: 'Play pattern 2: C and G with your left hand, then C and D with your right.',
+    objective:
+      'Play pattern 2. It’s just like pattern 1, but your right hand ends on D instead of E.',
+    narration: 'pattern-2.mp3',
     how: [
       LEFT_HAND,
       { who: 'Right hand', text: 'Thumb on middle C, pointer finger on D. Play C, then D.' },
     ],
-    remember: 'Only the last key changes from pattern 1: D instead of E.',
+    remember: HANDS_REMINDER,
   },
   'patterns-1-and-2': {
-    objective: 'Play pattern 1, then pattern 2: the start of the melody.',
+    objective:
+      'Play pattern 1, then pattern 2. Your left hand stays the same, and only your right hand’s last note changes.',
+    narration: 'patterns-1-and-2.mp3',
     how: [
       LEFT_HAND,
       {
@@ -134,19 +271,20 @@ export const FIRST_NOTES_ABOUT = {
         text: 'Thumb on middle C. Play C, then E for pattern 1, and C, then D for pattern 2.',
       },
     ],
-    remember:
-      'Four times each: the middle finger for pattern 1, then the pointer finger for pattern 2.',
+    remember: HANDS_REMINDER,
   },
   'pattern-4': {
-    objective: 'Play pattern 4: C and G with your left hand, then C and F with your right.',
+    objective: 'Play pattern 4. This time your right hand ends on F.',
+    narration: 'pattern-4.mp3',
     how: [
       LEFT_HAND,
       { who: 'Right hand', text: 'Thumb on middle C, ring finger on F. Play C, then F.' },
     ],
-    remember: 'Only the last key changes again: F, with your ring finger.',
+    remember: HANDS_REMINDER,
   },
   'whole-melody': {
-    objective: 'Play the whole melody: patterns 1, 2, 1 and 4, four times each.',
+    objective: 'Put the patterns together: You’re playing your first melody in the key of C.',
+    narration: 'whole-melody.mp3',
     how: [
       LEFT_HAND,
       {
@@ -154,6 +292,8 @@ export const FIRST_NOTES_ABOUT = {
         text: 'Thumb on middle C. Play C, then E, D, E or F, pattern by pattern.',
       },
     ],
-    remember: 'Pattern 1 comes back after pattern 2, and pattern 4 ends the melody.',
+    remember: HANDS_REMINDER,
+    // Then faster, from 72 (the user, 2026-11-22).
+    tempoChallenge: 92,
   },
 } as const satisfies Record<keyof typeof FIRST_NOTES_LESSONS, LessonAbout>

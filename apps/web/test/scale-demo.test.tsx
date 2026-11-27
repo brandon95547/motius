@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { DEFAULT_SCALE_SPEC } from '@motius/shared'
+import { DEFAULT_SCALE_SPEC, loadLessons } from '@motius/shared'
 import { useLearningStore } from '@/state/learning-store'
 import { useKeyboardStore } from '@/state/keyboard-store'
 
@@ -266,5 +266,58 @@ describe('scale demo, where a step is not a beat', () => {
     act(() => result.current.toggle())
     expect(useLearningStore.getState().pulseEpoch).toBe(before)
     expect(sounded().length).toBe(1)
+  })
+})
+
+describe('scale demo, of a lesson asked by ear', () => {
+  const open = async (lesson: 'high-or-low' | 'pitch-recognition') => {
+    await loadLessons(lesson)
+    act(() => {
+      useLearningStore.getState().setLesson(lesson)
+      useLearningStore.getState().setTopic('lesson')
+    })
+    expect(useLearningStore.getState().exercise?.id).toBe(`lesson:${lesson}`)
+    // Opening a lesson sets its own tempo; a beat a second keeps the sums readable.
+    useLearningStore.getState().setTargetBpm(60)
+  }
+
+  it('plays each question, a note a beat, and a beat’s rest before the next', async () => {
+    await open('high-or-low')
+    const { result } = mount()
+    act(() => result.current.toggle())
+    expect(sounded()).toEqual([60])
+    act(() => void vi.advanceTimersByTime(1000))
+    expect(sounded()).toEqual([60, 72])
+    // The rest, and the answer's beat, which a side of the keyboard does not sound.
+    act(() => void vi.advanceTimersByTime(2000))
+    expect(sounded()).toEqual([60, 72])
+    // The next question four beats after the first began: middle C, then an octave down.
+    act(() => void vi.advanceTimersByTime(1000))
+    expect(sounded()).toEqual([60, 72, 60])
+    act(() => void vi.advanceTimersByTime(1000))
+    expect(sounded()).toEqual([60, 72, 60, 48])
+  })
+
+  it('plays a note to find, then the note; a tune once, then each of its notes', async () => {
+    await open('pitch-recognition')
+    const steps = useLearningStore.getState().exercise!.steps
+    const { result } = mount()
+    act(() => result.current.toggle())
+    act(() => void vi.advanceTimersByTime(3500))
+    // Middle C, G, a rest, then G as its answer.
+    expect(sounded()).toEqual([60, 67, 67])
+
+    act(() => result.current.stop())
+    noteOn.mockClear()
+    const tune = steps.findIndex((step) => step.prompt!.length > 2)
+    act(() => useLearningStore.getState().setDemoStep(null))
+    // Played from the first of the tunes: C D E, a rest, then C, D and E one a beat.
+    useLearningStore.setState({
+      exercise: { ...useLearningStore.getState().exercise!, steps: steps.slice(tune, tune + 3) },
+    })
+    const again = mount()
+    act(() => again.result.current.toggle())
+    act(() => void vi.advanceTimersByTime(7000))
+    expect(sounded()).toEqual([60, 62, 64, 60, 62, 64])
   })
 })

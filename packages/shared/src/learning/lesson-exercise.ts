@@ -24,6 +24,7 @@ export const LESSON_SECTIONS = {
     'two-black-key-groups',
     'three-black-key-groups',
     'keyboard-patterns',
+    'black-key-song',
     'notes-a-through-g',
     'repeating-note-names',
     'finding-c-and-f',
@@ -48,11 +49,25 @@ export const LESSON_SECTIONS = {
   ],
   'first-notes': [
     'hands-on-c',
+    'steps-and-skips',
+    'mixing-steps-and-skips',
+    'moving-the-pattern',
     'pattern-1',
     'pattern-2',
     'patterns-1-and-2',
     'pattern-4',
     'whole-melody',
+  ],
+  intervals: [
+    'high-or-low',
+    'pitch-recognition',
+    'half-steps',
+    'half-steps-lower',
+    'half-steps-higher',
+    'whole-steps',
+    'whole-steps-lower',
+    'whole-steps-higher',
+    'counting-intervals',
   ],
 } as const
 
@@ -76,6 +91,14 @@ export interface LessonAbout {
   /** Led by the hand that plays it, where a hand has its own part. */
   readonly how: readonly { readonly who?: 'Left hand' | 'Right hand'; readonly text: string }[]
   readonly remember?: string
+  /**
+   * The objective read aloud: a file in the web app's `public/narration/`,
+   * named for the lesson. A new recording takes a new name, as the files are
+   * not hashed.
+   */
+  readonly narration?: string
+  /** A tempo the results dialog challenges the player to try it at next. */
+  readonly tempoChallenge?: number
 }
 
 /** A section's module: each lesson's exercise and its introduction. */
@@ -100,6 +123,11 @@ const SECTION_MODULES: Record<LessonSection, () => Promise<SectionContent>> = {
     import('./first-notes-lessons.js').then((loaded) => ({
       builders: loaded.FIRST_NOTES_LESSONS,
       abouts: loaded.FIRST_NOTES_ABOUT,
+    })),
+  intervals: () =>
+    import('./interval-lessons.js').then((loaded) => ({
+      builders: loaded.INTERVAL_LESSONS,
+      abouts: loaded.INTERVAL_ABOUT,
     })),
 }
 

@@ -125,6 +125,10 @@
   --c-lessons-deep: #9468f8;
   /* Peaceful's stage: white (the user's choice, 2026-11-21; it was violet). */
   --c-stage: #ffffff;
+  /* What a lesson asks by ear, written large in the middle of the stage: the
+     ink, half shown, so it reads as a word to the player, not as the music
+     (4.0:1 on white, over the 3:1 large text needs). */
+  --c-stage-say: rgb(21 23 27 / 0.55);
   /* How much of a background film shows over the stage: one part film to three
      of the stage's own color. */
   --stage-backdrop-opacity: 0.25;
@@ -323,6 +327,8 @@
   --ds-focus-ring: #e2ff95;
   --ds-layer-selected: rgb(216 255 116 / 0.16);
   --c-stage: #d9d9d9;
+  /* The ink, a little more of it on this grey stage (4.2:1). */
+  --c-stage-say: rgb(21 23 27 / 0.6);
   --c-wash-white: 216 255 116;
   --c-wash-black: 226 255 149;
   /* The C that names its octave is written in the accent, and lime on an
@@ -351,6 +357,8 @@
   /* A black key's name over the keys: on this dark stage, white. */
   --c-key-name-above: rgb(255 255 255 / 0.5);
   --c-stage: #101114;
+  /* White, half shown, on the dark stage (5.3:1). */
+  --c-stage-say: rgb(255 255 255 / 0.5);
   /* Falling notes' rulings on a dark stage: light, not dark. */
   --c-fall-rule: rgb(255 255 255 / 0.11);
   --c-fall-lane: rgb(255 255 255 / 0.05);

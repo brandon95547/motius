@@ -45,6 +45,8 @@ export function useFallingClock(
 ): FallingClock {
   const mode = useLearningStore((state) => state.mode)
   const status = useLearningStore((state) => state.session.status)
+  // Counts the runs started, so one begun over a run still going is seen.
+  const runs = useLearningStore((state) => state.runs)
   const demoing = useLearningStore((state) => state.demoStepIndex !== null)
   // Practice's clock: the beat it was at, and when.
   const origin = React.useRef({ beat: 0, ms: 0 })
@@ -78,13 +80,14 @@ export function useFallingClock(
     [place],
   )
 
-  // A run begins — Start, or Again after one ended: from wherever the music
-  // was left before the first, from the top after one.
-  const previous = React.useRef(status)
+  // A run begins — Start, Again after one ended, or Back to the start during
+  // one: from wherever the music was left before the first, from the top after
+  // one.
+  const previous = React.useRef({ status, runs })
   React.useEffect(() => {
-    const before = previous.current
-    previous.current = status
-    const begun = before !== 'running' && status === 'running'
+    const { status: before, runs: ranBefore } = previous.current
+    previous.current = { status, runs }
+    const begun = status === 'running' && (before !== 'running' || runs !== ranBefore)
     if (status !== 'running') useFallingStore.getState().setPaused(false)
     if (!begun || !starts) return
     useFallingStore.getState().setPaused(false)
@@ -95,7 +98,7 @@ export function useFallingClock(
     if (step > 0) useLearningStore.getState().seekStep(step)
     counted.current = step
     runFrom(practice ? starts[step]! - LEAD_IN : starts[step]!)
-  }, [status, mode, starts, stepAt, runFrom])
+  }, [status, runs, mode, starts, stepAt, runFrom])
 
   // Going on after a pause, from anywhere that paused it (a tap, Space, the
   // bar's button): Practice's clock picks up exactly where the music stood.
@@ -133,7 +136,8 @@ export function useFallingClock(
         const to = starts[learning.demoStepIndex + 1] ?? from
         now = Math.min(Math.max(now, from) + elapsed, to)
       } else if (!paused && !moving.current && learning.session.status === 'running') {
-        if (learning.mode === 'practice') {
+        // A lesson of questions waits for each answer, in Practice as in Learn.
+        if (learning.mode === 'practice' && !learning.exercise?.waits) {
           now = origin.current.beat + Math.max(0, Date.now() - origin.current.ms) / beatMs
           // Gone by: the next step is due, and a margin more, and this one is
           // still unplayed. Every step that has, at once: a frame that comes

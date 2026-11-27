@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { lessonAbout, loadLessons } from '@motius/shared'
 import { AudioProvider } from '@/audio/AudioProvider'
 import { MidiProvider } from '@/midi/MidiProvider'
 import { BottomNav } from '@/components/BottomNav'
@@ -74,16 +75,17 @@ const PRACTICE_AREAS = [
   'Daily Practice',
 ]
 
+// Easiest first: playing before rhythm and reading (the user, 2026-11-26).
 const NINE = [
   'Piano Foundations',
-  'Music Notation & Reading',
-  'Rhythm & Timing',
   'Scales, Intervals & Keys',
   'Chords & Harmony',
   'Piano Technique',
   'Musical Expression',
   'Structure & Styles',
   'Practice & Repertoire',
+  'Rhythm & Timing',
+  'Music Notation & Reading',
 ]
 
 const cards = () =>
@@ -263,9 +265,19 @@ describe('a category’s page', () => {
  */
 const FOUNDATIONS = {
   'Keyboard Layout': {
-    'White and black keys': ['Two black keys', 'Three black keys', 'Black-key pattern'],
-    'Musical alphabet': ['Notes A to G', 'Repeating note names', 'Finding C and F'],
-    'Keyboard navigation': ['Finding Middle C', 'Finding any note', 'Left and right', 'Octaves'],
+    'White and black keys': [
+      'Two black keys',
+      'Three black keys',
+      'Black-key pattern',
+      'Black-key song: Hot Cross Buns',
+    ],
+    'Musical alphabet': ['Notes A to G', 'A to G Repeated', 'Finding C and F'],
+    'Keyboard navigation': [
+      'Finding Middle C',
+      'Finding any white key',
+      'Left and right',
+      'Octaves',
+    ],
   },
   'Fingers & Hands': {
     'Finger numbering': [
@@ -286,12 +298,15 @@ const FOUNDATIONS = {
     ],
   },
   'First Notes': [
-    'Play in the Key of C',
+    'Both Hands on C',
+    'Steps and Skips: Key of C',
+    'Mixing Steps and Skips: Key of C',
+    'Same Pattern, Any Key',
     'Pattern 1: Key of C',
     'Pattern 2: Key of C',
     'Patterns 1 and 2: Key of C',
     'Pattern 4: Key of C',
-    'Patterns 1, 2, 1 and 4: Key of C',
+    'Your First Melody: Key of C',
   ],
 }
 
@@ -338,6 +353,7 @@ const NOTATION = {
     'Reading ahead',
     'Reading unfamiliar music',
     'Reading chords on the staff',
+    'Sight-reading challenges',
   ],
   'Music Writing': [
     'Writing notes',
@@ -347,6 +363,7 @@ const NOTATION = {
     'Writing two-part music',
     'Letters to notes',
     'Transcribing melodies',
+    'Harmonic dictation',
   ],
 }
 
@@ -414,16 +431,23 @@ const RHYTHM = {
     'Recognizing rhythm patterns',
     'Metronome challenges',
     'Rhythms on the keys',
+    'Beat recognition',
   ],
 }
 
 /** Scales, Intervals & Keys. */
 const SCALES_KEYS = {
   Intervals: {
-    'Half steps': [],
-    'Whole steps': [],
-    'Melodic intervals': [],
-    'Harmonic intervals': [],
+    'Hearing direction': ['High or low?', 'Pitch recognition'],
+    'Half and whole steps': [
+      'Half steps',
+      'Half steps: one octave lower',
+      'Half steps: one octave higher',
+      'Whole steps',
+      'Whole steps: one octave lower',
+      'Whole steps: one octave higher',
+    ],
+    'Measuring intervals': ['Counting intervals', 'Melodic intervals', 'Harmonic intervals'],
     'Interval sizes': [
       'Unison',
       'Seconds',
@@ -435,19 +459,59 @@ const SCALES_KEYS = {
       'Octaves',
     ],
     'Interval qualities': ['Perfect', 'Major', 'Minor', 'Augmented', 'Diminished'],
-    'Interval recognition': [],
-    'Interval construction': [],
+    'Putting it together': [
+      'Interval recognition',
+      'Play a melody by intervals',
+      'Interval construction',
+      'Interval challenge',
+    ],
   },
+  'Major Scales': [
+    'Major scale formula',
+    'Tetrachords',
+    'Ascending and descending scales',
+    'Major scale fingering',
+    'All 12 major scales',
+  ],
+  'Scale Technique': [
+    'Finger patterns',
+    'Thumb passing',
+    'One-octave scales',
+    'Hands-separate scales',
+    'Hands-together scales',
+    'Parallel motion',
+    'Two-octave scales',
+    'Multiple-octave scales',
+    'Contrary motion',
+    'Chromatic warm-ups',
+    'Scale speed and accuracy',
+  ],
+  'Minor Scales': [
+    'Natural minor',
+    'Minor scale formulas',
+    'Minor scale fingering',
+    'Harmonic minor',
+    'Melodic minor',
+  ],
+  'Scale Degrees': [
+    'Introduction to scale degrees',
+    'Scale degree names',
+    'The tonic',
+    'The dominant and subdominant',
+    'Stable and unstable scale degrees',
+    'Tension and resolution',
+    'Major and minor scale degrees',
+    'Identifying scale degrees',
+  ],
   'Keys & Tonality': [
     'Tonics and tonal centers',
     'Major keys',
+    'Key signatures',
     'Minor keys',
     'Relative major and minor',
     'Parallel major and minor',
-    'Key signatures',
-    'Enharmonic keys',
-    'Scale degrees',
     'Transposition',
+    'Enharmonic keys',
     'Modulation',
   ],
   'Circle of Fifths': [
@@ -457,34 +521,9 @@ const SCALES_KEYS = {
     'Order of sharps',
     'Order of flats',
     'Identifying key signatures',
-    'Relative keys',
     'Closely related keys',
     'Dominant relationships',
     'Subdominant relationships',
-    'Key changes and modulation',
-  ],
-  'Major Scales': [
-    'Major scale formula',
-    'Tetrachords',
-    'All 12 major scales',
-    'Ascending and descending scales',
-    'Scale degrees',
-    'Major scale fingering',
-  ],
-  'Minor Scales': [
-    'Natural minor',
-    'Harmonic minor',
-    'Melodic minor',
-    'Relative minors',
-    'Minor scale formulas',
-    'Minor scale fingering',
-  ],
-  'Additional Scales': [
-    'Chromatic scales',
-    'Whole-tone scales',
-    'Major pentatonic',
-    'Minor pentatonic',
-    'Blues scales',
   ],
   'Diatonic Modes': [
     'Ionian',
@@ -497,18 +536,12 @@ const SCALES_KEYS = {
     'Mode construction',
     'Mode relationships',
   ],
-  'Scale Technique': [
-    'Finger patterns',
-    'Thumb passing',
-    'One-octave scales',
-    'Two-octave scales',
-    'Multiple-octave scales',
-    'Hands-separate scales',
-    'Hands-together scales',
-    'Parallel motion',
-    'Contrary motion',
-    'Chromatic warm-ups',
-    'Scale speed and accuracy',
+  'Additional Scales': [
+    'Major pentatonic',
+    'Minor pentatonic',
+    'Blues scales',
+    'Chromatic scales',
+    'Whole-tone scales',
   ],
 }
 
@@ -529,6 +562,7 @@ const CHORDS = {
     'Augmented triads': [],
     'Suspended chords': ['Sus2', 'Sus4'],
     'Diatonic triads': [],
+    'Major and minor recognition': [],
   },
   'Sevenths & Beyond': [
     'Dominant seventh',
@@ -590,7 +624,6 @@ const CHORDS = {
     'Voice leading',
     'Shared chords',
     'Pivot chords',
-    'Modulation',
     'Harmonic movement',
   ],
   'Chord Application': [
@@ -601,6 +634,8 @@ const CHORDS = {
     'Changing chords smoothly',
     'Accompaniment in different keys',
     'Chords by ear',
+    'Improvisation',
+    'Chord-based improvisation',
   ],
 }
 
@@ -610,10 +645,8 @@ const TECHNIQUE = {
     'Finger independence',
     'Finger strength and control',
     'Finger crossing',
-    'Thumb passing',
     'Finger substitution',
     'Alternative fingering',
-    'Fingering for scales',
     'Fingering for chords',
     'Fingering for arpeggios',
     'Fingering for melodies',
@@ -642,15 +675,7 @@ const TECHNIQUE = {
     'Arpeggio exercises',
     'Speed and accuracy exercises',
     'Finger independence drills',
-  ],
-  'Pedal Technique': [
-    'Damper pedal',
-    'Soft pedal',
-    'Sostenuto pedal',
-    'Pedal timing',
-    'Overlapping pedal',
-    'Pedal changes',
-    'Pedal coordination',
+    'Etudes',
   ],
   'Ornaments & Effects': [
     'Grace notes',
@@ -730,6 +755,9 @@ const STRUCTURE = {
       'Sonata form',
     ],
     'Canons and fugues': [],
+    'Creating melodies': [],
+    'Writing original songs': [],
+    'Melody and lyrics': [],
   },
   'Musical Textures': [
     'Monophony',
@@ -740,6 +768,7 @@ const STRUCTURE = {
     'Countermelodies',
     'Bass lines',
     'Two-part writing',
+    'Basic arranging',
   ],
   'Accompaniment Patterns': [
     'Block-chord accompaniment',
@@ -798,58 +827,6 @@ const STRUCTURE = {
 
 /** Practice & Repertoire. */
 const REPERTOIRE = {
-  'Reading Practice': [
-    'Note identification',
-    'Treble clef drills',
-    'Bass clef drills',
-    'Grand staff reading',
-    'Interval reading',
-    'Sight-reading challenges',
-    'Pattern recognition',
-    'Reading unfamiliar pieces',
-  ],
-  'Rhythm Practice': [
-    'Beat recognition',
-    'Clapping and counting',
-    'Rhythm identification',
-    'Note-duration exercises',
-    'Metronome challenges',
-    'Syncopation exercises',
-    'Hand coordination rhythms',
-  ],
-  'Technical Practice': [
-    'Fingering exercises',
-    'Five-finger drills',
-    'Scale exercises',
-    'Chord exercises',
-    'Inversion exercises',
-    'Arpeggio exercises',
-    'Hand coordination',
-    'Etudes',
-    'Speed and accuracy',
-  ],
-  'Theory Practice': [
-    'Note writing',
-    'Interval identification',
-    'Scale construction',
-    'Chord construction',
-    'Chord inversion exercises',
-    'Key signature recognition',
-    'Circle-of-fifths exercises',
-    'Harmony exercises',
-  ],
-  'Ear Training': [
-    'Pitch recognition',
-    'High or low?',
-    'Interval recognition',
-    'Major and minor recognition',
-    'Chord recognition',
-    'Rhythm recognition',
-    'Melodic dictation',
-    'Harmonic dictation',
-    'Melodies by ear',
-    'Listening and imitation',
-  ],
   'Practice Methods': [
     'Practice routines',
     'Short, consistent sessions',
@@ -874,17 +851,8 @@ const REPERTOIRE = {
     'Ensemble arrangements',
     'Play-along pieces',
     'Performance repertoire',
-  ],
-  'Creativity & Composition': [
-    'Creating melodies',
-    'Improvisation',
-    'Chord-based improvisation',
-    'Playing by ear',
-    'Harmonizing melodies',
-    'Writing original songs',
-    'Song structure',
-    'Melody and lyrics',
-    'Basic arranging',
+    'Melodies by ear',
+    'Listening and imitation',
   ],
   'Progress & Assessment': [
     'Lesson completion',
@@ -979,17 +947,16 @@ describe('Piano Foundations', () => {
       '#/piano-foundations/keyboard-layout/white-and-black-keys/recognizing-keyboard-patterns',
     )
     const dialog = screen.getByRole('dialog', { name: 'Black-key pattern' })
-    expect(dialog.textContent).toContain('On each group of two')
-    expect(dialog.textContent).toContain('On each group of three')
+    expect(dialog.textContent).toContain('Play the black keys pattern up the keyboard.')
     expect(useLearningStore.getState()).toMatchObject({ lesson: 'keyboard-patterns' })
     expect(useLearningStore.getState().exercise!.pitchClasses).toEqual([1, 3, 6, 8, 10])
   })
 
-  it('has Notes A to G written: the seven letters up from A and back down', async () => {
+  it('has Notes A to G written: the seven letters up from A, and A again', async () => {
     globalThis.localStorage.removeItem('motius.lesson-intros-hidden')
     await open('#/piano-foundations/keyboard-layout/musical-alphabet/notes-a-through-g')
     const dialog = screen.getByRole('dialog', { name: 'Notes A to G' })
-    expect(dialog.textContent).toContain('Find A: the white key between the top two')
+    expect(dialog.textContent).toContain('seven repeating note names')
     // No run finished yet: nothing to see results of.
     expect(within(dialog).queryByRole('button', { name: 'See results' })).toBeNull()
     expect(useLearningStore.getState()).toMatchObject({ lesson: 'notes-a-through-g' })
@@ -998,14 +965,14 @@ describe('Piano Foundations', () => {
         .getState()
         .exercise!.steps.map((step) => step.label)
         .join(''),
-    ).toBe('ABCDEFGFEDCBA'.repeat(2))
+    ).toBe('ABCDEFGA'.repeat(2))
   })
 
-  it('has Repeating note names written: the alphabet round and round up the keyboard', async () => {
+  it('has A to G Repeated written: A to G again, an octave up, at its address from before', async () => {
     globalThis.localStorage.removeItem('motius.lesson-intros-hidden')
     await open('#/piano-foundations/keyboard-layout/musical-alphabet/repeating-note-names')
-    const dialog = screen.getByRole('dialog', { name: 'Repeating note names' })
-    expect(dialog.textContent).toContain('after G comes A')
+    const dialog = screen.getByRole('dialog', { name: 'A to G Repeated' })
+    expect(dialog.textContent).toContain('one octave higher')
     expect(useLearningStore.getState()).toMatchObject({ lesson: 'repeating-note-names' })
   })
 
@@ -1017,11 +984,11 @@ describe('Piano Foundations', () => {
     expect(useLearningStore.getState().exercise!.pitchClasses).toEqual([0, 5])
   })
 
-  it('has Finding Middle C written: out to every C and home again', async () => {
+  it('has Finding Middle C written: back to it from every other C', async () => {
     globalThis.localStorage.removeItem('motius.lesson-intros-hidden')
     await open('#/piano-foundations/keyboard-layout/keyboard-navigation/finding-middle-c')
     const dialog = screen.getByRole('dialog', { name: 'Finding Middle C' })
-    expect(dialog.textContent).toContain('home base')
+    expect(dialog.textContent).toContain('returning to it from every other C')
     expect(useLearningStore.getState()).toMatchObject({ lesson: 'finding-middle-c' })
   })
 
@@ -1030,7 +997,7 @@ describe('Piano Foundations', () => {
     await open(
       '#/piano-foundations/keyboard-layout/keyboard-navigation/locating-notes-across-the-keyboard',
     )
-    const dialog = screen.getByRole('dialog', { name: 'Finding any note' })
+    const dialog = screen.getByRole('dialog', { name: 'Finding any white key' })
     expect(dialog.textContent).toContain('D is between the two black keys')
     expect(useLearningStore.getState().exercise!.pitchClasses).toEqual([2, 7, 4, 9, 11])
   })
@@ -1047,7 +1014,7 @@ describe('Piano Foundations', () => {
     globalThis.localStorage.removeItem('motius.lesson-intros-hidden')
     await open('#/piano-foundations/keyboard-layout/keyboard-navigation/recognizing-octaves')
     const dialog = screen.getByRole('dialog', { name: 'Octaves' })
-    expect(dialog.textContent).toContain('eight names')
+    expect(dialog.textContent).toContain('from one C to the next')
     expect(useLearningStore.getState()).toMatchObject({ lesson: 'recognizing-octaves' })
   })
 
@@ -1055,9 +1022,7 @@ describe('Piano Foundations', () => {
     globalThis.localStorage.removeItem('motius.lesson-intros-hidden')
     await open('#/piano-foundations/keyboard-layout/white-and-black-keys/three-black-key-groups')
     const dialog = screen.getByRole('dialog', { name: 'Three black keys' })
-    expect(dialog.textContent).toContain(
-      'Ring finger (4) on the left key, middle (3) in the middle, index (2) on the right',
-    )
+    expect(dialog.textContent).toContain('play each group together')
     expect(useLearningStore.getState()).toMatchObject({ lesson: 'three-black-key-groups' })
     expect(useLearningStore.getState().exercise!.pitchClasses).toEqual([6, 8, 10])
   })
@@ -1066,7 +1031,7 @@ describe('Piano Foundations', () => {
     await open('#/piano-foundations/playing-your-first-notes')
     expect(lessons()).toEqual(FOUNDATIONS['First Notes'])
     expect(chapterTitles()).toEqual([])
-    expect(lessonUp()).toBe('Play in the Key of C')
+    expect(lessonUp()).toBe('Both Hands on C')
   })
 
   it('opens a topic’s address on its first lesson', async () => {
@@ -1083,13 +1048,59 @@ describe('Piano Foundations', () => {
     expect(lessonUp()).toBe('Octaves')
   })
 
+  it('reads a lesson’s objective aloud as it opens, with a button to pause it and play on', async () => {
+    // Not heard yet on this device: the first time, it plays by itself.
+    globalThis.localStorage.removeItem('motius.narration-heard:two-black-key-groups.mp3')
+    const play = vi.mocked(HTMLMediaElement.prototype.play)
+    const pause = vi.mocked(HTMLMediaElement.prototype.pause)
+    await open('#/piano-foundations/keyboard-layout/white-and-black-keys/two-black-key-groups')
+    await waitFor(() => expect(play).toHaveBeenCalledTimes(1))
+    expect((play.mock.contexts[0] as HTMLAudioElement).src).toMatch(
+      /\/narration\/two-black-key-groups\.mp3$/,
+    )
+    const head = intro()!.querySelector('.lesson-intro__head')!
+    expect(head.textContent).toContain('Your objective')
+
+    fireEvent.click(within(intro()!).getByRole('button', { name: 'Pause' }))
+    expect(pause).toHaveBeenCalled()
+    fireEvent.click(within(intro()!).getByRole('button', { name: 'Read the objective aloud' }))
+    expect(play).toHaveBeenCalledTimes(2)
+
+    // Quiet as the introduction closes.
+    pause.mockClear()
+    fireEvent.click(within(intro()!).getByRole('button', { name: 'Close' }))
+    expect(pause).toHaveBeenCalled()
+  })
+
+  it('has no button to read aloud where a lesson has no recording yet', async () => {
+    // Every lesson has its recording now, so one is taken away for this.
+    await loadLessons('whole-melody')
+    const about = lessonAbout('whole-melody') as { narration?: string }
+    const file = about.narration
+    delete about.narration
+    try {
+      await open('#/piano-foundations/playing-your-first-notes/patterns-1-2-1-and-4-key-of-c')
+      await waitFor(() =>
+        expect(
+          screen.queryByRole('dialog', { name: 'Your First Melody: Key of C' }),
+        ).not.toBeNull(),
+      )
+      const dialog = screen.getByRole('dialog', { name: 'Your First Melody: Key of C' })
+      expect(within(dialog).queryByRole('button', { name: /aloud|^Pause$/ })).toBeNull()
+      expect(HTMLMediaElement.prototype.play).not.toHaveBeenCalled()
+    } finally {
+      about.narration = file
+    }
+  })
+
   it('introduces a written lesson until it is closed or a run starts, and not again for that lesson', async () => {
     await open('#/piano-foundations/keyboard-layout')
-    // Where it is, what it asks, how to play it, and how far through the section.
+    // Where it is, what it asks, and how far through the section: the objective
+    // says how to play it, with no How to play beside it.
     expect(intro()!.textContent).toContain('White and black keys')
-    expect(intro()!.textContent).toContain('Lesson 1 of 10')
+    expect(intro()!.textContent).toContain('Lesson 1 of 11')
     expect(within(intro()!).getByRole('heading', { name: 'Your objective' })).toBeDefined()
-    expect(within(intro()!).getByRole('heading', { name: 'How to play' })).toBeDefined()
+    expect(within(intro()!).queryByRole('heading', { name: 'How to play' })).toBeNull()
     expect(
       within(intro()!).getByRole('progressbar', { name: 'Lessons played in Keyboard Layout' }),
     ).toBeDefined()
@@ -1109,16 +1120,21 @@ describe('Piano Foundations', () => {
     expect(intro()).toBeNull()
   })
 
-  it('says which finger goes on which key, with the finger numbers a click away', async () => {
-    // On every lesson, even one whose lines name no finger.
+  it('keeps the finger numbers a click away from the objective', async () => {
+    // On every lesson: at the end of its reminder, which says which hand is which.
     await open('#/piano-foundations/keyboard-layout/white-and-black-keys/two-black-key-groups')
-    expect(within(intro()!).getByRole('button', { name: 'Finger numbers' })).toBeDefined()
+    const reminder = intro()!.querySelector('.lesson-intro__remember')!
+    expect(reminder.textContent).toContain(
+      'The blue notes on the stage represent your left hand and the green your right. The numbers on each note represent which finger to use. See finger numbers here.',
+    )
+    expect(
+      within(reminder as HTMLElement).getByRole('button', { name: 'finger numbers' }),
+    ).toBeDefined()
     cleanup()
 
     await open('#/piano-foundations/keyboard-layout/white-and-black-keys/three-black-key-groups')
     const dialog = intro3()!
-    expect(dialog.textContent).toContain('Ring finger (4) on the left key')
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Finger numbers' }))
+    fireEvent.click(within(dialog).getByRole('button', { name: /^finger numbers$/i }))
     const chart = screen.getByRole('dialog', { name: 'Finger numbers' })
     // The chart loads the first time it opens.
     await waitFor(() => expect(chart.textContent).toContain('Left hand'))
@@ -1234,9 +1250,9 @@ describe('Piano Foundations', () => {
     // The lesson by name, where it is in the section, and how many of the
     // section's lessons have been played.
     expect(within(done()!).getByText('Two black keys')).toBeDefined()
-    expect(done()!.textContent).toContain('Lesson 1 of 10')
+    expect(done()!.textContent).toContain('Lesson 1 of 11')
     // In words, not a bar: the bar is the introduction's.
-    expect(done()!.textContent).toContain('1 / 10 lessons (10%)')
+    expect(done()!.textContent).toContain('1 / 11 lessons (9%)')
     expect(within(done()!).queryByRole('progressbar')).toBeNull()
     // The score as a ring, and what the run was made of.
     expect(done()!.querySelector('.lesson-results__percent')!.textContent).toBe('100%')
@@ -1299,6 +1315,27 @@ describe('Piano Foundations', () => {
     fireEvent.click(within(intro()!).getByRole('button', { name: 'Next lesson: Three black keys' }))
     await at('#/piano-foundations/keyboard-layout/white-and-black-keys/three-black-key-groups')
     useHistoryStore.setState({ runs: [] })
+  })
+
+  it('challenges the whole First Notes melody at 92 BPM, until it is played at it', async () => {
+    await open('#/piano-foundations/playing-your-first-notes/patterns-1-2-1-and-4-key-of-c')
+    const finish = () =>
+      act(() => {
+        const learning = useLearningStore.getState()
+        learning.start()
+        for (const step of learning.exercise!.steps)
+          for (const note of step.notes) useLearningStore.getState().noteOn(note)
+      })
+    const done = () => screen.queryByRole('dialog', { name: /^Lesson \d+ results$/ })
+
+    expect(useLearningStore.getState().targetBpm).toBe(72)
+    finish()
+    await waitFor(() =>
+      expect(done()!.textContent).toContain('Turn the tempo up to 92 and try it again.'),
+    )
+    act(() => useLearningStore.getState().setTargetBpm(92))
+    finish()
+    await waitFor(() => expect(done()!.textContent).toContain('Challenge met: 92 BPM'))
   })
 
   it('opens the list from the bar, as a sheet from the right, and puts it away when one is picked', async () => {
@@ -1382,15 +1419,15 @@ describe('the categories outlined after it', () => {
   })
 
   it.each([
-    ['piano-foundations', 28],
-    ['music-notation-and-reading', 51],
-    ['rhythm-and-timing', 53],
-    ['scales-intervals-and-keys', 77],
-    ['chords-and-harmony', 77],
-    ['piano-technique', 46],
+    ['piano-foundations', 32],
+    ['music-notation-and-reading', 53],
+    ['rhythm-and-timing', 54],
+    ['scales-intervals-and-keys', 89],
+    ['chords-and-harmony', 79],
+    ['piano-technique', 38],
     ['musical-expression', 41],
-    ['musical-structure-and-styles', 77],
-    ['practice-and-repertoire', 81],
+    ['musical-structure-and-styles', 81],
+    ['practice-and-repertoire', 32],
   ] as const)('%s has every one of its %i lessons still to come', (id, count) => {
     const leaves = (sections: readonly Section[]): Section[] =>
       sections.flatMap((section) =>
@@ -1398,10 +1435,13 @@ describe('the categories outlined after it', () => {
       )
     const lessons = leaves(category(id).sections)
     expect(lessons).toHaveLength(count)
-    // Its name, and nothing to open or to say yet — but for the lessons written.
+    // Its name, and nothing to open yet — but for the lessons written. A line
+    // about it only where the outline gave one, as Scale Degrees' lessons have.
+    const described: readonly string[] = SCALES_KEYS['Scale Degrees']
     for (const lesson of lessons.filter((entry) => !entry.exercise)) {
       expect(lesson.opens).toBeUndefined()
-      expect(lesson.description).toBeUndefined()
+      if (described.includes(lesson.label)) expect(lesson.description).toBeTruthy()
+      else expect(lesson.description).toBeUndefined()
     }
   })
 
@@ -1414,6 +1454,38 @@ describe('the categories outlined after it', () => {
     await open('#/rhythm-and-timing')
     expect(cards()).toEqual(Object.keys(RHYTHM))
     expect(numbers()).toEqual(['01', '02', '03', '04', '05', '06', '07'])
+  })
+
+  it('folds a long list’s chapters, one open at a time, the lesson up’s first', async () => {
+    await open('#/scales-intervals-and-keys/intervals')
+    openList()
+    const folds = () =>
+      [...document.querySelectorAll<HTMLButtonElement>('.lesson-list__fold')].map((fold) => [
+        fold.firstElementChild!.nextElementSibling!.textContent,
+        fold.getAttribute('aria-expanded'),
+      ])
+    const names = Object.keys(SCALES_KEYS.Intervals)
+    expect(folds()).toEqual(names.map((name, index) => [name, String(index === 0)]))
+    // Only the open chapter's lessons are in the list, each with how many are done.
+    expect(lessons()).toEqual(['High or low?', 'Pitch recognition'])
+    expect(screen.getByRole('button', { name: /^Interval sizes,\s?0 \/ 8\s?done$/ })).toBeDefined()
+
+    fireEvent.click(screen.getByRole('button', { name: /^Interval sizes/ }))
+    expect(folds().filter(([, expanded]) => expanded === 'true')).toEqual([
+      ['Interval sizes', 'true'],
+    ])
+    expect(lessons()).toEqual(SCALES_KEYS.Intervals['Interval sizes'])
+
+    // Closed again, nothing is open.
+    fireEvent.click(screen.getByRole('button', { name: /^Interval sizes/ }))
+    expect(lessons()).toEqual([])
+  })
+
+  it('keeps a short list’s chapters open, as Keyboard Layout’s are', async () => {
+    await open('#/piano-foundations/keyboard-layout')
+    openList()
+    expect(document.querySelector('.lesson-list__fold')).toBeNull()
+    expect(lessons()).toEqual(Object.values(FOUNDATIONS['Keyboard Layout']).flat())
   })
 
   it('has lessons and topics side by side where the outline does', async () => {

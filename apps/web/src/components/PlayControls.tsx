@@ -224,7 +224,8 @@ function useExercisePlay(): Omit<PlaySource, keyof TempoSource> {
               onRestart: restartDemo,
             }
         : running && fallingView && hasExercise
-          ? { kind: 'pause', paused, onToggle: () => setPaused(!paused), onRestart: reset }
+          ? // Back to the start plays it again from the top at once, as Try again does.
+            { kind: 'pause', paused, onToggle: () => setPaused(!paused), onRestart: start }
           : running
             ? { kind: 'stop', onStop: reset }
             : { kind: 'play', label: 'Start', onPlay: start },

@@ -37,7 +37,10 @@ export function buildAnnotations(
   }
 
   if (mode === 'practice') {
-    // The guidance goes away. Only your own mistakes come back.
+    // The guidance goes away. Only your own mistakes come back, and the key a
+    // question is measured from, which is part of the question.
+    const landmark = exercise.steps[session.stepIndex]?.landmark
+    if (landmark !== undefined) annotations[landmark] = { role: 'root', label: nameFor(landmark) }
     for (const note of Object.keys(session.wrongNotes)) {
       annotations[Number(note)] = { role: 'wrong' }
     }
@@ -82,6 +85,22 @@ export function buildAnnotations(
       }
     })
   })
+
+  // A step any key of a stretch answers: the stretch washed, unless the step
+  // is a question, whose answer would show; and the key it is measured from,
+  // with what to do.
+  const step = exercise.steps[here]
+  if (step?.answer && !step.prompt) {
+    for (let note = step.answer.from; note <= step.answer.to; note++)
+      annotations[note] ??= { role: 'scale' }
+  }
+  if (step?.landmark !== undefined) {
+    annotations[step.landmark] = {
+      role: 'root',
+      label: nameFor(step.landmark),
+      ...(step.cue && { cue: step.cue }),
+    }
+  }
 
   for (const note of Object.keys(session.wrongNotes)) {
     annotations[Number(note)] = { role: 'wrong' }

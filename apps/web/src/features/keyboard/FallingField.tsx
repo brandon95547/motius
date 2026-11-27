@@ -1,5 +1,5 @@
 import * as React from 'react'
-import type { Hand, TimedNote, Timing } from '@motius/shared'
+import { crossingNotes, type Hand, type TimedNote, type Timing } from '@motius/shared'
 import { useViewStore } from '@/state/view-store'
 import { buildLayout, type KeyGeometry } from '@/lib/keyboard-layout'
 
@@ -61,6 +61,10 @@ export function FallingField({
     for (const key of [...layout.whiteKeys, ...layout.blackKeys]) byNote.set(key.note, key)
     return byNote
   }, [layout])
+  // A note the hand crosses to — the thumb under, or a finger over — is violet
+  // all the way down, in every lesson, exercise and song, so the crossing is
+  // seen coming (the user, 2026-11-23).
+  const crossing = React.useMemo(() => crossingNotes(notes), [notes])
 
   return (
     <div
@@ -96,6 +100,7 @@ export function FallingField({
               data-done={!!state.done}
               data-missed={!!state.missed}
               data-now={!!state.now}
+              data-crossing={crossing.has(note)}
               data-lit={!!state.lit}
               data-timing={state.timing}
               style={

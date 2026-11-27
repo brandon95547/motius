@@ -68,7 +68,10 @@
 .falling__glow[data-hand='left'] {
   --hand: var(--c-fall-left);
 }
-.falling__note[data-now='true'] {
+/* The one asked for in a song, and every note the hand crosses to (the thumb
+   under, or a finger over), all the way down. */
+.falling__note[data-now='true'],
+.falling__note[data-crossing='true'] {
   background-color: var(--c-now);
 }
 .falling__note[data-done='true'] {

@@ -6,7 +6,6 @@ import {
   AudioLines,
   Blocks,
   BookOpen,
-  Brain,
   CalendarCheck,
   ChartNoAxesColumn,
   ChartNoAxesColumnIncreasing,
@@ -18,11 +17,9 @@ import {
   Disc3,
   Drum,
   Dumbbell,
-  Ear,
   Ellipsis,
   Eye,
   FlipVertical2,
-  Footprints,
   Gauge,
   GraduationCap,
   Hand,
@@ -34,7 +31,6 @@ import {
   Layers,
   Layers2,
   Library,
-  Lightbulb,
   ListMusic,
   ListPlus,
   ListTree,
@@ -84,7 +80,8 @@ const SONGS = {
   opens: { kind: 'area', topic: 'songs' },
 } as const
 
-// In the mock's order, which is the number each card carries.
+// In the course's order, easiest first, which is the number each card carries:
+// playing before rhythm and reading, which come last (the user, 2026-11-26).
 export const CATEGORIES: readonly Category[] = [
   {
     id: 'piano-foundations',
@@ -103,7 +100,8 @@ export const CATEGORIES: readonly Category[] = [
           {
             label: 'White and black keys',
             icon: Contrast,
-            description: 'Two-black-key groups, three-black-key groups and keyboard patterns.',
+            description:
+              'Two-black-key groups, three-black-key groups, keyboard patterns and a first black-key song.',
             under: [
               {
                 label: 'Two black keys',
@@ -120,12 +118,13 @@ export const CATEGORIES: readonly Category[] = [
                 id: 'recognizing-keyboard-patterns',
                 exercise: 'keyboard-patterns',
               },
+              { label: 'Black-key song: Hot Cross Buns', exercise: 'black-key-song' },
             ],
           },
           {
             label: 'Musical alphabet',
             icon: ALargeSmall,
-            description: 'Notes A through G, repeating note names, and finding C and F.',
+            description: 'Notes A through G, A to G repeated, and finding C and F.',
             under: [
               {
                 label: 'Notes A to G',
@@ -133,7 +132,9 @@ export const CATEGORIES: readonly Category[] = [
                 exercise: 'notes-a-through-g',
               },
               {
-                label: 'Repeating note names',
+                label: 'A to G Repeated',
+                // Its address from before the rename, kept.
+                id: 'repeating-note-names',
                 exercise: 'repeating-note-names',
               },
               {
@@ -152,7 +153,7 @@ export const CATEGORIES: readonly Category[] = [
                 exercise: 'finding-middle-c',
               },
               {
-                label: 'Finding any note',
+                label: 'Finding any white key',
                 id: 'locating-notes-across-the-keyboard',
                 exercise: 'locating-notes',
               },
@@ -231,270 +232,25 @@ export const CATEGORIES: readonly Category[] = [
         // A first melody, built pattern by pattern: both hands on C and the
         // five keys under each, then the first song (the lessons' module says how).
         under: [
-          { label: 'Play in the Key of C', exercise: 'hands-on-c' },
+          {
+            label: 'Both Hands on C',
+            // Its address from before it was renamed (2026-11-25).
+            id: 'play-in-the-key-of-c',
+            exercise: 'hands-on-c',
+          },
+          { label: 'Steps and Skips: Key of C', exercise: 'steps-and-skips' },
+          { label: 'Mixing Steps and Skips: Key of C', exercise: 'mixing-steps-and-skips' },
+          { label: 'Same Pattern, Any Key', exercise: 'moving-the-pattern' },
           { label: 'Pattern 1: Key of C', exercise: 'pattern-1' },
           { label: 'Pattern 2: Key of C', exercise: 'pattern-2' },
           { label: 'Patterns 1 and 2: Key of C', exercise: 'patterns-1-and-2' },
           { label: 'Pattern 4: Key of C', exercise: 'pattern-4' },
-          { label: 'Patterns 1, 2, 1 and 4: Key of C', exercise: 'whole-melody' },
-        ],
-      },
-    ]),
-  },
-  {
-    id: 'music-notation-and-reading',
-    label: 'Music Notation & Reading',
-    icon: BookOpen,
-    description: 'Master the staff, clefs, note values and sight-reading.',
-    accent: 'arpeggios',
-    // The user's outline of 2026-10-12, in its order and its words.
-    sections: outlined({ icon: BookOpen, accent: 'arpeggios' }, [
-      {
-        label: 'Musical Staff',
-        icon: ListMusic,
-        accent: 'songs',
-        description:
-          'Lines and spaces, the treble and bass clefs, the grand staff and ledger lines.',
-        under: [
-          'Staff lines and spaces',
           {
-            label: 'Treble clef',
-            description: 'Line notes and space notes.',
-            under: ['Line notes', 'Space notes'],
+            label: 'Your First Melody: Key of C',
+            // Its address from before it was renamed (2026-11-25).
+            id: 'patterns-1-2-1-and-4-key-of-c',
+            exercise: 'whole-melody',
           },
-          {
-            label: 'Bass clef',
-            description: 'Line notes and space notes.',
-            under: ['Line notes', 'Space notes'],
-          },
-          {
-            label: 'Grand staff',
-            description: 'Treble and bass staff relationships, and Middle C on the grand staff.',
-            under: [
-              { label: 'Treble and bass together', id: 'treble-and-bass-staff-relationships' },
-              { label: 'Middle C on the staff', id: 'middle-c-on-the-grand-staff' },
-            ],
-          },
-          {
-            label: 'Ledger lines',
-            description: 'Notes above the staff and notes below it.',
-            under: [
-              { label: 'Above the staff', id: 'notes-above-the-staff' },
-              { label: 'Below the staff', id: 'notes-below-the-staff' },
-            ],
-          },
-        ],
-      },
-      {
-        label: 'Notes & Notation',
-        icon: Music3,
-        accent: 'arpeggios',
-        description: 'Note heads, stems, flags and beams, and where notes are placed.',
-        under: [
-          'Note heads',
-          'Stems',
-          'Flags',
-          'Beams',
-          'Note placement',
-          'Notes written simultaneously',
-          'Stem direction',
-        ],
-      },
-      {
-        label: 'Musical Symbols',
-        icon: Shapes,
-        accent: 'exercises',
-        description: 'Accidentals, key signatures, bar lines, repeats and other symbols.',
-        under: [
-          {
-            label: 'Accidentals',
-            icon: Hash,
-            description: 'Sharps, flats, naturals and enharmonic notes.',
-            under: ['Sharps', 'Flats', 'Naturals', 'Enharmonic notes'],
-          },
-          'Key signatures',
-          {
-            label: 'Bar lines',
-            icon: Tally2,
-            description: 'Single, double and final bar lines.',
-            under: ['Single bar lines', 'Double bar lines', 'Final bar lines'],
-          },
-          {
-            label: 'Repetition symbols',
-            icon: Repeat,
-            description: 'Repeat signs, endings, Da Capo, Dal Segno, Fine and Coda.',
-            under: [
-              'Repeat signs',
-              'First and second endings',
-              'Da Capo',
-              'Dal Segno',
-              'Fine',
-              'Coda',
-            ],
-          },
-          {
-            label: 'Additional symbols',
-            icon: Spline,
-            description: 'Ties, slurs, fermatas and octave signs.',
-            under: [
-              'Ties',
-              'Slurs',
-              'Fermatas',
-              { label: '8va and 8vb', id: 'octave-signs-8va-and-8vb' },
-            ],
-          },
-        ],
-      },
-      {
-        label: 'Sight-Reading',
-        icon: Eye,
-        accent: 'rose',
-        description: 'Reading each clef and both staves, intervals, patterns and chords.',
-        under: [
-          'Recognizing notes',
-          'Reading treble clef',
-          'Reading bass clef',
-          'Reading both staves',
-          'Reading intervals',
-          { label: 'Repeated notes', id: 'recognizing-repeated-notes' },
-          'Recognizing melodic patterns',
-          'Reading ahead',
-          'Reading unfamiliar music',
-          'Reading chords on the staff',
-        ],
-      },
-      {
-        label: 'Music Writing',
-        icon: PenLine,
-        accent: 'scales',
-        description: 'Writing notes, accidentals, key signatures and melodies, and transcribing.',
-        under: [
-          { label: 'Writing notes', id: 'writing-notes-on-the-staff' },
-          'Writing accidentals',
-          'Writing key signatures',
-          'Writing simple melodies',
-          'Writing two-part music',
-          { label: 'Letters to notes', id: 'converting-letter-notes-into-notation' },
-          'Transcribing melodies',
-        ],
-      },
-    ]),
-  },
-  {
-    id: 'rhythm-and-timing',
-    label: 'Rhythm & Timing',
-    icon: MetronomeIcon,
-    description: 'Develop your sense of rhythm, beat and tempo.',
-    accent: 'exercises',
-    // The user's outline of 2026-10-12, in its order and its words.
-    sections: outlined({ icon: MetronomeIcon, accent: 'exercises' }, [
-      {
-        label: 'Beat & Counting',
-        icon: Activity,
-        accent: 'songs',
-        description: 'Pulse, strong and weak beats, counting and subdividing.',
-        under: [
-          'Understanding pulse',
-          'Strong and weak beats',
-          'Counting beats',
-          'Counting aloud',
-          'Subdividing beats',
-          { label: 'Steady pulse', id: 'keeping-a-steady-pulse' },
-        ],
-      },
-      {
-        label: 'Tempo & Metronome',
-        icon: Gauge,
-        accent: 'arpeggios',
-        description: 'Tempo and beats per minute, using a metronome, and keeping consistent time.',
-        under: [
-          'Understanding tempo',
-          'Beats per minute (BPM)',
-          'Using a metronome',
-          'Slow and fast tempos',
-          { label: 'Steady timing', id: 'maintaining-consistent-timing' },
-          'Changing tempo',
-        ],
-      },
-      {
-        label: 'Time Signatures',
-        icon: Tally4,
-        accent: 'exercises',
-        description: 'Measures, simple and compound meter, common time and cut time.',
-        under: [
-          'Measures and bar lines',
-          { label: 'Simple meter', description: '2/4, 3/4 and 4/4.', under: ['2/4', '3/4', '4/4'] },
-          { label: 'Compound meter', description: '6/8.', under: ['6/8'] },
-          'Common time',
-          'Cut time (2/2)',
-          'Changing time signatures',
-          'Beat groupings',
-        ],
-      },
-      {
-        label: 'Note Values',
-        icon: Music2,
-        accent: 'rose',
-        description: 'Whole notes to sixteenths, dotted notes and triplets.',
-        under: [
-          'Whole notes',
-          'Half notes',
-          'Quarter notes',
-          'Eighth notes',
-          'Sixteenth notes',
-          {
-            label: 'Dotted notes',
-            description: 'Dotted half, quarter and eighth notes.',
-            under: ['Dotted half notes', 'Dotted quarter notes', 'Dotted eighth notes'],
-          },
-          'Triplets',
-          { label: 'Note lengths', id: 'note-duration-relationships' },
-        ],
-      },
-      {
-        label: 'Rests',
-        icon: Pause,
-        accent: 'scales',
-        description: 'Whole rests to sixteenths, dotted rests and counting silence.',
-        under: [
-          'Whole rests',
-          'Half rests',
-          'Quarter rests',
-          'Eighth rests',
-          'Sixteenth rests',
-          'Dotted rests',
-          'Counting silence',
-        ],
-      },
-      {
-        label: 'Rhythm Patterns',
-        icon: Drum,
-        accent: 'teal',
-        description: 'Syncopation, swing and shuffle, dotted and triplet rhythms.',
-        under: [
-          'Repeated rhythms',
-          'Pickup measures',
-          'Syncopation',
-          'Swing rhythms',
-          'Shuffle rhythms',
-          'Dotted rhythms',
-          'Triplet patterns',
-          'Rhythmic accompaniment',
-          { label: 'Independent rhythms', id: 'independent-rhythms-between-hands' },
-        ],
-      },
-      {
-        label: 'Rhythm Exercises',
-        icon: Dumbbell,
-        accent: 'pink',
-        description: 'Clapping, tapping, counting and playing rhythms.',
-        under: [
-          'Clapping rhythms',
-          'Tapping beats',
-          'Counting note values',
-          'Recognizing rhythm patterns',
-          'Metronome challenges',
-          { label: 'Rhythms on the keys', id: 'playing-rhythms-on-the-keyboard' },
         ],
       },
     ]),
@@ -505,18 +261,46 @@ export const CATEGORIES: readonly Category[] = [
     icon: Music,
     description: 'Explore intervals, scales, modes and key signatures.',
     accent: 'rose',
-    // The user's outline of 2026-10-12, in its order and its words.
+    // The user's outline of 2026-10-12, in its words; put in the order it is
+    // learned, easiest first, with each lesson in one place (2026-11-26).
     sections: outlined({ icon: Music, accent: 'rose' }, [
       {
         label: 'Intervals',
         icon: Ruler,
         accent: 'songs',
-        description: 'Half and whole steps, interval sizes and qualities, and recognizing them.',
+        description:
+          'Hearing direction, half and whole steps, measuring and naming each interval, its quality, and a challenge to finish.',
         under: [
-          'Half steps',
-          'Whole steps',
-          'Melodic intervals',
-          'Harmonic intervals',
+          {
+            label: 'Hearing direction',
+            under: [
+              {
+                label: 'High or low?',
+                id: 'high-and-low-pitch-recognition',
+                exercise: 'high-or-low',
+              },
+              { label: 'Pitch recognition', exercise: 'pitch-recognition' },
+            ],
+          },
+          {
+            label: 'Half and whole steps',
+            under: [
+              { label: 'Half steps', exercise: 'half-steps' },
+              { label: 'Half steps: one octave lower', exercise: 'half-steps-lower' },
+              { label: 'Half steps: one octave higher', exercise: 'half-steps-higher' },
+              { label: 'Whole steps', exercise: 'whole-steps' },
+              { label: 'Whole steps: one octave lower', exercise: 'whole-steps-lower' },
+              { label: 'Whole steps: one octave higher', exercise: 'whole-steps-higher' },
+            ],
+          },
+          {
+            label: 'Measuring intervals',
+            under: [
+              { label: 'Counting intervals', exercise: 'counting-intervals' },
+              'Melodic intervals',
+              'Harmonic intervals',
+            ],
+          },
           {
             label: 'Interval sizes',
             description: 'Unison to octaves.',
@@ -536,25 +320,120 @@ export const CATEGORIES: readonly Category[] = [
             description: 'Perfect, major, minor, augmented and diminished.',
             under: ['Perfect', 'Major', 'Minor', 'Augmented', 'Diminished'],
           },
-          'Interval recognition',
-          'Interval construction',
+          {
+            label: 'Putting it together',
+            under: [
+              'Interval recognition',
+              'Play a melody by intervals',
+              'Interval construction',
+              'Interval challenge',
+            ],
+          },
+        ],
+      },
+      {
+        label: 'Major Scales',
+        icon: Sun,
+        accent: 'rose',
+        description: 'The major scale formula, tetrachords, fingering and all 12 scales.',
+        under: [
+          'Major scale formula',
+          'Tetrachords',
+          'Ascending and descending scales',
+          'Major scale fingering',
+          'All 12 major scales',
+        ],
+      },
+      {
+        label: 'Scale Technique',
+        icon: Hand,
+        accent: 'progressions',
+        description:
+          'Finger patterns and thumb passing, one octave, hands together, more octaves, and speed.',
+        under: [
+          'Finger patterns',
+          'Thumb passing',
+          'One-octave scales',
+          'Hands-separate scales',
+          'Hands-together scales',
+          'Parallel motion',
+          'Two-octave scales',
+          'Multiple-octave scales',
+          'Contrary motion',
+          'Chromatic warm-ups',
+          'Scale speed and accuracy',
+        ],
+      },
+      {
+        label: 'Minor Scales',
+        icon: Moon,
+        accent: 'scales',
+        description: 'Natural minor, its formula and fingering, then harmonic and melodic minor.',
+        under: [
+          'Natural minor',
+          'Minor scale formulas',
+          'Minor scale fingering',
+          'Harmonic minor',
+          'Melodic minor',
+        ],
+      },
+      {
+        label: 'Scale Degrees',
+        icon: Hash,
+        accent: 'teal',
+        description:
+          'Learn the position, function and relationship of each note in a musical scale.',
+        under: [
+          {
+            label: 'Introduction to scale degrees',
+            description: 'Identify and number the seven degrees of a scale.',
+          },
+          {
+            label: 'Scale degree names',
+            description:
+              'Learn the tonic, supertonic, mediant, subdominant, dominant, submediant, and leading tone or subtonic.',
+          },
+          {
+            label: 'The tonic',
+            description: 'Understand the tonal center and sense of resolution.',
+          },
+          {
+            label: 'The dominant and subdominant',
+            description: 'Understand their relationship to the tonic.',
+          },
+          {
+            label: 'Stable and unstable scale degrees',
+            description: 'Recognize how notes create stability and tension.',
+          },
+          {
+            label: 'Tension and resolution',
+            description: 'Understand why certain notes naturally lead toward others.',
+          },
+          {
+            label: 'Major and minor scale degrees',
+            description: 'Compare their interval relationships and tonal functions.',
+          },
+          {
+            label: 'Identifying scale degrees',
+            description: 'Practice recognizing scale degrees across different scales.',
+          },
         ],
       },
       {
         label: 'Keys & Tonality',
         icon: KeyRound,
         accent: 'arpeggios',
-        description: 'Tonics, major and minor keys, key signatures, transposition and modulation.',
+        description:
+          'Tonics, major keys and key signatures, minor keys, transposition and modulation.',
         under: [
           'Tonics and tonal centers',
           'Major keys',
+          'Key signatures',
           'Minor keys',
           'Relative major and minor',
           'Parallel major and minor',
-          'Key signatures',
-          'Enharmonic keys',
-          'Scale degrees',
           'Transposition',
+          'Enharmonic keys',
           'Modulation',
         ],
       },
@@ -562,7 +441,7 @@ export const CATEGORIES: readonly Category[] = [
         label: 'Circle of Fifths',
         icon: CircleDashed,
         accent: 'exercises',
-        description: 'Fifths and fourths, the order of sharps and flats, and related keys.',
+        description: 'Fifths and fourths, the order of sharps and flats, and closely related keys.',
         under: [
           'Circle construction',
           { label: 'Moving by fifths', id: 'clockwise-movement-by-fifths' },
@@ -570,52 +449,9 @@ export const CATEGORIES: readonly Category[] = [
           'Order of sharps',
           'Order of flats',
           'Identifying key signatures',
-          'Relative keys',
           'Closely related keys',
           'Dominant relationships',
           'Subdominant relationships',
-          'Key changes and modulation',
-        ],
-      },
-      {
-        label: 'Major Scales',
-        icon: Sun,
-        accent: 'rose',
-        description: 'The major scale formula, tetrachords, all 12 scales and their fingering.',
-        under: [
-          'Major scale formula',
-          'Tetrachords',
-          'All 12 major scales',
-          'Ascending and descending scales',
-          'Scale degrees',
-          'Major scale fingering',
-        ],
-      },
-      {
-        label: 'Minor Scales',
-        icon: Moon,
-        accent: 'scales',
-        description: 'Natural, harmonic and melodic minor, their formulas and fingering.',
-        under: [
-          'Natural minor',
-          'Harmonic minor',
-          'Melodic minor',
-          { label: 'Relative minors', id: 'relative-minor-relationships' },
-          'Minor scale formulas',
-          'Minor scale fingering',
-        ],
-      },
-      {
-        label: 'Additional Scales',
-        icon: ListPlus,
-        accent: 'teal',
-        description: 'Chromatic, whole-tone, pentatonic and blues scales.',
-        under: [
-          'Chromatic scales',
-          'Whole-tone scales',
-          'Major pentatonic',
-          'Minor pentatonic',
-          'Blues scales',
         ],
       },
       {
@@ -636,22 +472,16 @@ export const CATEGORIES: readonly Category[] = [
         ],
       },
       {
-        label: 'Scale Technique',
-        icon: Hand,
-        accent: 'progressions',
-        description: 'Finger patterns, thumb passing, octaves, hands together, and speed.',
+        label: 'Additional Scales',
+        icon: ListPlus,
+        accent: 'teal',
+        description: 'Pentatonic and blues scales, then chromatic and whole-tone.',
         under: [
-          'Finger patterns',
-          'Thumb passing',
-          'One-octave scales',
-          'Two-octave scales',
-          'Multiple-octave scales',
-          'Hands-separate scales',
-          'Hands-together scales',
-          'Parallel motion',
-          'Contrary motion',
-          'Chromatic warm-ups',
-          'Scale speed and accuracy',
+          'Major pentatonic',
+          'Minor pentatonic',
+          'Blues scales',
+          'Chromatic scales',
+          'Whole-tone scales',
         ],
       },
     ]),
@@ -683,7 +513,7 @@ export const CATEGORIES: readonly Category[] = [
         icon: Triangle,
         accent: 'arpeggios',
         description:
-          'Major, minor, diminished and augmented triads, suspended chords and diatonic triads.',
+          'Major, minor, diminished and augmented triads, suspended chords, diatonic triads, and hearing major from minor.',
         under: [
           'Major triads',
           'Minor triads',
@@ -691,6 +521,7 @@ export const CATEGORIES: readonly Category[] = [
           'Augmented triads',
           { label: 'Suspended chords', description: 'Sus2 and Sus4.', under: ['Sus2', 'Sus4'] },
           'Diatonic triads',
+          'Major and minor recognition',
         ],
       },
       {
@@ -788,7 +619,7 @@ export const CATEGORIES: readonly Category[] = [
         label: 'Harmonic Relationships',
         icon: Waypoints,
         accent: 'progressions',
-        description: 'Tonic, dominant and subdominant function, common tones and modulation.',
+        description: 'Tonic, dominant and subdominant function, common tones and pivot chords.',
         under: [
           'Chords built from scales',
           'Tonic function',
@@ -798,7 +629,6 @@ export const CATEGORIES: readonly Category[] = [
           'Voice leading',
           'Shared chords',
           'Pivot chords',
-          'Modulation',
           'Harmonic movement',
         ],
       },
@@ -806,7 +636,8 @@ export const CATEGORIES: readonly Category[] = [
         label: 'Chord Application',
         icon: CirclePlay,
         accent: 'arpeggios',
-        description: 'Chord symbols and charts, accompaniment, and harmonizing melodies.',
+        description:
+          'Chord symbols and charts, accompaniment, harmonizing melodies, chords by ear and improvising.',
         under: [
           'Reading chord symbols',
           'Reading chord charts',
@@ -815,6 +646,8 @@ export const CATEGORIES: readonly Category[] = [
           'Changing chords smoothly',
           'Accompaniment in different keys',
           { label: 'Chords by ear', id: 'playing-chords-by-ear' },
+          'Improvisation',
+          'Chord-based improvisation',
         ],
       },
     ]),
@@ -823,7 +656,7 @@ export const CATEGORIES: readonly Category[] = [
     id: 'piano-technique',
     label: 'Piano Technique',
     icon: Hand,
-    description: 'Build your fingering, coordination and pedal skills.',
+    description: 'Build your fingering and coordination skills.',
     accent: 'progressions',
     // The user's outline of 2026-10-12, in its order and its words.
     sections: outlined({ icon: Hand, accent: 'progressions' }, [
@@ -832,15 +665,13 @@ export const CATEGORIES: readonly Category[] = [
         icon: Pointer,
         accent: 'songs',
         description:
-          'Finger independence, crossing and thumb passing, and fingering for scales, chords and melodies.',
+          'Finger independence and crossing, and fingering for chords, arpeggios and melodies.',
         under: [
           'Finger independence',
           'Finger strength and control',
           'Finger crossing',
-          'Thumb passing',
           'Finger substitution',
           'Alternative fingering',
-          'Fingering for scales',
           'Fingering for chords',
           'Fingering for arpeggios',
           'Fingering for melodies',
@@ -870,7 +701,8 @@ export const CATEGORIES: readonly Category[] = [
         label: 'Technical Exercises',
         icon: Dumbbell,
         accent: 'exercises',
-        description: 'Five-finger, Hanon, chromatic, octave, chord and arpeggio exercises.',
+        description:
+          'Five-finger, Hanon, chromatic, octave, chord and arpeggio exercises, and etudes.',
         under: [
           'Five-finger exercises',
           'Hanon exercises',
@@ -882,21 +714,7 @@ export const CATEGORIES: readonly Category[] = [
           'Arpeggio exercises',
           'Speed and accuracy exercises',
           'Finger independence drills',
-        ],
-      },
-      {
-        label: 'Pedal Technique',
-        icon: Footprints,
-        accent: 'rose',
-        description: 'The damper, soft and sostenuto pedals, pedal timing and changes.',
-        under: [
-          'Damper pedal',
-          'Soft pedal',
-          'Sostenuto pedal',
-          'Pedal timing',
-          'Overlapping pedal',
-          'Pedal changes',
-          'Pedal coordination',
+          'Etudes',
         ],
       },
       {
@@ -1012,7 +830,8 @@ export const CATEGORIES: readonly Category[] = [
         label: 'Musical Structure',
         icon: ListTree,
         accent: 'songs',
-        description: 'Motifs, melodies and phrases, verse and chorus, and the musical forms.',
+        description:
+          'Motifs, melodies and phrases, verse and chorus, the musical forms, and writing your own songs.',
         under: [
           'Motifs',
           'Melodies',
@@ -1037,13 +856,17 @@ export const CATEGORIES: readonly Category[] = [
             ],
           },
           'Canons and fugues',
+          'Creating melodies',
+          'Writing original songs',
+          { label: 'Melody and lyrics', id: 'combining-melodies-with-lyrics' },
         ],
       },
       {
         label: 'Musical Textures',
         icon: Layers2,
         accent: 'arpeggios',
-        description: 'Monophony, homophony and polyphony, countermelodies and bass lines.',
+        description:
+          'Monophony, homophony and polyphony, countermelodies and bass lines, and basic arranging.',
         under: [
           'Monophony',
           'Homophony',
@@ -1053,6 +876,7 @@ export const CATEGORIES: readonly Category[] = [
           'Countermelodies',
           'Bass lines',
           'Two-part writing',
+          'Basic arranging',
         ],
       },
       {
@@ -1151,96 +975,13 @@ export const CATEGORIES: readonly Category[] = [
     id: 'practice-and-repertoire',
     label: 'Practice & Repertoire',
     icon: GraduationCap,
-    description: 'Exercises, ear training, songs and track your progress.',
+    description: 'Songs and repertoire, how to practice, and your progress.',
     accent: 'pink',
-    // The user's outline of 2026-10-12, in its order and its words.
+    // The user's outline of 2026-10-12, in its order and its words. Its
+    // reading, rhythm, technical and theory practice repeated what each skill's
+    // own category teaches, so what was new in them went there; and its ear
+    // training and creativity went to the skills they train (2026-11-26).
     sections: outlined({ icon: GraduationCap, accent: 'pink' }, [
-      {
-        label: 'Reading Practice',
-        icon: Eye,
-        accent: 'songs',
-        description:
-          'Note identification, clef drills, interval reading and sight-reading challenges.',
-        under: [
-          'Note identification',
-          'Treble clef drills',
-          'Bass clef drills',
-          'Grand staff reading',
-          'Interval reading',
-          'Sight-reading challenges',
-          'Pattern recognition',
-          'Reading unfamiliar pieces',
-        ],
-      },
-      {
-        label: 'Rhythm Practice',
-        icon: Drum,
-        accent: 'arpeggios',
-        description:
-          'Beat recognition, clapping and counting, metronome and syncopation exercises.',
-        under: [
-          'Beat recognition',
-          'Clapping and counting',
-          'Rhythm identification',
-          'Note-duration exercises',
-          'Metronome challenges',
-          'Syncopation exercises',
-          'Hand coordination rhythms',
-        ],
-      },
-      {
-        label: 'Technical Practice',
-        icon: Dumbbell,
-        accent: 'exercises',
-        description: 'Fingering, five-finger, scale, chord and arpeggio exercises, and etudes.',
-        under: [
-          'Fingering exercises',
-          'Five-finger drills',
-          'Scale exercises',
-          'Chord exercises',
-          'Inversion exercises',
-          'Arpeggio exercises',
-          'Hand coordination',
-          'Etudes',
-          { label: 'Speed and accuracy', id: 'speed-and-accuracy-challenges' },
-        ],
-      },
-      {
-        label: 'Theory Practice',
-        icon: Brain,
-        accent: 'rose',
-        description:
-          'Note writing, building scales and chords, and recognizing intervals and key signatures.',
-        under: [
-          'Note writing',
-          'Interval identification',
-          'Scale construction',
-          'Chord construction',
-          'Chord inversion exercises',
-          'Key signature recognition',
-          'Circle-of-fifths exercises',
-          'Harmony exercises',
-        ],
-      },
-      {
-        label: 'Ear Training',
-        icon: Ear,
-        accent: 'scales',
-        description:
-          'Recognizing pitch, intervals, chords and rhythm, dictation, and playing by ear.',
-        under: [
-          'Pitch recognition',
-          { label: 'High or low?', id: 'high-and-low-pitch-recognition' },
-          'Interval recognition',
-          'Major and minor recognition',
-          'Chord recognition',
-          'Rhythm recognition',
-          'Melodic dictation',
-          'Harmonic dictation',
-          { label: 'Melodies by ear', id: 'playing-melodies-by-ear' },
-          'Listening and imitation',
-        ],
-      },
       {
         label: 'Practice Methods',
         icon: ClipboardList,
@@ -1264,7 +1005,8 @@ export const CATEGORIES: readonly Category[] = [
         label: 'Songs & Repertoire',
         icon: Library,
         accent: 'pink',
-        description: 'Beginner songs, classical, folk, popular, jazz and blues pieces, and duets.',
+        description:
+          'Beginner songs, classical, folk, popular, jazz and blues pieces, duets, and melodies by ear.',
         under: [
           'Beginner songs',
           'Classical pieces',
@@ -1276,23 +1018,8 @@ export const CATEGORIES: readonly Category[] = [
           'Ensemble arrangements',
           'Play-along pieces',
           'Performance repertoire',
-        ],
-      },
-      {
-        label: 'Creativity & Composition',
-        icon: Lightbulb,
-        accent: 'progressions',
-        description: 'Creating melodies, improvisation, playing by ear and writing songs.',
-        under: [
-          'Creating melodies',
-          'Improvisation',
-          'Chord-based improvisation',
-          'Playing by ear',
-          'Harmonizing melodies',
-          'Writing original songs',
-          'Song structure',
-          { label: 'Melody and lyrics', id: 'combining-melodies-with-lyrics' },
-          'Basic arranging',
+          { label: 'Melodies by ear', id: 'playing-melodies-by-ear' },
+          'Listening and imitation',
         ],
       },
       {
@@ -1310,6 +1037,269 @@ export const CATEGORIES: readonly Category[] = [
           'Performance evaluations',
           'Learning milestones',
           { label: 'Achievements by level', id: 'beginner-intermediate-and-advanced-achievements' },
+        ],
+      },
+    ]),
+  },
+  {
+    id: 'rhythm-and-timing',
+    label: 'Rhythm & Timing',
+    icon: MetronomeIcon,
+    description: 'Develop your sense of rhythm, beat and tempo.',
+    accent: 'exercises',
+    // The user's outline of 2026-10-12, in its order and its words.
+    sections: outlined({ icon: MetronomeIcon, accent: 'exercises' }, [
+      {
+        label: 'Beat & Counting',
+        icon: Activity,
+        accent: 'songs',
+        description: 'Pulse, strong and weak beats, counting and subdividing.',
+        under: [
+          'Understanding pulse',
+          'Strong and weak beats',
+          'Counting beats',
+          'Counting aloud',
+          'Subdividing beats',
+          { label: 'Steady pulse', id: 'keeping-a-steady-pulse' },
+        ],
+      },
+      {
+        label: 'Tempo & Metronome',
+        icon: Gauge,
+        accent: 'arpeggios',
+        description: 'Tempo and beats per minute, using a metronome, and keeping consistent time.',
+        under: [
+          'Understanding tempo',
+          'Beats per minute (BPM)',
+          'Using a metronome',
+          'Slow and fast tempos',
+          { label: 'Steady timing', id: 'maintaining-consistent-timing' },
+          'Changing tempo',
+        ],
+      },
+      {
+        label: 'Time Signatures',
+        icon: Tally4,
+        accent: 'exercises',
+        description: 'Measures, simple and compound meter, common time and cut time.',
+        under: [
+          'Measures and bar lines',
+          { label: 'Simple meter', description: '2/4, 3/4 and 4/4.', under: ['2/4', '3/4', '4/4'] },
+          { label: 'Compound meter', description: '6/8.', under: ['6/8'] },
+          'Common time',
+          'Cut time (2/2)',
+          'Changing time signatures',
+          'Beat groupings',
+        ],
+      },
+      {
+        label: 'Note Values',
+        icon: Music2,
+        accent: 'rose',
+        description: 'Whole notes to sixteenths, dotted notes and triplets.',
+        under: [
+          'Whole notes',
+          'Half notes',
+          'Quarter notes',
+          'Eighth notes',
+          'Sixteenth notes',
+          {
+            label: 'Dotted notes',
+            description: 'Dotted half, quarter and eighth notes.',
+            under: ['Dotted half notes', 'Dotted quarter notes', 'Dotted eighth notes'],
+          },
+          'Triplets',
+          { label: 'Note lengths', id: 'note-duration-relationships' },
+        ],
+      },
+      {
+        label: 'Rests',
+        icon: Pause,
+        accent: 'scales',
+        description: 'Whole rests to sixteenths, dotted rests and counting silence.',
+        under: [
+          'Whole rests',
+          'Half rests',
+          'Quarter rests',
+          'Eighth rests',
+          'Sixteenth rests',
+          'Dotted rests',
+          'Counting silence',
+        ],
+      },
+      {
+        label: 'Rhythm Patterns',
+        icon: Drum,
+        accent: 'teal',
+        description: 'Syncopation, swing and shuffle, dotted and triplet rhythms.',
+        under: [
+          'Repeated rhythms',
+          'Pickup measures',
+          'Syncopation',
+          'Swing rhythms',
+          'Shuffle rhythms',
+          'Dotted rhythms',
+          'Triplet patterns',
+          'Rhythmic accompaniment',
+          { label: 'Independent rhythms', id: 'independent-rhythms-between-hands' },
+        ],
+      },
+      {
+        label: 'Rhythm Exercises',
+        icon: Dumbbell,
+        accent: 'pink',
+        description: 'Clapping, tapping, counting and playing rhythms, and finding the beat.',
+        under: [
+          'Clapping rhythms',
+          'Tapping beats',
+          'Counting note values',
+          'Recognizing rhythm patterns',
+          'Metronome challenges',
+          { label: 'Rhythms on the keys', id: 'playing-rhythms-on-the-keyboard' },
+          'Beat recognition',
+        ],
+      },
+    ]),
+  },
+  {
+    id: 'music-notation-and-reading',
+    label: 'Music Notation & Reading',
+    icon: BookOpen,
+    description: 'Master the staff, clefs, note values and sight-reading.',
+    accent: 'arpeggios',
+    // The user's outline of 2026-10-12, in its order and its words.
+    sections: outlined({ icon: BookOpen, accent: 'arpeggios' }, [
+      {
+        label: 'Musical Staff',
+        icon: ListMusic,
+        accent: 'songs',
+        description:
+          'Lines and spaces, the treble and bass clefs, the grand staff and ledger lines.',
+        under: [
+          'Staff lines and spaces',
+          {
+            label: 'Treble clef',
+            description: 'Line notes and space notes.',
+            under: ['Line notes', 'Space notes'],
+          },
+          {
+            label: 'Bass clef',
+            description: 'Line notes and space notes.',
+            under: ['Line notes', 'Space notes'],
+          },
+          {
+            label: 'Grand staff',
+            description: 'Treble and bass staff relationships, and Middle C on the grand staff.',
+            under: [
+              { label: 'Treble and bass together', id: 'treble-and-bass-staff-relationships' },
+              { label: 'Middle C on the staff', id: 'middle-c-on-the-grand-staff' },
+            ],
+          },
+          {
+            label: 'Ledger lines',
+            description: 'Notes above the staff and notes below it.',
+            under: [
+              { label: 'Above the staff', id: 'notes-above-the-staff' },
+              { label: 'Below the staff', id: 'notes-below-the-staff' },
+            ],
+          },
+        ],
+      },
+      {
+        label: 'Notes & Notation',
+        icon: Music3,
+        accent: 'arpeggios',
+        description: 'Note heads, stems, flags and beams, and where notes are placed.',
+        under: [
+          'Note heads',
+          'Stems',
+          'Flags',
+          'Beams',
+          'Note placement',
+          'Notes written simultaneously',
+          'Stem direction',
+        ],
+      },
+      {
+        label: 'Musical Symbols',
+        icon: Shapes,
+        accent: 'exercises',
+        description: 'Accidentals, key signatures, bar lines, repeats and other symbols.',
+        under: [
+          {
+            label: 'Accidentals',
+            icon: Hash,
+            description: 'Sharps, flats, naturals and enharmonic notes.',
+            under: ['Sharps', 'Flats', 'Naturals', 'Enharmonic notes'],
+          },
+          'Key signatures',
+          {
+            label: 'Bar lines',
+            icon: Tally2,
+            description: 'Single, double and final bar lines.',
+            under: ['Single bar lines', 'Double bar lines', 'Final bar lines'],
+          },
+          {
+            label: 'Repetition symbols',
+            icon: Repeat,
+            description: 'Repeat signs, endings, Da Capo, Dal Segno, Fine and Coda.',
+            under: [
+              'Repeat signs',
+              'First and second endings',
+              'Da Capo',
+              'Dal Segno',
+              'Fine',
+              'Coda',
+            ],
+          },
+          {
+            label: 'Additional symbols',
+            icon: Spline,
+            description: 'Ties, slurs, fermatas and octave signs.',
+            under: [
+              'Ties',
+              'Slurs',
+              'Fermatas',
+              { label: '8va and 8vb', id: 'octave-signs-8va-and-8vb' },
+            ],
+          },
+        ],
+      },
+      {
+        label: 'Sight-Reading',
+        icon: Eye,
+        accent: 'rose',
+        description:
+          'Reading each clef and both staves, intervals, patterns and chords, and sight-reading challenges.',
+        under: [
+          'Recognizing notes',
+          'Reading treble clef',
+          'Reading bass clef',
+          'Reading both staves',
+          'Reading intervals',
+          { label: 'Repeated notes', id: 'recognizing-repeated-notes' },
+          'Recognizing melodic patterns',
+          'Reading ahead',
+          'Reading unfamiliar music',
+          'Reading chords on the staff',
+          'Sight-reading challenges',
+        ],
+      },
+      {
+        label: 'Music Writing',
+        icon: PenLine,
+        accent: 'scales',
+        description:
+          'Writing notes, accidentals, key signatures and melodies, and transcribing melodies and chords.',
+        under: [
+          { label: 'Writing notes', id: 'writing-notes-on-the-staff' },
+          'Writing accidentals',
+          'Writing key signatures',
+          'Writing simple melodies',
+          'Writing two-part music',
+          { label: 'Letters to notes', id: 'converting-letter-notes-into-notation' },
+          'Transcribing melodies',
+          'Harmonic dictation',
         ],
       },
     ]),

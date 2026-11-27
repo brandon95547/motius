@@ -38,6 +38,8 @@
 .piano-key--white {
   flex: 1 1 0;
   min-width: 0;
+  /* Its label is sized from its width. */
+  container-type: inline-size;
   align-self: stretch;
   border-right: 1px solid var(--c-key-gap);
   border-radius: var(--c-key-radius);
@@ -111,7 +113,8 @@
   inset-inline: 0;
   bottom: 6px;
   text-align: center;
-  font-size: var(--text-label);
+  /* As large as the key leaves room for: 13px on a narrow key, up to 19px. */
+  font-size: clamp(var(--text-label), 62cqi, var(--text-h3));
   font-weight: 600;
   line-height: 1;
   color: var(--c-key-label);

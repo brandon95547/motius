@@ -5,7 +5,8 @@ import type * as React from 'react'
  * numbered in its hand's color — blue the left, green the right, as the
  * falling notes color them — and the numbers' names beneath. Shown by a
  * lesson's Finger numbers, and by the reminder of which hand is which before
- * the notes fall, each with its own sentence under it.
+ * the notes fall, each with its own sentence under it; one hand alone where a
+ * tip is about that hand (the right hand taking over).
  */
 
 const FINGERS = [
@@ -19,9 +20,12 @@ const FINGERS = [
 export function FingerChart({
   note = 'The same numbers on both hands: the thumbs are 1.',
   compact = false,
+  hands = 'both',
 }: {
-  /** What it is shown for, in a sentence under the chart. */
+  /** What it is shown for, in a sentence under the chart; null for none. */
   note?: React.ReactNode
+  /** Both hands, or the one a tip is about. */
+  hands?: 'both' | 'left' | 'right'
   /**
    * For a notice, where the numbers and colors are the point and the room is
    * a card's: no names under the hands, and no captions on them (the sentence
@@ -30,10 +34,10 @@ export function FingerChart({
   compact?: boolean
 }) {
   return (
-    <div className="finger-chart" data-compact={compact}>
+    <div className="finger-chart" data-compact={compact} data-hands={hands}>
       <div className="finger-chart__hands">
-        <HandDrawing side="left" caption={!compact} />
-        <HandDrawing side="right" caption={!compact} />
+        {hands !== 'right' && <HandDrawing side="left" caption={!compact} />}
+        {hands !== 'left' && <HandDrawing side="right" caption={!compact} />}
       </div>
       {!compact && (
         <p className="finger-chart__key">
@@ -44,7 +48,7 @@ export function FingerChart({
           ))}
         </p>
       )}
-      <p className="finger-chart__note">{note}</p>
+      {note !== null && <p className="finger-chart__note">{note}</p>}
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { ArrowRight, Check, GraduationCap, Info, Lightbulb, Trophy } from 'lucid
 import { BarButton } from '@/ui/BarButton'
 import { Button } from '@/ui/Button'
 import { Dialog } from '@/ui/Dialog'
+import { Disclosure } from '@/ui/Disclosure'
 import { Drawer } from '@/ui/Drawer'
 import { bestOf, percent, useScoredRuns, type Played } from '@/state/history-store'
 import { introHidden, showIntroNextTime } from '@/state/lesson-intros'
@@ -11,9 +12,11 @@ import { useLearningStore } from '@/state/learning-store'
 import { panelActions, usePanelStore } from '@/state/panel-store'
 import { COMING_SOON, type Lesson, type Section } from '@/lib/outline/outline'
 import { FingerNumbers } from './FingerNumbers'
+import { Narration } from '@/ui/Narration'
 import { resultsActions } from './results-store'
 import { chapterOf, closeLessons, go, keyOf, SectionProgress, useHere } from './lesson-here'
 import { remindThenRun } from '@/state/hands-reminder'
+import { askCrossingTip, reachedCrossingTip } from '@/state/crossing-tips'
 
 /**
  * A section's stage: a written lesson's introduction in a dialog, and the
@@ -67,14 +70,51 @@ export function LessonsButton({ className }: { className?: string }) {
   )
 }
 
+/**
+ * How many lessons a list shows with every chapter open. A longer one folds
+ * them, one open at a time, so it fits the sheet without a long scroll; a
+ * short one is read in a glance as it is.
+ */
+const FOLD_OVER = 15
+
 /** The section's lessons, by chapter, the one that is up marked. */
 export function LessonsDrawer() {
   const here = useHere()
   const open = usePanelStore((state) => state.panel === 'lessons')
   const runs = useScoredRuns()
+  const current = here?.lessons[here.index]
+  const runsOf = here ? chapters(here.section, here.lessons) : []
+  const folds = (here?.lessons.length ?? 0) > FOLD_OVER && runsOf.length > 1
+  const upIn = runsOf.findIndex((chapter) => current && chapter.lessons.includes(current))
+  // The chapter open: the one the lesson up is in, each time the sheet opens.
+  const [shown, setShown] = React.useState<number | null>(upIn)
+  React.useEffect(() => {
+    if (open) setShown(upIn)
+  }, [open, upIn])
   if (!here) return null
-  const current = here.lessons[here.index]
   const count = here.lessons.length
+
+  const list = (lessons: readonly Lesson[]) => (
+    <ol>
+      {lessons.map((lesson) => (
+        // Numbered through the section, not the chapter: the card says "4 of 10".
+        <li key={lesson.path.join('/')}>
+          <button
+            type="button"
+            className="lesson-list__item"
+            aria-current={lesson === current ? 'step' : undefined}
+            onClick={() => go(here, lesson)}
+          >
+            <span className="lesson-list__number" aria-hidden>
+              {String(here.lessons.indexOf(lesson) + 1).padStart(2, '0')}
+            </span>
+            <span className="lesson-list__name">{lesson.lesson.label}</span>
+            <Best record={bestOf(runs, keyOf(here, lesson))} />
+          </button>
+        </li>
+      ))}
+    </ol>
+  )
 
   return (
     <Drawer
@@ -86,30 +126,37 @@ export function LessonsDrawer() {
       description={`${count} ${count === 1 ? 'lesson' : 'lessons'}`}
     >
       <nav className="lesson-list" data-accent={here.section.accent} aria-label="Lessons">
-        {chapters(here.section, here.lessons).map((chapter, index) => (
-          <section key={index} className="lesson-list__chapter">
-            {chapter.title && <h3 className="lesson-list__chapter-title">{chapter.title}</h3>}
-            <ol>
-              {chapter.lessons.map((lesson) => (
-                // Numbered through the section, not the chapter: the card says "4 of 10".
-                <li key={lesson.path.join('/')}>
-                  <button
-                    type="button"
-                    className="lesson-list__item"
-                    aria-current={lesson === current ? 'step' : undefined}
-                    onClick={() => go(here, lesson)}
-                  >
-                    <span className="lesson-list__number" aria-hidden>
-                      {String(here.lessons.indexOf(lesson) + 1).padStart(2, '0')}
-                    </span>
-                    <span className="lesson-list__name">{lesson.lesson.label}</span>
-                    <Best record={bestOf(runs, keyOf(here, lesson))} />
-                  </button>
-                </li>
-              ))}
-            </ol>
-          </section>
-        ))}
+        {runsOf.map((chapter, index) => {
+          if (!folds) {
+            return (
+              <section key={index} className="lesson-list__chapter">
+                {chapter.title && <h3 className="lesson-list__chapter-title">{chapter.title}</h3>}
+                {list(chapter.lessons)}
+              </section>
+            )
+          }
+          const done = chapter.lessons.filter((lesson) => bestOf(runs, keyOf(here, lesson))).length
+          return (
+            <Disclosure
+              key={index}
+              className="lesson-list__chapter"
+              heading="h3"
+              triggerClassName="lesson-list__fold"
+              label={chapter.title}
+              aside={
+                <span className="lesson-list__fold-count" data-tabular>
+                  <span className="sr-only">, </span>
+                  {done} / {chapter.lessons.length}
+                  <span className="sr-only"> done</span>
+                </span>
+              }
+              open={shown === index}
+              onOpenChange={(opened) => setShown(opened ? index : null)}
+            >
+              {list(chapter.lessons)}
+            </Disclosure>
+          )
+        })}
       </nav>
     </Drawer>
   )
@@ -228,30 +275,26 @@ export function LessonIntro() {
       <div className="lesson-intro">
         <SectionProgress here={here} thin />
         <section className="lesson-intro__part">
-          <h3 className="lesson-intro__heading">Your objective</h3>
+          <div className="lesson-intro__head">
+            <h3 className="lesson-intro__heading">Your objective</h3>
+            <div className="lesson-intro__actions">
+              {/* Until every lesson has its reminder, Finger numbers waits here where one has none. */}
+              {!about.remember && <FingerNumbers>Finger numbers</FingerNumbers>}
+              {about.narration && <Narration file={about.narration} open={open} />}
+            </div>
+          </div>
           <p>{about.objective}</p>
         </section>
-        <section className="lesson-intro__how">
-          <div className="lesson-intro__how-head">
-            <h3 className="lesson-intro__heading">How to play</h3>
-            {/* On every lesson: what the numbers on the keys mean, for whoever looks. */}
-            <FingerNumbers />
-          </div>
-          {about.how.map((line) => (
-            <p key={line.text}>
-              {line.who && <strong>{line.who}: </strong>}
-              {line.text}
-            </p>
-          ))}
-        </section>
         {about.remember && (
-          <p className="lesson-intro__remember">
+          <div className="lesson-intro__remember">
             <Lightbulb size={20} aria-hidden />
-            <span>
+            {/* Not a <p>: the finger chart opens inside it. */}
+            <div>
               <strong>Remember: </strong>
-              {about.remember}
-            </span>
-          </p>
+              {about.remember} {/* What the numbers on the notes mean, for whoever looks. */}
+              See <FingerNumbers>finger numbers</FingerNumbers> here.
+            </div>
+          </div>
         )}
       </div>
     </Dialog>
@@ -265,8 +308,16 @@ export function useHasLessonAbout() {
   return Boolean(here?.lessons[here.index]?.lesson.exercise)
 }
 
-/** Opens the lesson's introduction again. */
-export const openLessonAbout = () => panelActions.open('lesson')
+/**
+ * Opens the lesson's introduction again; or, during a run that has reached a
+ * tip, that tip — the part the player is on — with the introduction a click
+ * from it.
+ */
+export function openLessonAbout() {
+  const tip = reachedCrossingTip()
+  if (tip) askCrossingTip(tip)
+  else panelActions.open('lesson')
+}
 
 export function LessonAboutButton({ className }: { className?: string }) {
   const here = useHere()

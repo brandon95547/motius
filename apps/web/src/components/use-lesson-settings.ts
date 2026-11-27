@@ -105,9 +105,17 @@ export function useLessonSettings() {
     const stopSettings = useLessonSettingsStore.subscribe((state, before) => {
       if (state.byLesson !== before.byLesson) follow(true)
     })
+    // A lesson's notes can arrive after its page opens, at the lesson's own
+    // tempo; a tempo set here still wins.
+    const stopExercise = useLearningStore.subscribe((state, before) => {
+      if (!up || state.exercise?.id === before.exercise?.id) return
+      const bpm = useLessonSettingsStore.getState().byLesson[up]?.bpm
+      if (bpm) state.setTargetBpm(bpm)
+    })
     return () => {
       stopPages()
       stopSettings()
+      stopExercise()
       restore()
     }
   }, [])

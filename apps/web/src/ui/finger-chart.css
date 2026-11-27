@@ -10,6 +10,13 @@
   width: min(100%, 17.5rem);
   margin-inline: auto;
 }
+/* One hand: a column the size of one of the two. */
+.finger-chart[data-hands='left'] .finger-chart__hands,
+.finger-chart[data-hands='right'] .finger-chart__hands {
+  grid-template-columns: 1fr;
+  width: min(100%, 8.5rem);
+  margin-inline: auto;
+}
 .finger-chart__hand {
   display: flex;
   flex-direction: column;

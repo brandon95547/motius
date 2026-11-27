@@ -10,7 +10,7 @@ import { LessonComplete } from '@/features/areas/LessonResults'
 import { LessonIntro, LessonsDrawer, LessonSoon } from '@/features/areas/Lessons'
 import { Button } from '@/ui/Button'
 import { useLearningStore } from '@/state/learning-store'
-import { useCrossingDue } from '@/state/crossing-tips'
+import { useCrossingTip } from '@/state/crossing-tips'
 import { lazyExport, OnDemand } from '@/ui/OnDemand'
 
 /*
@@ -24,8 +24,10 @@ import { lazyExport, OnDemand } from '@/ui/OnDemand'
 export { OptionsButton } from '@/components/OptionsDrawer'
 export { PlayControls } from '@/components/PlayControls'
 
-// How to cross, loaded the first time a lesson's run reaches a crossing.
+// How to cross, loaded the first time a lesson's run reaches a crossing, or one is asked for again.
 const CrossingTip = lazyExport(() => import('@/features/areas/CrossingTip'), 'CrossingTip')
+// A lesson's questions by ear, loaded the first time a lesson that asks them opens.
+const StepPrompt = lazyExport(() => import('@/features/areas/StepPrompt'), 'StepPrompt')
 
 export interface WorkspaceProps {
   page: 'area' | 'lesson'
@@ -36,8 +38,11 @@ export interface WorkspaceProps {
 
 export function Workspace({ page, catalogueError, onRetryCatalogue }: WorkspaceProps) {
   const topic = useLearningStore((state) => state.topic)
-  const crossingDue = useCrossingDue() !== null
+  const crossingTip = useCrossingTip().crossing !== null
   const ready = useLearningStore((state) => state.ready)
+  const asks = useLearningStore(
+    (state) => state.exercise?.steps.some((step) => step.prompt) ?? false,
+  )
   // The area's builder, or the lesson's section, if this is the first time.
   React.useEffect(ready, [ready])
   return (
@@ -53,6 +58,9 @@ export function Workspace({ page, catalogueError, onRetryCatalogue }: WorkspaceP
             {page === 'lesson' ? (
               <Stage>
                 <LessonSoon />
+                <OnDemand when={asks}>
+                  <StepPrompt />
+                </OnDemand>
               </Stage>
             ) : (
               <Stage />
@@ -73,7 +81,7 @@ export function Workspace({ page, catalogueError, onRetryCatalogue }: WorkspaceP
           <LessonsDrawer />
           <LessonIntro />
           <LessonComplete />
-          <OnDemand when={crossingDue}>
+          <OnDemand when={crossingTip}>
             <CrossingTip />
           </OnDemand>
         </>

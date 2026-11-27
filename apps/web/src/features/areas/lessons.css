@@ -11,6 +11,38 @@
 .lesson-list__chapter:first-child .lesson-list__chapter-title {
   padding-top: 0;
 }
+/* A long list's chapters fold, one open at a time: each heading is the
+   button that opens it, with how many of its lessons are done at its end. */
+.lesson-list__fold {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-ui);
+  font-weight: 600;
+  text-align: left;
+  color: var(--ds-fg);
+}
+.lesson-list__fold:hover {
+  background-color: var(--ds-layer-hover);
+}
+.lesson-list__fold:focus-visible {
+  outline: 2px solid var(--ds-focus-ring);
+  outline-offset: -2px;
+}
+.lesson-list__fold > svg {
+  flex: none;
+  color: var(--ds-fg-muted);
+}
+.lesson-list__fold-count {
+  margin-left: auto;
+  font-size: var(--text-label);
+  font-weight: 400;
+  color: var(--ds-fg-muted);
+}
 .lesson-list__item {
   display: flex;
   align-items: baseline;
@@ -39,8 +71,8 @@
   font-size: var(--text-label);
   color: var(--ds-fg-secondary);
 }
-/* A lesson's introduction: where it is in the section, what it asks, how to
-   play it in a panel of its own, and one thing to remember. */
+/* A lesson's introduction: where it is in the section, what it asks and how,
+   and one thing to remember. */
 .lesson-intro {
   display: flex;
   flex-direction: column;
@@ -50,8 +82,7 @@
   padding-bottom: 14px;
   border-bottom: 1px solid var(--ds-border-subtle);
 }
-.lesson-intro__part,
-.lesson-intro__how {
+.lesson-intro__part {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -61,11 +92,6 @@
   line-height: var(--text-h4--line-height);
   font-weight: var(--text-h4--font-weight);
 }
-.lesson-intro__how {
-  padding: 14px 18px;
-  border-radius: var(--radius-lg);
-  background-color: var(--ds-surface-raised);
-}
 .lesson-intro strong {
   font-weight: 600;
 }
@@ -74,17 +100,33 @@
   align-items: flex-start;
   gap: 12px;
 }
-.lesson-intro__remember svg {
+.lesson-intro__remember > svg {
   flex: none;
   margin-top: 3px;
   color: var(--ds-accent-text);
 }
-/* How to play's heading, with Finger numbers beside it where the lines use them. */
-.lesson-intro__how-head {
+/* The objective's heading, with the read-aloud button beside it. */
+.lesson-intro__head,
+.lesson-intro__actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+/* Finger numbers, a link in the reminder's sentence that opens the chart. */
+.finger-numbers-link {
+  color: var(--ds-accent-text);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+.finger-numbers-link:hover {
+  text-decoration-thickness: 2px;
+}
+.finger-numbers-link:focus-visible {
+  outline: 2px solid var(--ds-focus-ring);
+  outline-offset: 2px;
 }
 /* The chart: both hands, palms down, each fingertip numbered. */
 .finger-numbers {
@@ -242,6 +284,40 @@
   color: var(--accent);
 }
 
+/* A question by ear: the way to hear it again, in the corner the stage's
+   notices are not in, and what to do, large in the middle of the stage. */
+.step-prompt {
+  position: absolute;
+  top: 12px;
+  left: clamp(12px, 2.5vw, 36px);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.step-prompt__say {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  font-size: var(--text-h1);
+  line-height: var(--text-h1--line-height);
+  font-weight: 600;
+  text-align: center;
+  white-space: pre-line;
+  color: var(--c-stage-say);
+  pointer-events: none;
+}
+@media (min-width: 48rem) {
+  .step-prompt__say {
+    font-size: var(--text-display);
+    line-height: var(--text-display--line-height);
+  }
+}
+
 /* A lesson not written yet, said in the corner the stage's notices are not in. */
 .lesson-soon {
   position: absolute;
@@ -273,7 +349,9 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: var(--text-body-sm);
+  /* 15px, as every dialog's smaller text (the user, 2026-11-23). */
+  font-size: var(--text-ui);
+  line-height: var(--text-body--line-height);
   color: var(--ds-fg-secondary);
 }
 .badge-news__title {

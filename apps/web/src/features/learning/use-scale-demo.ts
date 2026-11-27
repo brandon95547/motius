@@ -59,8 +59,26 @@ function beatMs(): number {
  */
 const CLICK_LEAD_MS = 50
 
-/** A step's notes, each once, with how long it is held in beats. */
-function soundingOf(step: ExerciseStep): [note: number, beats: number][] {
+/** A note a demonstration plays: when in its step, and for how long, in beats. */
+interface Sound {
+  readonly note: number
+  readonly at: number
+  readonly beats: number
+}
+
+/**
+ * What a demonstration plays for a step, and how many beats it takes.
+ *
+ * A step's notes, each once, with how long each is held. A question by ear
+ * (`prompt`) is played first, a note a beat and a beat's rest after, where
+ * it begins (the steps of a tune share it, and it is played once); then its
+ * answer, where one key is it. A side of the keyboard is no one note, so a
+ * step that any key of one answers plays its question alone.
+ */
+function soundsOf(step: ExerciseStep, before: ExerciseStep | undefined) {
+  const asked = step.prompt && step.prompt !== before?.prompt ? step.prompt : []
+  const start = asked.length > 0 ? asked.length + 1 : 0
+  const sounds: Sound[] = asked.map((note, at) => ({ note, at, beats: 1 }))
   const held = new Map<number, number>()
   step.notes.forEach((note, index) => {
     // Two hands on one key — the first note of a scale in contrary motion —
@@ -68,7 +86,10 @@ function soundingOf(step: ExerciseStep): [note: number, beats: number][] {
     const beats = step.holds?.[index] ?? stepBeats(step)
     held.set(note, Math.max(held.get(note) ?? 0, beats))
   })
-  return [...held]
+  if (step.notes.length === 0 && step.answer && step.answer.from === step.answer.to)
+    held.set(step.answer.from, stepBeats(step))
+  for (const [note, beats] of held) sounds.push({ note, at: start, beats })
+  return { sounds, beats: start + stepBeats(step) }
 }
 
 /** An even mezzo-forte. A demonstration should not also be an interpretation. */
@@ -117,6 +138,8 @@ export function useScaleDemo(): ScaleDemo {
    * together: a chord under a melody is still down three steps later.
    */
   const soundingRef = React.useRef(new Map<number, number>())
+  /** Notes of the step now sounding still to come within it: a question's, before its answer. */
+  const laterRef = React.useRef<number[]>([])
   /** When the step now sounding was due, on the wall clock. */
   const dueRef = React.useRef(0)
 
@@ -137,6 +160,8 @@ export function useScaleDemo(): ScaleDemo {
   const clearTimers = React.useCallback(() => {
     if (advanceRef.current !== null) window.clearTimeout(advanceRef.current)
     advanceRef.current = null
+    for (const timer of laterRef.current) window.clearTimeout(timer)
+    laterRef.current = []
   }, [])
 
   const stop = React.useCallback(() => {
@@ -171,19 +196,24 @@ export function useScaleDemo(): ScaleDemo {
     // Read from the store here, not from a render: a scheduled tick must not
     // depend on having re-rendered with the latest tempo first.
     const beat = beatMs()
-    for (const [note, beats] of soundingOf(step)) {
+    const { sounds, beats } = soundsOf(step, steps[index - 1])
+    const strike = ({ note, beats: length }: Sound) => {
       // A note still held from an earlier step is struck again, not left ringing.
       release(note)
       keyboardActions.noteOn(note, DEMO_VELOCITY, 'pointer')
       audioRef.current.noteOn(note, DEMO_VELOCITY)
       soundingRef.current.set(
         note,
-        window.setTimeout(() => release(note), beats * beat * holdRef.current),
+        window.setTimeout(() => release(note), length * beat * holdRef.current),
       )
+    }
+    for (const sound of sounds) {
+      if (sound.at === 0) strike(sound)
+      else laterRef.current.push(window.setTimeout(() => strike(sound), sound.at * beat))
     }
 
     // Due from when this step was due, so lateness does not accumulate.
-    dueRef.current += stepBeats(step) * beat
+    dueRef.current += beats * beat
     advanceRef.current = window.setTimeout(
       () => playFrom.current(index + 1),
       Math.max(0, dueRef.current - Date.now()),

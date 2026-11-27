@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { buildLessonExercise } from './lesson-builders.js'
 import { buildScaleExercise } from './scale-exercise.js'
 import { buildSong, type SongNote } from '../songs/song.js'
-import { songTimeline, stepAtBeat, timelineOf, timingOf } from './timeline.js'
+import { crossingNotes, songTimeline, stepAtBeat, timelineOf, timingOf } from './timeline.js'
 import { DEFAULT_SCALE_SPEC } from './practice-defaults.js'
 
 /**
@@ -98,5 +98,61 @@ describe('a song laid out in time', () => {
 
   it('takes only the hand that is played', () => {
     expect(songTimeline(song(), 'left').notes.map((n) => n.note)).toEqual([48])
+  })
+})
+
+/** The notes a hand crosses to, in any music with fingers on it. */
+describe('crossingNotes', () => {
+  const crossed = (notes: ReturnType<typeof timelineOf>['notes']) =>
+    [...crossingNotes(notes)].map((note) => `${note.hand} ${note.finger} ${note.note}`)
+
+  it('finds the lesson’s own: 3 over to F in the left hand, the thumb under to D in the right', () => {
+    const { notes } = timelineOf(buildLessonExercise('notes-a-through-g'))
+    expect(crossed(notes).sort()).toEqual(['left 3 53', 'right 1 62'])
+  })
+
+  it('finds them in a scale, both ways: the thumb under going up, a finger over coming down', () => {
+    const { notes } = timelineOf(
+      buildScaleExercise({ ...DEFAULT_SCALE_SPEC, direction: 'up-down' }),
+    )
+    const found = crossingNotes(notes)
+    expect(found.size).toBeGreaterThan(0)
+    const up = [...found].filter((note) => note.hand === 'right' && note.finger === 1)
+    const over = [...found].filter((note) => note.hand === 'right' && note.finger !== 1)
+    expect(up.length).toBeGreaterThan(0)
+    expect(over.length).toBeGreaterThan(0)
+  })
+
+  it('finds them in a song, on black keys too', () => {
+    const note = (step: number, pitch: number, finger: number) => ({
+      step,
+      note: pitch,
+      start: step,
+      beats: 1,
+      hand: 'right' as const,
+      finger,
+    })
+    // E♭ with 3, then F with the thumb tucked under.
+    expect(crossed([note(0, 63, 3), note(1, 65, 1)])).toEqual(['right 1 65'])
+  })
+
+  it('leaves out fingers in order, a key played again, chords, and the other hand', () => {
+    const at = (
+      start: number,
+      pitch: number,
+      finger: number,
+      hand: 'left' | 'right' = 'right',
+    ) => ({
+      step: start,
+      note: pitch,
+      start,
+      beats: 1,
+      hand,
+      finger,
+    })
+    expect(crossed([at(0, 60, 1), at(1, 62, 2), at(2, 64, 3)])).toEqual([])
+    expect(crossed([at(0, 60, 3), at(1, 60, 1)])).toEqual([])
+    expect(crossed([at(0, 64, 3), at(0, 67, 5), at(1, 65, 1)])).toEqual([])
+    expect(crossed([at(0, 52, 1, 'left'), at(1, 53, 1)])).toEqual([])
   })
 })

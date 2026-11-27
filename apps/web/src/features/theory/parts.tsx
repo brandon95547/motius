@@ -1,5 +1,4 @@
 import * as React from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
 
 /**
  * The few shapes every theory panel is made of, so that "Understand this
@@ -89,23 +88,5 @@ export function Facts({
         </div>
       ))}
     </dl>
-  )
-}
-
-export function Disclosure({ label, children }: { label: string; children: React.ReactNode }) {
-  const [open, setOpen] = React.useState(false)
-  return (
-    <div className="flex flex-col gap-2">
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen((current) => !current)}
-        className="flex w-fit items-center gap-1 text-label-sm text-[var(--ds-fg-secondary)] hover:text-[var(--ds-fg)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ds-focus-ring)]"
-      >
-        {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        {label}
-      </button>
-      {open && children}
-    </div>
   )
 }

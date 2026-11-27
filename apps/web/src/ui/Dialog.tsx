@@ -13,7 +13,7 @@ import { useDismissable, useFocusTrap, useMediaQuery } from '@/lib/hooks'
    the song before there is a song to show. Anything read beside the workspace,
    or changed while watching it land, is a Drawer.
 
-   Three sizes, one shape: every dialog is 4:3 — a notice (30 x 22.5rem: a
+   Three sizes, one shape: every dialog is 4:3 — a notice (36 x 27rem: a
    line or two to read and close, as which hand is which), small (48 x 36rem:
    a lesson's introduction and results) or large (64 x 48rem: a picker that
    needs the room) — so one dialog never looks like a different kind of thing
@@ -30,7 +30,7 @@ export type DialogSize = 'notice' | 'sm' | 'lg'
 /* The width, and through the 4:3 shape the height: no wider than the size,
    than the screen less its margins, or than the screen's height allows. */
 const widths: Record<DialogSize, string> = {
-  notice: 'w-[min(30rem,calc(100vw-2rem),calc((100dvh-3rem)*4/3))]',
+  notice: 'w-[min(36rem,calc(100vw-2rem),calc((100dvh-3rem)*4/3))]',
   sm: 'w-[min(48rem,calc(100vw-3rem),calc((100dvh-3rem)*4/3))]',
   lg: 'w-[min(64rem,calc(100vw-3rem),calc((100dvh-3rem)*4/3))]',
 }

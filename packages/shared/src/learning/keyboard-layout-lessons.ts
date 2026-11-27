@@ -5,6 +5,7 @@ import type { FingeringSystemId } from '../music/fingering-system.js'
 import type { Exercise, ExerciseStep } from './exercise.js'
 import type { LessonAbout, LessonBuilder, LessonExerciseId } from './lesson-exercise.js'
 import { LETTER_OF, MIDDLE_C, positionFinger, whiteKeysUp } from './lesson-keys.js'
+import { HANDS_REMINDER } from './lesson-reminders.js'
 
 /*
  * Keyboard Layout's lessons: the black-key groups, the musical alphabet and
@@ -90,6 +91,11 @@ const THREE: BlackKeyGroup = {
   fingers: { left: [4, 3, 2], right: [2, 3, 4] },
 }
 
+/** The hand on a key's side of the keyboard: the left below middle C, the right from it up. */
+const handOf = (note: number): Hand => (note < MIDDLE_C ? 'left' : 'right')
+/** The hand on a group's side, from its lowest key. */
+const handFor = (group: readonly number[]): Hand => handOf(group[0]!)
+
 /**
  * Every group of one kind on the keyboard, each pressed as a block: the left
  * hand climbs from the bottom of the keyboard to middle C, then the right hand
@@ -100,7 +106,6 @@ const THREE: BlackKeyGroup = {
  */
 function blackKeyGroups(kind: BlackKeyGroup, range: NoteRange): Exercise {
   const groups = groupsOf(kind, range)
-  const handFor = (group: readonly number[]): Hand => (group[0]! < MIDDLE_C ? 'left' : 'right')
   // Left hand going up, then right hand coming down.
   const order = [
     ...groups.filter((group) => handFor(group) === 'left'),
@@ -162,6 +167,78 @@ function blackKeyGroups(kind: BlackKeyGroup, range: NoteRange): Exercise {
   }
 }
 
+/**
+ * A first tune on the black keys: Hot Cross Buns (traditional) on the group of
+ * three above middle C, the right hand's 2-3-4 as in the group lesson, then the
+ * left hand's 4-3-2 on the group below. Faber's Primer and black-key songbooks
+ * start beginners here: the long fingers on the short keys shape the hand, and
+ * the groups just found become notes (the user, 2026-11-25).
+ */
+const HOT_CROSS_BUNS: readonly (readonly [offset: number, beats: number])[] = [
+  ...[
+    [4, 1],
+    [2, 1],
+    [0, 2],
+  ],
+  ...[
+    [4, 1],
+    [2, 1],
+    [0, 2],
+  ],
+  ...[0, 0, 0, 0, 2, 2, 2, 2].map((offset) => [offset, 0.5] as const),
+  ...[
+    [4, 1],
+    [2, 1],
+    [0, 2],
+  ],
+] as const
+
+function blackKeySong(range: NoteRange): Exercise {
+  // F♯ above middle C for the right hand, the F♯ below it for the left.
+  const starts: Record<Hand, number> = { right: MIDDLE_C + 6, left: MIDDLE_C - 6 }
+  const steps: ExerciseStep[] = (['right', 'left'] as const)
+    .flatMap((hand) =>
+      HOT_CROSS_BUNS.map(([offset, beats], index) => {
+        const note = starts[hand] + offset
+        const place = THREE.pitchClasses.indexOf(note % 12)
+        const name = THREE.names[place]!
+        return {
+          id: `${hand}-${index}-${note}`,
+          notes: [note],
+          fingers: [{ finger: THREE.fingers[hand][place]!, hand }],
+          label: name,
+          noteLabels: [name],
+          beats,
+          ...(index === 0 && {
+            cue: `${hand === 'right' ? 'Right' : 'Left'} hand on the three black keys`,
+          }),
+        }
+      }),
+    )
+    .filter((step) => step.notes[0]! >= range.low && step.notes[0]! <= range.high)
+  return {
+    id: 'lesson:black-key-song',
+    kind: 'exercise',
+    title: 'Black-key song: Hot Cross Buns',
+    subtitle: 'Three black keys · right hand, then left',
+    steps,
+    pitchClasses: THREE.pitchClasses,
+    rootPitchClass: null,
+    pitchNames: Object.fromEntries(THREE.pitchClasses.map((pc, i) => [pc, THREE.names[i]!])),
+    notes: steps.flatMap((step) => step.notes),
+    // Written with every sharp printed, as the group lessons are.
+    keyFifths: null,
+    facts: [{ label: 'Notes', value: String(steps.length) }],
+    fingerings: (['right', 'left'] as const).map((hand) => ({
+      hand,
+      fingers: THREE.fingers[hand],
+      source: 'derived',
+    })),
+    defaultBpm: 72,
+    meter: { beats: 4, beatType: 4 },
+  }
+}
+
 /** Every group of one kind wholly on the keyboard, low to high. */
 function groupsOf(kind: BlackKeyGroup, range: NoteRange): number[][] {
   const groups: number[][] = []
@@ -175,8 +252,8 @@ function groupsOf(kind: BlackKeyGroup, range: NoteRange): number[][] {
 /**
  * The pattern the groups make: two, then three, over and over, two white keys
  * side by side between each. Every group on the keyboard in order, up and back
- * down, the hands taking turns — the left hand every group of two, the right
- * hand every group of three, each crossing over the other to its next group.
+ * down, each hand on its own side: the left hand every group below middle C,
+ * the right hand every group from it up, as in the two lessons before.
  *
  * Fingering guide (`~/sites/piano knowledge`): Verbalis, *Natural Fingering*,
  * stage 1 "black keys first", step 2 (pp. 203–204) — after each kind of group
@@ -184,10 +261,11 @@ function groupsOf(kind: BlackKeyGroup, range: NoteRange): number[][] {
  * down, "then all five" keys of the octave; with step 3's long fingers, LH 4-3
  * for the two and RH 2-3-4 for the three. Still blocks, still no note names:
  * Alfred Level 1 (p. 10) and Cazaubon name the alternating pattern itself as
- * what the beginner learns to see before any key is named.
+ * what the beginner learns to see before any key is named. Verbalis plays it
+ * hand over hand; here each hand keeps to its side instead, so the colors say
+ * what the first lessons taught, left low and right high (the user, 2026-11-24).
  */
 function keyboardPatterns(range: NoteRange): Exercise {
-  const handOf = (group: readonly number[]): Hand => (group.length === 2 ? 'left' : 'right')
   const kindOf = (group: readonly number[]) => (group.length === 2 ? TWO : THREE)
   const groups = [...groupsOf(TWO, range), ...groupsOf(THREE, range)].sort((a, b) => a[0]! - b[0]!)
   // Up, then back down from the group before the top: the turn is not played twice.
@@ -195,12 +273,12 @@ function keyboardPatterns(range: NoteRange): Exercise {
   const turn = groups.length
 
   const steps: ExerciseStep[] = order.map((group, index) => {
-    const hand = handOf(group)
+    const hand = handFor(group)
     const kind = kindOf(group)
     const fingers = kind.fingers[hand]
     const cue =
       index === 0
-        ? 'Hand over hand, going up: left hand on the twos, 4-3; right hand on the threes, 2-3-4'
+        ? 'Going up: left hand below middle C, right hand from middle C up'
         : index === turn
           ? 'Now back down, the same way'
           : undefined
@@ -220,7 +298,7 @@ function keyboardPatterns(range: NoteRange): Exercise {
     id: 'lesson:keyboard-patterns',
     kind: 'exercise',
     title: 'Black-key pattern',
-    subtitle: 'Twos and threes · hand over hand, up and back down',
+    subtitle: 'Twos and threes · each hand on its side, up and back down',
     steps,
     pitchClasses,
     rootPitchClass: null,
@@ -229,8 +307,9 @@ function keyboardPatterns(range: NoteRange): Exercise {
     keyFifths: null,
     facts: [{ label: 'Groups', value: String(groups.length) }],
     fingerings: [
-      { hand: 'left', fingers: TWO.fingers.left, source: 'derived', perStep: 2 },
-      { hand: 'right', fingers: THREE.fingers.right, source: 'derived', perStep: 3 },
+      // A two, then a three: the groups are of both sizes, so no one size per step.
+      { hand: 'left', fingers: [...TWO.fingers.left, ...THREE.fingers.left], source: 'derived' },
+      { hand: 'right', fingers: [...TWO.fingers.right, ...THREE.fingers.right], source: 'derived' },
     ],
     defaultBpm: 60,
     stepsAre: 'groups',
@@ -244,11 +323,12 @@ const ABOVE_A = [0, 2, 3, 5, 7, 8, 10] as const
 
 /**
  * The musical alphabet: the seven letters on the white keys, A to G, up from
- * an A — the left hand from the A an octave and a third below middle C, then
- * the right hand from the A just below middle C, up across it — and each hand
- * back down to its A. One key at a time, each named as it is played: the
- * lesson is the names, forwards and backwards, and the next ones ("Repeating
- * note names", "Finding C and F") take them round the keyboard.
+ * an A and on to the next A, where the letters start again — the left hand
+ * from the A an octave and a third below middle C, then the right hand from the
+ * A just below middle C, up across it. One key at a time, each named as it is
+ * played: the lesson is that there are only seven, and after G comes A (the
+ * user, 2026-11-22); "A to G Repeated" plays the same the next
+ * octave up, and "Finding C and F" takes them round the keyboard.
  *
  * Fingering guide (`~/sites/piano knowledge`): "where is this note?" before
  * "which finger?" — Verbalis, *Natural Fingering*, stages 2 and 4 (p. 204). So
@@ -259,48 +339,78 @@ const ABOVE_A = [0, 2, 3, 5, 7, 8, 10] as const
  * between the upper two keys of every three-black-key group, and the names
  * A–G repeat; Piano For Dummies (p. 76) — seven letters, and after G, A again.
  */
-function notesAThroughG(range: NoteRange, system?: FingeringSystemId): Exercise {
+/** A to G and A again, as a lesson: where it is played, and what it is called. */
+interface AlphabetWalk {
+  readonly id: string
+  readonly title: string
+  readonly subtitle: string
+  /** Octaves above "Notes A to G"'s own As. */
+  readonly octavesUp: number
+}
+
+const NOTES_A_TO_G: AlphabetWalk = {
+  id: 'lesson:notes-a-through-g',
+  title: 'Notes A to G',
+  subtitle: 'The seven letters up from A, and A again · left hand, then right',
+  octavesUp: 0,
+}
+
+/**
+ * "A to G Repeated": the same, the next octave up, so the letters are seen to
+ * come round again on the next As (the user, 2026-11-22).
+ */
+const A_TO_G_REPEATED: AlphabetWalk = {
+  id: 'lesson:repeating-note-names',
+  title: 'A to G Repeated',
+  subtitle: 'The seven letters again, an octave higher · left hand, then right',
+  octavesUp: 1,
+}
+
+function alphabetWalk(
+  lesson: AlphabetWalk,
+  range: NoteRange,
+  system?: FingeringSystemId,
+): Exercise {
+  const up = 12 * lesson.octavesUp
   const walks: { hand: Hand; a: number }[] = [
-    { hand: 'left', a: MIDDLE_C - 15 },
-    { hand: 'right', a: MIDDLE_C - 3 },
+    { hand: 'left', a: MIDDLE_C - 15 + up },
+    { hand: 'right', a: MIDDLE_C - 3 + up },
   ]
-  // A to G is the start of A minor: the right hand 1-2-3, thumb under, 1-2-3-4;
-  // the left 5-4-3-2-1, 3 over, 2.
+  // A to G, then the next A: the seven letters and the first of them again.
+  const path = [...ABOVE_A, 12]
+  const letterAt = (index: number) => ALPHABET[index % ALPHABET.length]!
+  const again = path.length - 1
+  // A to A is A minor's octave: the right hand 1-2-3, thumb under, 1-2-3-4-5;
+  // the left 5-4-3-2-1, 3 over, 2-1.
   const fingersOf = Object.fromEntries(
     walks.map(({ hand, a }) => [
       hand,
       runFingers(
-        ABOVE_A.map((above) => a + above),
+        path.map((above) => a + above),
         hand,
         system,
       ),
     ]),
   ) as Record<Hand, number[]>
-  // Up A to G and straight back down to A, without playing G twice: the way
-  // down is where a beginner has to look, and its crossings are the other way
-  // round — the right hand's 3 over the thumb, the left thumb passing under.
-  // Each key keeps the finger it had going up.
-  const path = [...ABOVE_A.keys(), ...[...ABOVE_A.keys()].reverse().slice(1)]
-  const turn = ABOVE_A.length - 1
   const steps: ExerciseStep[] = walks.flatMap(({ hand, a }) => {
     const side = hand === 'left' ? 'Left' : 'Right'
     return (
       path
-        .map((index, at) => ({ note: a + ABOVE_A[index]!, letter: ALPHABET[index]!, index, at }))
+        .map((above, index) => ({ note: a + above, letter: letterAt(index), index }))
         .filter(({ note }) => note >= range.low && note <= range.high)
         // Said on the hand's first key — its A, or where a short keyboard starts
-        // it — and on the first key of the way down.
-        .map(({ note, letter, index, at }, first) => {
+        // it — and on the A after G, where the letters start again.
+        .map(({ note, letter, index }, first) => {
           const cue =
             first === 0
               ? index === 0
                 ? `${side} hand: find A between the top two keys of a group of three, then up, saying each name`
                 : `${side} hand: up from ${letter}, saying each name`
-              : at === turn + 1
-                ? 'Now back down to A, saying each name'
+              : index === again
+                ? 'After G, the letters start again: A'
                 : undefined
           return {
-            id: `${hand}-${at}-${letter}`,
+            id: `${hand}-${index}-${letter}`,
             notes: [note],
             fingers: [{ finger: fingersOf[hand][index]!, hand }],
             label: letter,
@@ -316,11 +426,11 @@ function notesAThroughG(range: NoteRange, system?: FingeringSystemId): Exercise 
   )
 
   return {
-    id: 'lesson:notes-a-through-g',
+    id: lesson.id,
     kind: 'exercise',
-    title: 'Notes A to G',
-    subtitle: 'The seven letters up from A and back down · left hand, then right',
-    // The first lesson past five keys: each crossing stops to show how (the
+    title: lesson.title,
+    subtitle: lesson.subtitle,
+    // The first lessons past five keys: each crossing stops to show how (the
     // user, 2026-11-22).
     steps: markCrossings(steps),
     pitchClasses,
@@ -329,79 +439,6 @@ function notesAThroughG(range: NoteRange, system?: FingeringSystemId): Exercise 
     notes: steps.flatMap((step) => step.notes),
     keyFifths: null,
     facts: [{ label: 'Letters', value: '7' }],
-    fingerings: hands.map((hand) => ({ hand, fingers: fingersOf[hand], source: 'standard' })),
-    defaultBpm: 60,
-  }
-}
-
-/**
- * The alphabet over and over: every white key from the keyboard's lowest A to
- * its top, each named as it is played — A to G, and after G, A again. The left
- * hand up to middle C, then the right hand from middle C to the top, fingered
- * on the keys as A minor and C major runs and named nowhere, as in "Notes A to
- * G". Every A after the first is said: that is
- * where the names start again, and the lesson.
- *
- * Fingering guide (`~/sites/piano knowledge`): as "Notes A to G" —
- * Verbalis, stages 2 and 4 (p. 204), single fingers and the arm before any hand
- * position, the whole keyboard from the start (pp. 200–203). The names: Piano
- * For Dummies (p. 76) — seven letters, after G the series starts again at A, so
- * the eighth key has the first one's name, and a piano runs from its lowest A
- * to its highest; Alfred Level 1 (p. 11) — the letters repeat, the lowest key is
- * A and the highest C; Cazaubon — "then C again".
- */
-function repeatingNoteNames(range: NoteRange, system?: FingeringSystemId): Exercise {
-  const white = (note: number) => LETTER_OF[note % 12] !== undefined
-  let from = range.low
-  while (from <= range.high && from % 12 !== 9) from++
-  const keys: number[] = []
-  for (let note = from; note <= range.high; note++) if (white(note)) keys.push(note)
-  const handOf = (note: number): Hand => (note < MIDDLE_C ? 'left' : 'right')
-  // Each hand's keys are one run: the left hand's A minor up from the lowest A,
-  // the right hand's C major up from middle C.
-  const runOf = (hand: Hand) => keys.filter((note) => handOf(note) === hand)
-  const fingersOf: Record<Hand, number[]> = {
-    left: runOf('left').length > 0 ? runFingers(runOf('left'), 'left', system) : [],
-    right: runOf('right').length > 0 ? runFingers(runOf('right'), 'right', system) : [],
-  }
-
-  const steps: ExerciseStep[] = keys.map((note, index) => {
-    const letter = LETTER_OF[note % 12]!
-    const hand = handOf(note)
-    const cue =
-      index === 0
-        ? `${hand === 'left' ? 'Left' : 'Right'} hand: from the lowest A, up, saying each name`
-        : hand !== handOf(keys[index - 1]!)
-          ? 'Right hand, from the middle: keep going'
-          : letter === 'A'
-            ? 'After G, A again'
-            : undefined
-    return {
-      id: `key-${note}`,
-      notes: [note],
-      fingers: [{ finger: fingersOf[hand][runOf(hand).indexOf(note)]!, hand }],
-      label: letter,
-      noteLabels: [letter],
-      ...(cue && { cue }),
-    }
-  })
-  const pitchClasses = [0, 2, 4, 5, 7, 9, 11]
-  const hands = (['left', 'right'] as const).filter((hand) =>
-    keys.some((note) => handOf(note) === hand),
-  )
-
-  return {
-    id: 'lesson:repeating-note-names',
-    kind: 'exercise',
-    title: 'Repeating note names',
-    subtitle: 'A to G, and A again · the whole keyboard',
-    steps,
-    pitchClasses,
-    rootPitchClass: null,
-    pitchNames: Object.fromEntries(pitchClasses.map((pc) => [pc, LETTER_OF[pc]!])),
-    notes: keys,
-    keyFifths: null,
-    facts: [{ label: 'Rounds', value: String(keys.filter((note) => note % 12 === 9).length) }],
     fingerings: hands.map((hand) => ({ hand, fingers: fingersOf[hand], source: 'standard' })),
     defaultBpm: 60,
   }
@@ -426,7 +463,6 @@ function landmarkHunt(
   about: { id: LessonExerciseId; title: string; subtitle: string },
   hunts: readonly Hunt[],
 ): Exercise {
-  const handOf = (note: number): Hand => (note < MIDDLE_C ? 'left' : 'right')
   const found = hunts.map((hunt) => {
     const keys: number[] = []
     for (let note = range.low; note <= range.high; note++)
@@ -525,7 +561,7 @@ const locatingNotes = (range: NoteRange) =>
     range,
     {
       id: 'locating-notes',
-      title: 'Finding any note',
+      title: 'Finding any white key',
       subtitle: 'Every D and G, then every E, A and B · bottom to top',
     },
     [
@@ -572,7 +608,6 @@ function findingMiddleC(range: NoteRange): Exercise {
     if (note % 12 === 0 && note !== MIDDLE_C) others.push(note)
   // The nearest first, below before above at the same distance.
   others.sort((a, b) => Math.abs(a - MIDDLE_C) - Math.abs(b - MIDDLE_C) || a - b)
-  const handOf = (note: number): Hand => (note < MIDDLE_C ? 'left' : 'right')
   const steps: ExerciseStep[] = []
   const step = (note: number, hand: Hand, cue?: string): ExerciseStep => ({
     id: `${hand}-${note}-${steps.length}`,
@@ -803,8 +838,10 @@ export const KEYBOARD_LAYOUT_LESSONS = {
   'two-black-key-groups': (range) => blackKeyGroups(TWO, range),
   'three-black-key-groups': (range) => blackKeyGroups(THREE, range),
   'keyboard-patterns': (range) => keyboardPatterns(range),
-  'notes-a-through-g': (range, options) => notesAThroughG(range, options.fingering),
-  'repeating-note-names': (range, options) => repeatingNoteNames(range, options.fingering),
+  'black-key-song': (range) => blackKeySong(range),
+  'notes-a-through-g': (range, options) => alphabetWalk(NOTES_A_TO_G, range, options.fingering),
+  'repeating-note-names': (range, options) =>
+    alphabetWalk(A_TO_G_REPEATED, range, options.fingering),
   'finding-c-and-f': (range) => findingCAndF(range),
   'finding-middle-c': (range) => findingMiddleC(range),
   'locating-notes': (range) => locatingNotes(range),
@@ -816,13 +853,16 @@ export const KEYBOARD_LAYOUT_LESSONS = {
 export const KEYBOARD_LAYOUT_ABOUT = {
   'two-black-key-groups': {
     objective: 'Find the groups of two black keys. They repeat all the way across the keyboard.',
+    narration: 'two-black-key-groups.mp3',
     how: [
       { text: 'Start with the pair that is lit up, and press both keys at once.' },
       { text: 'Then find the next pair. Each one turns green once you play it.' },
     ],
+    remember: HANDS_REMINDER,
   },
   'three-black-key-groups': {
-    objective: 'Find the groups of three black keys, and press all three keys at once.',
+    objective: 'Find the groups of three black keys and play each group together.',
+    narration: 'three-black-key-groups-2.mp3',
     how: [
       {
         who: 'Left hand',
@@ -833,56 +873,71 @@ export const KEYBOARD_LAYOUT_ABOUT = {
         text: 'Index finger (2) on the left key, middle (3) in the middle, ring (4) on the right.',
       },
     ],
+    remember: HANDS_REMINDER,
   },
   'keyboard-patterns': {
-    objective:
-      'Play the black keys’ pattern up the keyboard: a group of two, then a group of three.',
+    objective: 'Play the black keys pattern up the keyboard.',
+    narration: 'keyboard-patterns-2.mp3',
     how: [
       {
         who: 'Left hand',
-        text: 'On each group of two: ring finger (4) on the left key, middle (3) on the right.',
+        text: 'Below middle C: fingers 4-3 on each group of two, 4-3-2 on each group of three.',
       },
       {
         who: 'Right hand',
-        text: 'On each group of three: index (2) on the left key, middle (3) in the middle, ring (4) on the right.',
+        text: 'From middle C up: fingers 3-4 on each group of two, 2-3-4 on each group of three.',
       },
     ],
-    remember:
-      'The piano keyboard repeats the same pattern of two and three black keys surrounded by white keys.',
+    remember: HANDS_REMINDER,
+  },
+  'black-key-song': {
+    objective:
+      'Play your first song, Hot Cross Buns, on the three black keys: first with your right hand, then with your left.',
+    narration: 'black-key-song.mp3',
+    how: [
+      { text: 'Right hand on the three black keys above middle C: fingers 4, 3, 2 going down.' },
+      { text: 'Then the left hand on the three black keys below middle C.' },
+    ],
+    remember: HANDS_REMINDER,
   },
   'notes-a-through-g': {
-    objective: 'Name the white keys with their seven letters: A, B, C, D, E, F and G.',
+    objective:
+      'The piano uses seven repeating note names: A, B, C, D, E, F, and G. As you move along the keyboard, the notes follow this pattern. Once you reach G, the sequence starts again at A.',
+    narration: 'notes-a-through-g.mp3',
     how: [
       {
         text: 'Find A: the white key between the top two of a group of three black keys.',
       },
       {
         who: 'Left hand',
-        text: 'From a low A, play the white keys up to G, then back down to A.',
+        text: 'From a low A, play the white keys up through G to the next A.',
       },
       {
         who: 'Right hand',
         text: 'Then the same from the A in the middle of the keyboard.',
       },
     ],
-    remember: 'Say each letter as you play it.',
+    remember: HANDS_REMINDER,
   },
   'repeating-note-names': {
-    objective: 'Play every white key from the bottom of the keyboard to the top, saying each name.',
+    objective:
+      'This is similar to the previous lesson, but one octave higher on the keyboard. The piano uses seven repeating note names: A, B, C, D, E, F, and G. As you move along the keyboard, the notes follow this pattern. Once you reach G, the sequence starts again at A.',
+    narration: 'repeating-note-names.mp3',
     how: [
       {
         who: 'Left hand',
-        text: 'From the lowest A up to the middle of the keyboard.',
+        text: 'From the A just below middle C, play the white keys up through G to the next A.',
       },
       {
         who: 'Right hand',
-        text: 'From the middle on to the top.',
+        text: 'Then the same from the next A up.',
       },
     ],
-    remember: 'There are only seven letters: after G comes A again.',
+    remember: HANDS_REMINDER,
   },
   'finding-c-and-f': {
     objective: 'Find every C and every F on the keyboard.',
+    narration: 'finding-c-and-f.mp3',
     how: [
       {
         text: 'Play every C from the bottom of the keyboard to the top, then every F the same way.',
@@ -897,7 +952,8 @@ export const KEYBOARD_LAYOUT_ABOUT = {
       'C is just left of every group of two black keys, and F just left of every group of three.',
   },
   'finding-middle-c': {
-    objective: 'Find middle C, home base, and come back to it from every other C.',
+    objective: 'Find Middle C, then practice returning to it from every other C on the keyboard.',
+    narration: 'finding-middle-c-2.mp3',
     how: [
       { text: 'Start on middle C, marked C4.' },
       {
@@ -906,10 +962,11 @@ export const KEYBOARD_LAYOUT_ABOUT = {
       { who: 'Left hand', text: 'The Cs below middle C, there and back.' },
       { who: 'Right hand', text: 'The Cs above it, there and back.' },
     ],
-    remember: 'Middle C is the C nearest the middle of the piano: sit facing it.',
+    remember: 'Middle C is in the middle of the keyboard to the left of the two black keys.',
   },
   'locating-notes': {
     objective: 'Find every white key from its group of black keys.',
+    narration: 'locating-notes.mp3',
     how: [
       {
         text: 'Find every D from the bottom of the keyboard to the top, then every G, then every E, A and B, saying each name.',
@@ -922,6 +979,7 @@ export const KEYBOARD_LAYOUT_ABOUT = {
   },
   'moving-left-and-right': {
     objective: 'Hear the keys go higher to the right and lower to the left.',
+    narration: 'moving-left-and-right.mp3',
     how: [
       {
         who: 'Right hand',
@@ -935,7 +993,9 @@ export const KEYBOARD_LAYOUT_ABOUT = {
     remember: 'Say each name, and listen to which way it goes.',
   },
   'recognizing-octaves': {
-    objective: 'Learn the octave: from one key to the next key with the same name.',
+    objective:
+      'Explore octaves by playing from one C to the next. Each octave repeats the same notes, just at a higher or lower pitch.',
+    narration: 'recognizing-octaves.mp3',
     how: [
       {
         who: 'Right hand',

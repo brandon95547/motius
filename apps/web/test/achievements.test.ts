@@ -115,7 +115,7 @@ describe('the badges', () => {
     const badges = badgesOf(context([lesson(key)]))
     const of = (id: string) => badges.find((status) => status.badge.id === id)!
     expect(of('course-first-steps').earned).toBe(true)
-    expect(of('course-black-keys').progress).toEqual({ have: 1, need: 3 })
+    expect(of('course-black-keys').progress).toEqual({ have: 1, need: 4 })
     // Next is the one nearest done that is not earned.
     expect(nextBadge(badges)!.earned).toBe(false)
   })

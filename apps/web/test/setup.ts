@@ -30,6 +30,19 @@ import { beforeEach, vi } from 'vitest'
 import { api } from '@/lib/api'
 
 beforeEach(() => {
+  // Sound: jsdom has no media playback. Played, it plays at once and silently;
+  // a test about playing spies on these itself.
+  vi.spyOn(HTMLMediaElement.prototype, 'play').mockImplementation(function (
+    this: HTMLMediaElement,
+  ) {
+    this.dispatchEvent(new Event('playing'))
+    return Promise.resolve()
+  })
+  vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(function (
+    this: HTMLMediaElement,
+  ) {
+    this.dispatchEvent(new Event('pause'))
+  })
   vi.spyOn(api, 'listRuns').mockResolvedValue({ items: [], lessonsResetAt: null })
   vi.spyOn(api, 'addRuns').mockImplementation(async (runs) => ({
     items: runs.map((run, index) => ({ ...run, id: `test-${run.at}-${index}` })),

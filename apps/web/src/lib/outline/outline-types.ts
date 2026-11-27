@@ -86,7 +86,7 @@ export type Opens =
 interface Place {
   readonly label: string
   readonly icon: PlaceIcon
-  /** A line about it, for its card. A lesson has only its name so far. */
+  /** A line about it, for its card, where the outline gives one. */
   readonly description?: string
   readonly accent: Accent
   /** Absent for a place that is a page: of its sections, or saying it is to come. */

@@ -151,7 +151,9 @@ export function sessionReducer(
       const step = exercise.steps[state.stepIndex]
       if (!step) return state
 
-      const belongs = step.notes.includes(event.note)
+      const belongs = step.answer
+        ? event.note >= step.answer.from && event.note <= step.answer.to
+        : step.notes.includes(event.note)
       if (!belongs) {
         return {
           ...state,
@@ -164,6 +166,8 @@ export function sessionReducer(
       // is not a mistake either — a player checking a note is still a player
       // playing the right note.
       if (state.satisfied.includes(event.note)) return state
+      // Any one key of its stretch answers a step that asks for one.
+      if (step.answer) return advance(state, exercise, event.at)
 
       const satisfied = [...state.satisfied, event.note]
       // Distinct keys, not notes listed: where two hands meet on one note —
@@ -195,6 +199,20 @@ export function upcomingSteps(
 ): ExerciseStep[] {
   if (!exercise) return []
   return exercise.steps.slice(state.stepIndex + 1, state.stepIndex + 1 + count)
+}
+
+/**
+ * What to say about the last wrong key, while it is lit: for a note to find
+ * by ear (one key's `answer`), which way it is, Higher or Lower; otherwise the
+ * lesson's word for a wrong key of that kind (`Exercise.wrongHints`), if any.
+ */
+export function wrongHint(exercise: Exercise | null, state: SessionState): string | null {
+  const wrong = Object.entries(state.wrongNotes)
+  if (!exercise || wrong.length === 0) return null
+  const note = Number(wrong.reduce((latest, each) => (each[1] > latest[1] ? each : latest))[0])
+  const answer = exercise.steps[state.stepIndex]?.answer
+  if (answer && answer.from === answer.to) return note < answer.from ? 'Higher' : 'Lower'
+  return exercise.wrongHints?.find((hint) => hint.pitchClasses.includes(note % 12))?.text ?? null
 }
 
 /** 0-1. A session with nothing played yet is 100%, not 0% — nothing is wrong yet. */

@@ -11,7 +11,7 @@ import { LETTER_OF, MIDDLE_C, positionFinger } from './lesson-keys.js'
  */
 
 /** A key by name and octave, middle C being C4. Naturals only: the positions are white keys. */
-function key(name: string): number {
+export function noteOf(name: string): number {
   const pc = Number(Object.entries(LETTER_OF).find(([, letter]) => letter === name[0])![0])
   return (Number(name.slice(1)) + 1) * 12 + pc
 }
@@ -27,6 +27,11 @@ export interface Phrase {
    */
   readonly hand: Hand | 'by-pitch'
   readonly notes: string
+  /**
+   * Where its hand's thumb is for this phrase, where the hand has moved from
+   * the song's position. Not with `by-pitch`.
+   */
+  readonly thumb?: number
   /** Said as the phrase starts. */
   readonly cue?: string
 }
@@ -50,7 +55,7 @@ export interface Song {
 /** The steps of the song, a key to a step, each with its finger, length and name. */
 function stepsOf(song: Song, range: NoteRange): ExerciseStep[] {
   const steps: ExerciseStep[] = []
-  song.phrases.forEach(({ hand: playing, notes, cue }, part) => {
+  song.phrases.forEach(({ hand: playing, notes, thumb, cue }, part) => {
     let first = true
     for (const token of notes.split(/\s+/)) {
       if (token.startsWith('-')) {
@@ -61,10 +66,10 @@ function stepsOf(song: Song, range: NoteRange): ExerciseStep[] {
         continue
       }
       const [, name, length] = /^([A-G]\d)(?::([\d.]+))?$/.exec(token)!
-      const note = key(name!)
+      const note = noteOf(name!)
       if (note < range.low || note > range.high) continue
       const hand: Hand = playing === 'by-pitch' ? (note < MIDDLE_C ? 'left' : 'right') : playing
-      const finger = positionFinger(note, song.thumbs[hand]!)
+      const finger = positionFinger(note, thumb ?? song.thumbs[hand]!)
       const label = song.naming === 'finger' ? String(finger) : LETTER_OF[note % 12]!
       steps.push({
         id: `${part}-${steps.length}-${note}`,

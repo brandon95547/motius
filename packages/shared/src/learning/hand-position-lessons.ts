@@ -1,6 +1,7 @@
 import type { NoteRange } from '../domain/device-schemas.js'
 import type { LessonAbout, LessonBuilder } from './lesson-exercise.js'
 import { LOW_C, MIDDLE_C } from './lesson-keys.js'
+import { HANDS_REMINDER } from './lesson-reminders.js'
 import { songLesson, type Song } from './song-lessons.js'
 
 /*
@@ -73,7 +74,7 @@ const SAINTS: Song = {
   subtitle: 'When the Saints Go Marching In · little finger on C',
   meter: { beats: 4, beatType: 4 },
   pickup: 3,
-  bpm: 72,
+  bpm: 76,
   thumbs: { left: LOW_C + 7 },
   naming: 'finger',
   phrases: [
@@ -180,7 +181,7 @@ const ROUSSEAU: Song = {
   title: 'Rousseau’s melody',
   subtitle: 'Right hand · Rousseau, 1752',
   meter: { beats: 2, beatType: 4 },
-  bpm: 72,
+  bpm: 60,
   thumbs: { right: MIDDLE_C },
   naming: 'finger',
   phrases: [
@@ -315,7 +316,7 @@ const LOVE_SOMEBODY: Song = {
   title: 'Love Somebody',
   subtitle: 'C position · an American folk song · the hands in turn',
   meter: { beats: 2, beatType: 4 },
-  bpm: 80,
+  bpm: 52,
   thumbs: { left: LOW_C + 7, right: MIDDLE_C },
   naming: 'letter',
   phrases: [
@@ -350,7 +351,7 @@ const TRAIN: Song = {
   subtitle: 'Middle C position · a spiritual, 1925',
   meter: { beats: 4, beatType: 4 },
   pickup: 1,
-  bpm: 72,
+  bpm: 52,
   thumbs: { left: MIDDLE_C, right: MIDDLE_C },
   naming: 'letter',
   phrases: [
@@ -373,7 +374,7 @@ const YANKEE_DOODLE: Song = {
   title: 'Yankee Doodle',
   subtitle: 'Middle C position · the verse',
   meter: { beats: 2, beatType: 4 },
-  bpm: 88,
+  bpm: 52,
   thumbs: { left: MIDDLE_C, right: MIDDLE_C },
   naming: 'letter',
   phrases: [
@@ -413,7 +414,6 @@ const POSITION_HOW = {
         text: 'Thumb on middle C, a finger on each white key up to G. Play the finger each key shows.',
       },
     ],
-    remember: 'The thumb is 1, the little finger 5.',
   },
   left: {
     how: [
@@ -422,14 +422,12 @@ const POSITION_HOW = {
         text: 'Little finger on the C below middle C, thumb on G. Play the finger each key shows.',
       },
     ],
-    remember: 'The thumb is 1 here too, so the numbers run the other way.',
   },
   c: {
     how: [
       { who: 'Left hand', text: 'Little finger on the C below middle C. You start the tune.' },
       { who: 'Right hand', text: 'Thumb on middle C. You answer, and carry it on.' },
     ],
-    remember: 'Neither hand moves: every note is under a finger.',
   },
   'middle-c': {
     how: [
@@ -437,63 +435,52 @@ const POSITION_HOW = {
         text: 'Right hand over C to G, left hand over C down to F. The left hand plays the low notes, the right hand the rest.',
       },
     ],
-    remember: 'Middle C is played by the right thumb.',
   },
-} as const satisfies Record<string, Omit<LessonAbout, 'objective'>>
+} as const satisfies Record<string, Pick<LessonAbout, 'how'>>
 
-const about = (position: keyof typeof POSITION_HOW, objective: string): LessonAbout => ({
+const about = (
+  position: keyof typeof POSITION_HOW,
+  objective: string,
+  narration?: string,
+): LessonAbout => ({
   objective,
+  ...(narration && { narration }),
   ...POSITION_HOW[position],
+  remember: HANDS_REMINDER,
 })
+
+/** Finger numbering's songs, three a hand, share one objective and recording per hand (the user, 2026-11-24). */
+const right = () =>
+  about(
+    'right',
+    'Learn the basics of the key of C with your right hand.',
+    'key-of-c-right-hand.mp3',
+  )
+const left = () =>
+  about('left', 'Learn the basics of the key of C with your left hand.', 'key-of-c-left-hand.mp3')
+/** The C position's three songs share one objective and recording too. */
+const cPosition = () =>
+  about('c', 'Learn the basics of the C position with both hands.', 'c-position.mp3')
+/** And the middle C position's, Amazing Grace's words on all three (the user, 2026-11-24). */
+const middleCPosition = () =>
+  about(
+    'middle-c',
+    'Play Amazing Grace in the middle C position: both thumbs share middle C.',
+    'middle-c-position.mp3',
+  )
 
 /** Each song's introduction: what it is, and how its position is played. */
 export const HAND_POSITION_ABOUT = {
-  'right-hand-finger-numbers': about(
-    'right',
-    'Learn your right hand’s finger numbers by playing Goin’ Home, the slow theme from Dvořák’s New World Symphony.',
-  ),
-  'right-hand-rousseau': about(
-    'right',
-    'Play the tune Rousseau wrote for his 1752 opera, sung in America as Go Tell Aunt Nancy.',
-  ),
-  'right-hand-jingle-bells': about(
-    'right',
-    'Play the chorus of Jingle Bells with your right hand.',
-  ),
-  'left-hand-finger-numbers': about(
-    'left',
-    'Learn your left hand’s finger numbers by playing When the Saints Go Marching In.',
-  ),
-  'left-hand-railroad': about(
-    'left',
-    'Play A-Working on the Railroad, a railroad song recorded in 1938, with your left hand.',
-  ),
-  'left-hand-lightly-row': about(
-    'left',
-    'Play Lightly Row, a German folk song, with your left hand.',
-  ),
-  'c-position': about(
-    'c',
-    'Play Beethoven’s Ode to Joy in the C position: each hand on five white keys, C to G.',
-  ),
-  'c-position-outshine-the-sun': about(
-    'c',
-    'Play the chorus of Outshine the Sun, a spiritual, the hands taking turns.',
-  ),
-  'c-position-love-somebody': about(
-    'c',
-    'Play Love Somebody, an American folk song, the hands taking two bars each.',
-  ),
-  'middle-c-position': about(
-    'middle-c',
-    'Play Amazing Grace in the middle C position: both thumbs share middle C.',
-  ),
-  'middle-c-train': about(
-    'middle-c',
-    'Play When the Train Comes Along, a spiritual from St. Helena Island, both thumbs on middle C.',
-  ),
-  'middle-c-yankee-doodle': about(
-    'middle-c',
-    'Play the verse of Yankee Doodle, both thumbs on middle C.',
-  ),
+  'right-hand-finger-numbers': right(),
+  'right-hand-rousseau': right(),
+  'right-hand-jingle-bells': right(),
+  'left-hand-finger-numbers': left(),
+  'left-hand-railroad': left(),
+  'left-hand-lightly-row': left(),
+  'c-position': cPosition(),
+  'c-position-outshine-the-sun': cPosition(),
+  'c-position-love-somebody': cPosition(),
+  'middle-c-position': middleCPosition(),
+  'middle-c-train': middleCPosition(),
+  'middle-c-yankee-doodle': middleCPosition(),
 } as const satisfies Record<keyof typeof HAND_POSITION_LESSONS, LessonAbout>

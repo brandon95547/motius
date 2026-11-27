@@ -186,3 +186,18 @@ function Live() {
   })
   return <p>{message}</p>
 }
+
+/** Every C says C, with no octave number: players read letters. Its name read aloud keeps the octave. */
+describe('the names on the keys', () => {
+  beforeEach(() => useLearningStore.setState({ keyLabels: 'notes' }))
+
+  it('writes C on every C, middle C in bolder ink', () => {
+    const { container } = render(<PianoKeyboard window={{ low: 48, high: 72 }} />)
+    const label = (note: number) =>
+      container.querySelector(`[data-note="${note}"] .piano-key__label`)
+    expect(label(48)?.textContent).toBe('C')
+    expect(label(60)?.textContent).toBe('C')
+    expect(label(60)?.classList.contains('piano-key__label--anchor')).toBe(true)
+    expect(container.querySelector('[data-note="60"]')?.getAttribute('aria-label')).toBe('C4')
+  })
+})

@@ -1,25 +1,14 @@
-import * as React from 'react'
-import { Play } from 'lucide-react'
 import type { StepCrossing } from '@motius/shared'
-import { IconButton } from '@/ui/Button'
 
 /*
- * A crossing, drawn: a few white keys, the hand over them from above as the
- * finger chart draws hands (`ui/FingerChart.tsx`) — a palm, and fingers 1 to
- * 3 with their numbers on tips in the hand's color — and the finger that
- * crosses moving to its key, again and again. The thumb goes under the palm,
- * drawn beneath it; a finger goes over, lifted above it. A dashed arrow and a
- * ring on the key say the same without the motion.
- *
- * The motion is the lesson, so it is played in script (the Web Animations
- * API), not by the stylesheet's reduced-motion rule. With Reduce Motion on it
- * waits for Play: pressing it is the asking the setting is there for, as
- * choosing a background film is (`StageBackdrop`).
+ * A crossing, drawn and still: a few white keys, the hand over them from above
+ * as the finger chart draws hands (`ui/FingerChart.tsx`) — a palm, and fingers
+ * 1 to 3 with their numbers on tips in the hand's color — and a dashed arrow
+ * from the finger that crosses to a ring on its key. The thumb goes under the
+ * palm, drawn beneath it; a finger goes over, drawn above it. No motion: the
+ * picture says it, and the tip's recording says it aloud (the user,
+ * 2026-11-23).
  */
-
-/** One pass of the movement: still, across, landed, gone. */
-const DURATION_MS = 3200
-const LIFT = { 'thumb-under': -18, 'finger-over': -30 } as const
 
 /** One white key's width, in the drawing's units. */
 const KEY = 44
@@ -31,7 +20,7 @@ const KEYS_BOTTOM = 106
 
 const centerOf = (key: number) => key * KEY + KEY / 2
 
-export function CrossingAnimation({ crossing }: { crossing: StepCrossing }) {
+export function CrossingDrawing({ crossing }: { crossing: StepCrossing }) {
   const { keys, fingers, finger: mover, to, kind, hand } = crossing
   const width = keys.length * KEY
   const start = fingers.find((each) => each.finger === mover)!.key
@@ -55,34 +44,7 @@ export function CrossingAnimation({ crossing }: { crossing: StepCrossing }) {
       </text>
     </>
   )
-  const reduced = () => globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-  const [playing, setPlaying] = React.useState(() => !reduced())
-  const moverRef = React.useRef<SVGGElement>(null)
-  const dx = target - from
-  React.useEffect(() => {
-    const element = moverRef.current
-    if (!playing || !element || typeof element.animate !== 'function') return
-    const at = (x: number, y: number) => `translate(${x}px, ${y}px)`
-    const animation = element.animate(
-      [
-        { transform: at(0, 0), opacity: 0, offset: 0 },
-        { transform: at(0, 0), opacity: 1, offset: 0.08 },
-        { transform: at(0, 0), opacity: 1, offset: 0.22 },
-        { transform: at(dx / 2, LIFT[kind]), opacity: under ? 0.55 : 1, offset: 0.5 },
-        { transform: at(dx, 0), opacity: 1, offset: 0.74 },
-        { transform: at(dx, 0), opacity: 1, offset: 0.92 },
-        { transform: at(dx, 0), opacity: 0, offset: 1 },
-      ],
-      { duration: DURATION_MS, iterations: Infinity, easing: 'ease-in-out' },
-    )
-    return () => animation.cancel()
-  }, [playing, dx, kind, under])
-
-  const moving = (
-    <g ref={moverRef} className="crossing__mover">
-      {fingerAt(from, mover)}
-    </g>
-  )
+  const crosser = fingerAt(from, mover)
 
   return (
     <div className="crossing">
@@ -138,7 +100,7 @@ export function CrossingAnimation({ crossing }: { crossing: StepCrossing }) {
         />
         <circle className="crossing__landing" cx={target} cy={TIP_Y} r={16} />
         {/* Under: the thumb is drawn first, so the palm covers it as it passes. */}
-        {under && moving}
+        {under && crosser}
         <rect
           className="crossing__palm"
           x={palmLeft}
@@ -150,18 +112,8 @@ export function CrossingAnimation({ crossing }: { crossing: StepCrossing }) {
         {others.map((each) => (
           <g key={each.finger}>{fingerAt(centerOf(each.key), each.finger)}</g>
         ))}
-        {!under && moving}
+        {!under && crosser}
       </svg>
-      {!playing && (
-        <IconButton
-          className="crossing__play"
-          label="Play the movement"
-          icon={<Play />}
-          size="sm"
-          variant="outlined"
-          onClick={() => setPlaying(true)}
-        />
-      )}
     </div>
   )
 }

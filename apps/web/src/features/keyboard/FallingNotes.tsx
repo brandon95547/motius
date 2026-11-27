@@ -98,11 +98,9 @@ export function FallingNotes() {
     }
   const running = session.status === 'running'
   const passed = running || session.status === 'complete' ? session.completedSteps : 0
-  const waitingOn = mode === 'learn' && running ? session.stepIndex : null
   const stateOf = (note: TimedNote): NoteState => ({
     done: note.step < passed && !missed.has(note.step),
     missed: missed.has(note.step),
-    now: note.step === waitingOn,
     // Pressed when it was due, and still held — by the player, or by the
     // demonstration playing it. The demonstration lights its notes as a player
     // would, but is never counted as one (`use-scale-demo`).

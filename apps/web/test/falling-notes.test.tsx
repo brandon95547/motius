@@ -144,7 +144,8 @@ describe('falling notes', () => {
     act(() => learning().start())
     await frame()
     expect(track().style.transform).toBe('translateY(0px)')
-    expect(notes().filter((note) => note.dataset.now === 'true')).toHaveLength(2)
+    // No crossing in it, so none of its notes turns violet: each falls in its hand's color.
+    expect(notes().filter((note) => note.dataset.crossing === 'true')).toHaveLength(0)
 
     press(37)
     await frame()
@@ -158,12 +159,6 @@ describe('falling notes', () => {
     expect(partway).toBeGreaterThan(0)
     expect(partway).toBeLessThan(100)
     await waitFor(() => expect(track().style.transform).toBe('translateY(100px)'))
-    const now = notes().filter((note) => note.dataset.now === 'true')
-    // The two keys of the next group, each with its finger.
-    expect(now.map((note) => note.querySelector('.falling__label')!.textContent)).toEqual([
-      '4',
-      '3',
-    ])
     // The keys they fall to are asked for in the hand's color.
     expect(learning().annotations[49]).toMatchObject({ role: 'target', hand: 'left' })
     expect(notes().filter((note) => note.dataset.done === 'true')).toHaveLength(2)
@@ -244,6 +239,25 @@ describe('falling notes', () => {
     expect(second.every((note) => note.dataset.missed === 'true')).toBe(true)
   })
 
+  it('waits for each answer in Practice where the lesson asks questions', async () => {
+    act(() => {
+      learning().setLesson('high-or-low')
+      learning().setMode('practice')
+    })
+    await waitFor(() => expect(learning().exercise?.id).toBe('lesson:high-or-low'))
+    const beatMs = 60_000 / learning().targetBpm
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(0)
+    render(<FallingNotes />)
+    act(() => learning().start())
+    await frame()
+    // Long past where a step would have gone by: nothing is missed.
+    clock.mockReturnValue(40 * beatMs)
+    await frame()
+    await frame()
+    expect(learning().session.missedSteps).toEqual([])
+    expect(learning().session.stepIndex).toBe(0)
+  })
+
   it('pauses on a tap or Space (the bar’s Play), and goes on from where it stopped', () => {
     withBar()
     act(() => learning().start())
@@ -314,6 +328,23 @@ describe('falling notes', () => {
     expect(fallingClock.now).toBeCloseTo(paused, 5)
   })
 
+  it('falls violet all the way down where the hand crosses, and in its hand’s color elsewhere', () => {
+    act(() => learning().setLesson('notes-a-through-g'))
+    render(<FallingNotes />)
+    // Before the run, and from its first note: the notes the hand crosses to,
+    // and only those, are violet already.
+    const crossing = learning().exercise!.steps.flatMap((step, index) =>
+      step.crossing && step.crossing.kind !== 'hand-change' ? [index] : [],
+    )
+    expect(crossing.length).toBeGreaterThan(0)
+    const violet = () => [
+      ...document.querySelectorAll<HTMLElement>('.falling__note[data-crossing="true"]'),
+    ]
+    expect(violet()).toHaveLength(crossing.length)
+    act(() => learning().start())
+    expect(violet()).toHaveLength(crossing.length)
+  })
+
   it('moves through the music when dragged, and asks for the step it is left at', () => {
     render(<FallingNotes />)
     act(() => learning().start())
@@ -376,9 +407,11 @@ describe('falling notes', () => {
     expect(useFallingStore.getState().paused).toBe(false)
     expect(learning().session.status).toBe('running')
 
+    // Back to the start plays it again from the top at once, with no Start to press.
+    act(() => learning().seekStep(2))
     fireEvent.click(screen.getByRole('button', { name: 'Back to the start' }))
-    expect(learning().session.status).toBe('idle')
-    expect(screen.getByRole('button', { name: 'Start' })).toBeDefined()
+    expect(learning().session).toMatchObject({ status: 'running', stepIndex: 0 })
+    expect(screen.getByRole('button', { name: 'Pause' })).toBeDefined()
     act(() => useViewStore.getState().setStageView('staff'))
   })
 })

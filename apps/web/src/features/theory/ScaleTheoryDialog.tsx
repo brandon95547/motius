@@ -17,7 +17,8 @@ import { Drawer } from '@/ui/Drawer'
 import { Divider } from '@/ui/Display'
 import { useLearningStore } from '@/state/learning-store'
 import { KeyCircle } from './KeyCircle'
-import { Disclosure, Prose, Row, Section } from './parts'
+import { Disclosure } from '@/ui/Disclosure'
+import { Prose, Row, Section } from './parts'
 
 const OTHER_NAMES = new Intl.ListFormat('en', { style: 'long', type: 'conjunction' })
 

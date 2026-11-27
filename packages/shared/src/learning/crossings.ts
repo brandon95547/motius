@@ -4,8 +4,10 @@ import { LETTER_OF } from './lesson-keys.js'
 
 /*
  * Where a hand crosses: the thumb tucked under the fingers, or a finger
- * lifted over the thumb, to go on past five keys. A lesson marks the step that
- * needs it, and the app stops there to show how, before the key is played.
+ * lifted over the thumb, to go on past five keys; or where the other hand
+ * takes over (the user, 2026-11-23). A lesson marks
+ * the step that needs it, and the app stops there to show how, before the key
+ * is played.
  *
  * Fingering guide (`~/sites/piano knowledge`, `topics/fingering-rulebook.md`
  * §2): thumb under going away from the body, a finger over the thumb coming
@@ -13,7 +15,7 @@ import { LETTER_OF } from './lesson-keys.js'
  * with them falling; a move against that is a crossing.
  */
 
-export type CrossingKind = 'thumb-under' | 'finger-over'
+export type CrossingKind = 'thumb-under' | 'finger-over' | 'hand-change'
 
 /** A crossing, as the hand is just before it: on white keys, counted left to right. */
 export interface StepCrossing {
@@ -21,7 +23,7 @@ export interface StepCrossing {
   readonly kind: CrossingKind
   /** Which way the music is going. */
   readonly direction: 'up' | 'down'
-  /** The finger that crosses: 1 under, or 3 (say) over. */
+  /** The finger that crosses: 1 under, or 3 (say) over; the new hand's first finger. */
   readonly finger: number
   /** The white keys drawn, left to right, by letter. */
   readonly keys: readonly string[]
@@ -81,11 +83,32 @@ export function crossingInto(before: ExerciseStep, step: ExerciseStep): StepCros
   }
 }
 
-/** The steps, each marked where the hand crosses into it. */
+/**
+ * The other hand taking over, or null: the step its first key is on. Nothing
+ * is drawn for it, so it carries only the key it starts on.
+ */
+export function handChangeInto(before: ExerciseStep, step: ExerciseStep): StepCrossing | null {
+  const was = before.fingers[0]
+  const now = step.fingers[0]
+  const from = before.notes[0]
+  const to = step.notes[0]
+  if (!was || !now || from === undefined || to === undefined || was.hand === now.hand) return null
+  return {
+    hand: now.hand,
+    kind: 'hand-change',
+    direction: to >= from ? 'up' : 'down',
+    finger: now.finger,
+    keys: [step.label],
+    fingers: [],
+    to: 0,
+  }
+}
+
+/** The steps, each marked where the hand crosses into it, or the other hand takes over. */
 export function markCrossings(steps: readonly ExerciseStep[]): ExerciseStep[] {
   return steps.map((step, index) => {
     const before = steps[index - 1]
-    const crossing = before && crossingInto(before, step)
+    const crossing = before && (crossingInto(before, step) ?? handChangeInto(before, step))
     return crossing ? { ...step, crossing } : step
   })
 }

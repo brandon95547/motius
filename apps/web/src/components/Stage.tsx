@@ -1,5 +1,5 @@
 import { RotateCcw } from 'lucide-react'
-import { leadInMs, practiceSummary, runSummary } from '@motius/shared'
+import { asksByEar, leadInMs, practiceSummary, runSummary, wrongHint } from '@motius/shared'
 import { cn } from '@/lib/cn'
 import { BarButton } from '@/ui/BarButton'
 import { useAudio } from '@/audio/AudioProvider'
@@ -39,6 +39,8 @@ export function Stage({ children }: { children?: React.ReactNode }) {
   // Falling notes wherever they were chosen, with or without notes to fall:
   // the choice holds from screen to screen, songs included.
   const falling = stageView === 'falling'
+  // A lesson asked by ear has nothing to read or to fall: its stage says what to do.
+  const byEar = useLearningStore((state) => asksByEar(state.exercise))
 
   return (
     <main className="stage" aria-label="Staff" data-falling={falling}>
@@ -52,8 +54,8 @@ export function Stage({ children }: { children?: React.ReactNode }) {
         {topic !== 'songs' && <WrongHint />}
       </div>
 
-      {falling && (scoreOpen ? <SongFallingNotes /> : <FallingNotes />)}
-      {!falling && (
+      {falling && !byEar && (scoreOpen ? <SongFallingNotes /> : <FallingNotes />)}
+      {!falling && !byEar && (
         <div className={cn('staff-panel', sheet && 'staff-panel--sheet')}>
           {/* Whatever has notes to read gets them written out: a song its
               score, a scale the scale. Only a topic with nothing written —
@@ -116,17 +118,12 @@ function RunStatus() {
 /**
  * A word for a wrong key of a kind the lesson expects (`Exercise.wrongHints`):
  * a group of three in a lesson on the twos is "That's three. Look for a pair."
+ * A note to find by ear (one key's `answer`) says which way it is: Higher, or Lower.
  * Nothing else is said over the music: what a lesson has to explain, it says
  * in a dialog (its introduction, a crossing's tip).
  */
 function WrongHint() {
-  const text = useLearningStore((state) => {
-    const hints = state.exercise?.wrongHints
-    const wrong = Object.entries(state.session.wrongNotes)
-    if (!hints || wrong.length === 0) return null
-    const [note] = wrong.reduce((latest, each) => (each[1] > latest[1] ? each : latest))
-    return hints.find((hint) => hint.pitchClasses.includes(Number(note) % 12))?.text ?? null
-  })
+  const text = useLearningStore((state) => wrongHint(state.exercise, state.session))
   if (!text) return null
   return (
     <span className="stage-pill" role="status">

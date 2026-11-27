@@ -28,15 +28,29 @@ describe('every song lesson', () => {
     expect((beats - (exercise.pickup ?? 0)) % exercise.meter!.beats).toBe(0)
   })
 
-  it.each(IDS)('%s keeps each hand in one five-finger position', (id) => {
-    for (const hand of ['left', 'right'] as const) {
-      const keys = buildLessonExercise(id)
-        .steps.filter((step) => step.fingers[0]!.hand === hand)
-        .flatMap((step) => step.notes)
-      if (keys.length === 0) continue
-      // Five white keys side by side span at most seven semitones.
-      expect(Math.max(...keys) - Math.min(...keys)).toBeLessThanOrEqual(7)
-    }
+  // Moving the Pattern moves the hand on purpose, a key at a time: each
+  // pattern keeps to one position, and the lesson as a whole does not.
+  const MOVES: LessonExerciseId[] = ['moving-the-pattern']
+  // Five white keys side by side span at most seven semitones.
+  const fits = (keys: number[]) => Math.max(...keys) - Math.min(...keys) <= 7
+
+  it.each(IDS.filter((id) => !MOVES.includes(id)))(
+    '%s keeps each hand in one five-finger position',
+    (id) => {
+      for (const hand of ['left', 'right'] as const) {
+        const keys = buildLessonExercise(id)
+          .steps.filter((step) => step.fingers[0]!.hand === hand)
+          .flatMap((step) => step.notes)
+        if (keys.length > 0) expect(fits(keys)).toBe(true)
+      }
+    },
+  )
+
+  it.each(MOVES)('%s keeps each pattern in one five-finger position', (id) => {
+    const byPhrase = Map.groupBy(buildLessonExercise(id).steps, (step) => step.id.split('-')[0]!)
+    expect(byPhrase.size).toBeGreaterThan(1)
+    for (const steps of byPhrase.values())
+      expect(fits(steps.flatMap((step) => step.notes))).toBe(true)
   })
 })
 

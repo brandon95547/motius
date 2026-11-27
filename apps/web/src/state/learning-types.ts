@@ -142,10 +142,17 @@ export interface LearningState {
    */
   demoStepIndex: number | null
   /**
+   * The app is playing a step's question (`ExerciseStep.prompt`). Keys pressed
+   * meanwhile sound but are not an answer: the question is not over yet.
+   */
+  prompting: boolean
+  /**
    * Rises each time the click should start again from the first beat of a bar
    * — when a demonstration begins, so the two come in together.
    */
   pulseEpoch: number
+  /** Runs started, counted: a new one, even begun over a run still going. */
+  runs: number
   /**
    * Whose fingering is recommended.
    *
@@ -196,6 +203,7 @@ export interface LearningState {
   start: () => void
   reset: () => void
   setDemoStep: (index: number | null) => void
+  setPrompting: (prompting: boolean) => void
   setFingeringSystem: (system: FingeringSystemId) => void
   /** Null for no keyboard connected, which is the default range. */
   setPlayableRange: (range: NoteRange | null) => void

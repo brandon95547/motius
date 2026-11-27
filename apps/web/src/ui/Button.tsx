@@ -75,12 +75,15 @@ const sizes: Record<ButtonSize, string> = {
 /** Icons scale sub-linearly with the button — a 1.5x button gets a 1.2x icon. */
 export const buttonIconSize: Record<ButtonSize, number> = { xs: 13, sm: 14, md: 16, lg: 18 }
 
-/** Icon-only buttons are square: the horizontal padding becomes the vertical. */
+/**
+ * Icon-only buttons are square: the horizontal padding becomes the vertical.
+ * They keep that square beside long text in a row, never squeezed narrow.
+ */
 const iconOnly: Record<ButtonSize, string> = {
-  xs: 'w-7 px-0 touch-target--icon',
-  sm: 'w-8 px-0 touch-target--icon',
-  md: 'w-9 px-0 touch-target--icon',
-  lg: 'w-11 px-0 touch-target--icon',
+  xs: 'w-7 shrink-0 px-0 touch-target--icon',
+  sm: 'w-8 shrink-0 px-0 touch-target--icon',
+  md: 'w-9 shrink-0 px-0 touch-target--icon',
+  lg: 'w-11 shrink-0 px-0 touch-target--icon',
 }
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

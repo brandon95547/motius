@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { noteName, pitchClass, pitchName } from '@motius/shared'
+import { noteName, pitchName } from '@motius/shared'
 import { useKeyboardStore } from '@/state/keyboard-store'
 import { useLearningStore, type KeyLabels } from '@/state/learning-store'
 import { useViewStore } from '@/state/view-store'
@@ -65,16 +65,16 @@ export const PianoKey = React.memo(function PianoKey({
    * in their own layer above the keys rather than written here. With the labels
    * on notes, every white key carries its name (the black keys' are above the
    * keyboard, `NoteNamesAbove`): the exercise's spelling where it names the key
-   * by a letter, its own letter otherwise, and on a C the octave marker that
-   * says where you are.
+   * by a letter, its own letter otherwise: C, with no octave number, and
+   * middle C in bolder ink.
    */
   const keyText = ((): { text: string; anchor?: boolean } | null => {
     if (keyLabels === 'off' || keyLabels === 'fingers') return null
     if (keyLabels === 'degrees') return annotation?.degree ? { text: annotation.degree } : null
     const spelled = annotation?.label && /^[A-G]/.test(annotation.label) ? annotation.label : null
     if (spelled) return { text: spelled }
-    if (pitchClass(note) === 0) return { text: label, anchor: isAnchor }
-    return black ? null : { text: pitchName(note) }
+    if (black) return null
+    return { text: pitchName(note), anchor: isAnchor }
   })()
 
   const style: React.CSSProperties = black
@@ -112,9 +112,8 @@ export const PianoKey = React.memo(function PianoKey({
       // Dragging a key would start a native drag and swallow the glissando.
       draggable={false}
     >
-      {/* An annotated key shows the note it IS — `E♭`, not `E♭4` — because in
-          a scale you are reading letters, not octaves. Unannotated keys keep
-          the octave marker on every C, which is how you find your place. */}
+      {/* A key shows its letter — `E♭`, not `E♭4`, and `C`, not `C4` — because
+          players read letters, not octaves. Its name, read aloud, keeps the octave. */}
       {keyText !== null && !black && (
         <span className={`piano-key__label${keyText.anchor ? ' piano-key__label--anchor' : ''}`}>
           {keyText.text}

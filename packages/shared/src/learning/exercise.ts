@@ -93,7 +93,38 @@ export interface ExerciseStep {
    * the thumb — for a lesson that stops to show how before it is played.
    */
   readonly crossing?: StepCrossing
+  /**
+   * Any key of a stretch of the keyboard answers the step, in place of exact
+   * notes: "any key higher than middle C". `notes` then lists none, and a key
+   * outside the stretch is a mistake.
+   */
+  readonly answer?: { readonly from: number; readonly to: number }
+  /**
+   * The key an `answer` is measured from: marked, with the step's `cue`, but
+   * not asked for. Middle C, for "higher" and "lower".
+   */
+  readonly landmark?: number
+  /**
+   * Notes the app plays as the step comes up, one a beat, before it waits for
+   * the player: a question to answer by ear. Its answer is not marked on the keys.
+   * Steps that share one prompt (the same array) are one question, a tune
+   * played back a note a step: it is played as the first of them comes up.
+   */
+  readonly prompt?: readonly number[]
+  /**
+   * What the step asks, in a few words, written large on the stage of a lesson
+   * asked by ear (`asksByEar`), which has no music to draw: "Play the second
+   * note". A line break starts a new line.
+   */
+  readonly ask?: string
 }
+
+/**
+ * Whether every step is a question by ear: a lesson with no music to read or
+ * to fall, whose stage shows what each step asks instead.
+ */
+export const asksByEar = (exercise: Exercise | null): boolean =>
+  !!exercise && exercise.steps.length > 0 && exercise.steps.every((step) => step.prompt)
 
 /** How long a step lasts, in beats. */
 export const stepBeats = (step: ExerciseStep): number => step.beats ?? 1
@@ -167,6 +198,11 @@ export interface Exercise {
    * up as it is played. Without it, the next few are marked and the rest wash.
    */
   readonly marksProgress?: boolean
+  /**
+   * Practice waits for each step, as Learn does, instead of moving on at the
+   * tempo: a lesson of questions, each answered when it has been heard.
+   */
+  readonly waits?: boolean
   /** A word for a wrong key of a kind the lesson expects: "That's three. Look for a pair." */
   readonly wrongHints?: readonly {
     readonly pitchClasses: readonly number[]

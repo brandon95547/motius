@@ -1,9 +1,7 @@
-/* A crossing, drawn and moving (`CrossingAnimation.tsx`): the keys, the hand
-   from above in the finger chart's look, and the crossing finger going to its
-   key every few seconds — under the palm for the thumb, over it for a finger,
-   moved in script (transform and opacity only). */
+/* A crossing, drawn (`CrossingDrawing.tsx`): the keys, the hand from above in
+   the finger chart's look, and an arrow from the crossing finger to its key —
+   under the palm for the thumb, over it for a finger. */
 .crossing {
-  position: relative;
   width: min(100%, 10.5rem);
   margin-inline: auto;
 }
@@ -12,12 +10,6 @@
   width: 100%;
   height: auto;
   overflow: visible;
-}
-/* With Reduce Motion on, the movement waits for this, in the drawing's corner. */
-.crossing__play {
-  position: absolute;
-  top: 0;
-  right: -2.5rem;
 }
 .crossing__key {
   fill: var(--c-key-white);
@@ -65,7 +57,7 @@
 .crossing__arrowhead {
   fill: var(--ds-fg-secondary);
 }
-/* Where the finger lands: a ring on its key, brightest as it arrives. */
+/* Where the finger lands: a ring on its key. */
 .crossing__landing {
   fill: none;
   stroke: var(--ds-fg-secondary);
@@ -79,9 +71,4 @@
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-}
-.crossing-tip__text {
-  text-align: center;
-  font-size: var(--text-body-sm);
-  color: var(--ds-fg);
 }

@@ -11,12 +11,11 @@ describe('crossings in Notes A to G', () => {
       step.crossing ? [{ label: step.label, ...step.crossing }] : [],
     )
 
-  it('marks the four, and nothing else', () => {
+  it('marks the two on the way up, the right hand taking over, and nothing else', () => {
     expect(crossings().map((c) => `${c.hand} ${c.direction} ${c.kind} to ${c.label}`)).toEqual([
       'left up finger-over to F',
-      'left down thumb-under to E',
+      'right up hand-change to A',
       'right up thumb-under to D',
-      'right down finger-over to C',
     ])
   })
 
@@ -44,10 +43,5 @@ describe('crossings in Notes A to G', () => {
       finger: 3,
       to: 3,
     })
-  })
-
-  it('draws each way down as the way up turned round', () => {
-    expect(crossings()[3]).toMatchObject({ keys: ['C', 'D', 'E', 'F'], finger: 3, to: 0 })
-    expect(crossings()[1]).toMatchObject({ keys: ['E', 'F', 'G', 'A'], finger: 1, to: 0 })
   })
 })

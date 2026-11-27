@@ -39,6 +39,10 @@ describe('the hands reminder', () => {
     expect(dialog()!.textContent).toContain(
       'Blue is your left hand, green your right. The number on each bar is the finger that plays it.',
     )
+    // Read aloud, the first time, from its own recording.
+    expect(
+      (vi.mocked(HTMLMediaElement.prototype.play).mock.contexts.at(-1) as HTMLAudioElement).src,
+    ).toMatch(/\/narration\/which-hand-is-which\.mp3$/)
     expect(start).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Got it' }))
     expect(start).toHaveBeenCalledOnce()

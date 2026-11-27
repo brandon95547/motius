@@ -113,3 +113,38 @@ export function timingOf(playedAt: number, dueAt: number): Timing {
   const off = playedAt - dueAt
   return off < -ON_TIME_MS ? 'early' : off > ON_TIME_MS ? 'late' : 'on-time'
 }
+
+/**
+ * The notes a hand crosses to — the thumb tucked under the fingers, or a
+ * finger over the thumb — in any music with fingers on it: a lesson, a scale,
+ * a song. A hand crosses where its finger numbers run against the way the
+ * music goes (the right hand's rise going up, the left hand's fall), from one
+ * note it plays alone to the next. Chords and the other hand taking over are
+ * not crossings. Fingering guide (`~/sites/piano knowledge`,
+ * `topics/fingering-rulebook.md` §2).
+ */
+export function crossingNotes(notes: readonly TimedNote[]): ReadonlySet<TimedNote> {
+  const crossing = new Set<TimedNote>()
+  // Each hand's notes, by when they start.
+  const byHand = new Map<Hand, Map<number, TimedNote[]>>()
+  for (const note of notes) {
+    if (!note.hand || note.finger === undefined) continue
+    const starts = byHand.get(note.hand) ?? new Map<number, TimedNote[]>()
+    byHand.set(note.hand, starts)
+    starts.set(note.start, [...(starts.get(note.start) ?? []), note])
+  }
+  for (const [hand, starts] of byHand) {
+    let before: TimedNote | null = null
+    for (const start of [...starts.keys()].sort((a, b) => a - b)) {
+      const group = starts.get(start)!
+      const now = group.length === 1 ? group[0]! : null
+      if (before && now && now.note !== before.note && now.finger !== before.finger) {
+        const up = now.note > before.note
+        const rising = now.finger! > before.finger!
+        if ((up === (hand === 'right')) !== rising) crossing.add(now)
+      }
+      before = now
+    }
+  }
+  return crossing
+}
