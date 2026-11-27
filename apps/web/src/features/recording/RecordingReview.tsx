@@ -1,8 +1,10 @@
-import { Download, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import { keyFromTonic, performanceLength, writeMidiFile, writeMusicXml } from '@motius/shared'
 import { Button } from '@/ui/Button'
 import { Drawer } from '@/ui/Drawer'
 import { Divider } from '@/ui/Display'
+import { ExportOption } from '@/ui/ExportOption'
+import { downloadBytes, downloadText, fileSlug, MIDI_TYPE, MUSICXML_TYPE } from '@/lib/download'
 import { useLearningStore } from '@/state/learning-store'
 import { useRecordingStore } from '@/state/recording-store'
 import { formatLength } from './RecordControls'
@@ -55,7 +57,7 @@ export function RecordingReview() {
             downloadText(
               writeMusicXml(take, { bpm, title, key, pedal }),
               `${slug(title)}.musicxml`,
-              'application/vnd.recordare.musicxml+xml',
+              MUSICXML_TYPE,
             )
           }
         />
@@ -66,7 +68,7 @@ export function RecordingReview() {
           detail="The performance itself. Every DAW, sequencer and notation program reads it, and it is the format to pick if you intend to keep playing with the take."
           caveat="Keeps your exact timing and how hard each key was struck — nothing is rounded."
           onExport={() =>
-            downloadBytes(writeMidiFile(take, { bpm, pedal }), `${slug(title)}.mid`, 'audio/midi')
+            downloadBytes(writeMidiFile(take, { bpm, pedal }), `${slug(title)}.mid`, MIDI_TYPE)
           }
         />
       </div>
@@ -74,61 +76,4 @@ export function RecordingReview() {
   )
 }
 
-function ExportOption({
-  title,
-  extension,
-  detail,
-  caveat,
-  onExport,
-}: {
-  title: string
-  extension: string
-  detail: string
-  caveat: string
-  onExport: () => void
-}) {
-  return (
-    <section className="flex flex-col gap-2">
-      <div className="flex items-baseline gap-2">
-        <h3 className="text-ui text-[var(--ds-fg)]">{title}</h3>
-        <span className="text-label-sm text-[var(--ds-fg-muted)]" data-tabular>
-          {extension}
-        </span>
-      </div>
-      <p className="text-body-sm text-[var(--ds-fg-secondary)]">{detail}</p>
-      <p className="text-caption text-[var(--ds-fg-muted)]">{caveat}</p>
-      <Button
-        size="sm"
-        variant="outlined"
-        startIcon={<Download />}
-        onClick={onExport}
-        className="w-fit"
-      >
-        Export {title}
-      </Button>
-    </section>
-  )
-}
-
-const slug = (value: string) =>
-  value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '') || 'recording'
-
-function download(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  link.click()
-  // Revoked on the next frame rather than immediately: some browsers have not
-  // started reading the blob by the time the click handler returns.
-  requestAnimationFrame(() => URL.revokeObjectURL(url))
-}
-
-const downloadText = (text: string, filename: string, type: string) =>
-  download(new Blob([text], { type }), filename)
-
-const downloadBytes = (bytes: Uint8Array, filename: string, type: string) =>
-  download(new Blob([bytes as BlobPart], { type }), filename)
+const slug = (value: string) => fileSlug(value, 'recording')

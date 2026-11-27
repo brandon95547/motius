@@ -16,7 +16,7 @@ import type { Spelling } from '../music/pitch.js'
 import { withInferredHands } from './hand-assignment.js'
 import type { PartRole } from './general-midi.js'
 import { estimateKey, type DetectedKey } from './key-of.js'
-import { gridMeasures, quartersPerBar, type SongMeasure } from './meter.js'
+import { gridMeasures, quartersAt, quartersPerBar, type SongMeasure } from './meter.js'
 import type { SongSection } from './performance.js'
 export type { Hand }
 
@@ -334,6 +334,14 @@ export interface Song {
   readonly handsSuggested?: number
 }
 
+/**
+ * How long before its beat a grace note is struck, in crotchets, and how long
+ * it sounds. A score gives a grace note no time of its own; the importers
+ * place it this far ahead of the note it leads into, and the exports put it
+ * back in front of that note.
+ */
+export const GRACE_Q = 0.25
+
 export function songDuration(notes: readonly SongNote[]): number {
   return notes.reduce((end, note) => Math.max(end, note.startMs + note.durationMs), 0)
 }
@@ -478,14 +486,7 @@ export function buildSong(input: {
  * from its grid.
  */
 function withQuarters(notes: readonly SongNote[], measures: readonly SongMeasure[]): SongNote[] {
-  const toQ = (ms: number): number => {
-    let bar = measures[0]!
-    for (const candidate of measures) {
-      if (candidate.startMs <= ms + 1e-6) bar = candidate
-      else break
-    }
-    return bar.startQ + (ms - bar.startMs) / bar.quarterMs
-  }
+  const toQ = (ms: number): number => quartersAt(measures, ms)
   return notes.map((note) => {
     if (note.startQ !== undefined && note.durationQ !== undefined) return note
     const startQ = toQ(note.startMs)

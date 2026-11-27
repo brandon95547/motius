@@ -31,6 +31,8 @@ export type Panel =
   | 'lessons'
   /** A written lesson's introduction, asked for again from the bar. */
   | 'lesson'
+  /** The song on the stage, saved as MusicXML or MIDI. */
+  | 'export'
 
 interface PanelState {
   panel: Panel | null

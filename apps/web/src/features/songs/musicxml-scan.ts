@@ -51,8 +51,8 @@ export const KIND_SUFFIX: Record<string, string> = {
   none: '',
 }
 
-/** How long before its beat a grace note is struck, in crotchets. */
-export const GRACE_Q = 0.25
+/** How long before its beat a grace note is struck: one number for the importers and the exports. */
+export { GRACE_Q } from '@motius/shared'
 
 export const inner = (xml: string, tag: string): string | undefined =>
   new RegExp(`<${tag}(?:\\s[^>]*)?>([\\s\\S]*?)</${tag}>`).exec(xml)?.[1]

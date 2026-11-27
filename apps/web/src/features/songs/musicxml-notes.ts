@@ -183,10 +183,10 @@ export function readNote(
   })
   if (/<tie[^>]*type="start"/.test(content)) part.tied.set(tieKey, note)
 
-  if (!isChord && !isGrace) {
-    at.previousStart = start
-    at.cursor = start + duration
-  }
+  // A grace chord's other notes are struck with its first, not with the
+  // last note that took time: the grace sets where its chord is too.
+  if (!isChord) at.previousStart = start
+  if (!isChord && !isGrace) at.cursor = start + duration
   if (!isGrace) at.longest = Math.max(at.longest, start + duration)
 }
 

@@ -44,6 +44,23 @@ export interface SongMeasure {
   readonly ending?: readonly number[]
 }
 
+/**
+ * Where a moment falls in crotchets from the start of the piece.
+ *
+ * Time to crotchets goes through the bar it is in, because the bar carries
+ * the tempo in force: one tempo for the whole piece puts everything after a
+ * ritardando in the wrong place.
+ */
+export function quartersAt(measures: readonly SongMeasure[], ms: number): number {
+  let bar = measures[0]
+  if (!bar) return 0
+  for (const candidate of measures) {
+    if (candidate.startMs <= ms + 1e-6) bar = candidate
+    else break
+  }
+  return bar.startQ + (ms - bar.startMs) / bar.quarterMs
+}
+
 /** Crotchets in one bar of a signature: a bar of 6/8 is three of them. */
 export function quartersPerBar(beats: number, beatType: number): number {
   return beats > 0 && beatType > 0 ? (beats * 4) / beatType : 4

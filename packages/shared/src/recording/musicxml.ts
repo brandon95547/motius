@@ -1,5 +1,6 @@
 import { spellInKey, normalisePitchClass } from '../music/pitch.js'
 import { staffPlacement } from '../music/staff.js'
+import { musicXmlDocument, pitchXml as spelledPitchXml } from '../export/musicxml-base.js'
 import type { DetectedKey } from '../songs/key-of.js'
 import type { PedalSpan } from '../songs/song.js'
 import type { RecordedNote } from './performance.js'
@@ -60,22 +61,9 @@ function writable(duration: number): [number, string, boolean][] {
   return parts
 }
 
-const escape = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;')
-
-function pitchXml(note: number, key: DetectedKey | null): string {
-  // Spelled in the key, so a recording of something in F major writes B♭ and
-  // not A♯. `staffPlacement` puts the octave on the *letter*, which is what
-  // MusicXML wants: B♯3 is step B, alter 1, octave 3.
-  const spelling = key ? spellInKey(normalisePitchClass(note), key.fifths, key.mode) : null
-  const { letter, accidental, octave } = staffPlacement(note, spelling)
-  return [
-    '<pitch>',
-    `<step>${letter}</step>`,
-    accidental !== 0 ? `<alter>${accidental}</alter>` : '',
-    `<octave>${octave}</octave>`,
-    '</pitch>',
-  ].join('')
-}
+/** Spelled in the key, so a recording of something in F major writes B♭ and not A♯. */
+const pitchXml = (note: number, key: DetectedKey | null) =>
+  spelledPitchXml(note, key ? spellInKey(normalisePitchClass(note), key.fifths, key.mode) : null)
 
 interface Group {
   start: number
@@ -297,15 +285,5 @@ export function writeMusicXml(
     )
   }
 
-  return [
-    '<?xml version="1.0" encoding="UTF-8"?>',
-    '<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">',
-    '<score-partwise version="4.0">',
-    `<work><work-title>${escape(options.title ?? 'Motius recording')}</work-title></work>`,
-    '<part-list><score-part id="P1"><part-name>Piano</part-name></score-part></part-list>',
-    '<part id="P1">',
-    ...body,
-    '</part>',
-    '</score-partwise>',
-  ].join('\n')
+  return musicXmlDocument(options.title ?? 'Motius recording', body)
 }

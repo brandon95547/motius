@@ -34,6 +34,7 @@ export {
   inferHand,
   songDuration,
   songSteps,
+  GRACE_Q,
   type ChordSymbol,
   type PedalSpan,
   type Song,
@@ -53,6 +54,8 @@ export * from './songs/hand-assignment.js'
 export * from './songs/song-fingering.js'
 export * from './songs/fingering-hints.js'
 export * from './songs/key-holds.js'
+export * from './songs/song-musicxml.js'
+export * from './songs/song-midi.js'
 export * from './learning/exercise.js'
 export * from './learning/crossings.js'
 export * from './learning/practice-defaults.js'

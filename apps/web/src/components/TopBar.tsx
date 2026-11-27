@@ -15,6 +15,7 @@ import {
   Piano,
   Square,
   Upload,
+  Download,
   Info,
   GraduationCap,
   LibraryBig,
@@ -339,6 +340,7 @@ function Utilities({ area, playing }: { area: string | null; playing: boolean })
   // fingers are on the keys, and its place is over the music.
   const progress = area !== null && area !== 'songs'
   const about = useHasLessonAbout() && page === 'lesson'
+  const song = useCurrentSong()
 
   /*
    * What the bar has folded away at this width, and only that. At full width
@@ -430,6 +432,17 @@ function Utilities({ area, playing }: { area: string | null; playing: boolean })
         pageActions.openArea('songs')
       },
     },
+    // The song on the stage, out again as a file: only where there is one.
+    ...(area === 'songs' && song
+      ? [
+          {
+            id: 'export',
+            label: 'Export this song…',
+            icon: <Download size={16} />,
+            onSelect: () => panelActions.open('export'),
+          },
+        ]
+      : []),
   ]
 
   return (

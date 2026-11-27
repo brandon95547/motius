@@ -39,6 +39,7 @@ const RecordingReview = lazyExport(
   'RecordingReview',
 )
 const SongPicker = lazyExport(() => import('@/features/songs/SongPicker'), 'SongPicker')
+const SongExport = lazyExport(() => import('@/features/songs/SongExport'), 'SongExport')
 const HandsReminder = lazyExport(() => import('@/features/keyboard/HandsReminder'), 'HandsReminder')
 const ScaleTheoryDialog = lazyExport(
   () => import('@/features/theory/ScaleTheoryDialog'),
@@ -208,6 +209,9 @@ export function AppShell() {
       </OnDemand>
       <OnDemand when={panel === 'library'}>
         <SongPicker open={panel === 'library'} onClose={closePanel} />
+      </OnDemand>
+      <OnDemand when={panel === 'export'}>
+        <SongExport open={panel === 'export'} onClose={closePanel} />
       </OnDemand>
       <RecordingOverlay />
       <OnDemand when={reviewing}>
